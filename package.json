@@ -1,0 +1,35 @@
+{
+  "name": "swap-core",
+  "version": "1.0.0",
+  "description": "Swap Core",
+  "homepage": "https://github.com/pavelivanov/swap",
+  "author": "Pavel Ivanov <grammka@gmail.com> (https://github.com/pavelivanov)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pavelivanov/swap.git"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "watch": "cpx './src/**/*.js' ./app/src/swap -w",
+    "dev": "babel -w ./src --out-dir ./lib",
+    "build": "npm run clean && babel ./src --out-dir ./lib",
+    "dev:umd": "NODE_ENV=development webpack --config webpack.config.babel.js --watch",
+    "build:umd": "NODE_ENV=production webpack --config webpack.config.babel.js"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-loader": "^7.1.4",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-es2015-destructuring": "^6.23.0",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "colors": "^1.2.1",
+    "copy-and-watch": "^0.1.2",
+    "cpx": "^1.5.0",
+    "webpack": "^4.6.0",
+    "webpack-cli": "^2.0.15"
+  }
+}

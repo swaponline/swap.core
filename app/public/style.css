@@ -1,0 +1,23 @@
+body {
+  font-family: -apple-system, Tahoma, sans-serif;
+}
+
+
+table {
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  border-spacing: 0;
+  text-align: center;
+}
+
+table th,
+table td {
+  border-top: 1px solid #ddd;
+  border-left: 1px solid #ddd;
+  padding: 3px 5px;
+}
+
+
+.swaps {
+  width: 700px;
+}
