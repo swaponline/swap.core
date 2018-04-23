@@ -33,12 +33,6 @@ const app = new SwapApp({
 
 Then after you create the app you have some functionality:
 
-#### Data
-
-```
-app.swapCollection.items // swap items
-```
-
 #### Methods
 
 ```
