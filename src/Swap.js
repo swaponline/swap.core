@@ -14,7 +14,12 @@ class Swap {
    *
    * @param {object} data
    * @param {string} data.id
-   * @param {string} data.ownerId
+   * @param {object} data.owner
+   * @param {string} data.owner.peer
+   * @param {number} data.owner.reputation
+   * @param {object} data.owner.<currency>
+   * @param {string} data.owner.<currency>.address
+   * @param {string} data.owner.<currency>.publicKey
    * @param {string} data.buyCurrency
    * @param {string} data.sellCurrency
    * @param {number} data.buyAmount

@@ -31,7 +31,7 @@ const app = window.app = new SwapApp({
 
 app.on('ready', () => {
   console.log('swapApp ready')
-  console.log('initial swaps', app.swapCollection.items)
+  console.log('initial swaps', app.getSwaps())
 })
 
 app.on('user online', (peer) => {

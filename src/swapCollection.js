@@ -52,7 +52,7 @@ class SwapCollection extends Collection {
    * @param {string} data.id
    * @param {object} data.owner
    * @param {string} data.owner.peer
-   * @param {string} data.owner.reputation
+   * @param {number} data.owner.reputation
    * @param {object} data.owner.<currency>
    * @param {string} data.owner.<currency>.address
    * @param {string} data.owner.<currency>.publicKey
@@ -95,3 +95,7 @@ class SwapCollection extends Collection {
 
 
 export default new SwapCollection()
+
+export {
+  SwapCollection,
+}
