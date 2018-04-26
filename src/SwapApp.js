@@ -45,6 +45,10 @@ class SwapApp {
     return SwapCollection.getMySwaps()
   }
 
+  removeSwap(swapId) {
+    swapCollection.remove(swapId)
+  }
+
   on(eventName, handler) {
     events.subscribe(eventName, handler)
   }

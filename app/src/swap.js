@@ -42,8 +42,16 @@ app.on('user offline', (peer) => {
   console.log('user offline', peer)
 })
 
+app.on('new swaps', (swaps) => {
+  console.log('new swaps', swaps)
+})
+
 app.on('new swap', (swap) => {
   console.log('new swap', swap)
+})
+
+app.on('remove swap', (swap) => {
+  console.log('remove swap', swap)
 })
 
 app.on('new swap request', ({ swapId, participant }) => {

@@ -14,13 +14,17 @@ export default class App extends Component {
   }
 
   componentWillMount() {
+    app.on('new swaps', this.updateSwaps)
     app.on('new swap', this.updateSwaps)
+    app.on('remove swap', this.updateSwaps)
     app.on('swap update', this.updateSwaps)
     app.on('new swap request', this.handleRequest)
   }
 
   componentWillUnmount() {
+    app.off('new swaps', this.updateSwaps)
     app.off('new swap', this.updateSwaps)
+    app.off('remove swap', this.updateSwaps)
     app.off('swap update', this.updateSwaps)
     app.off('new swap request', this.handleRequest)
   }
@@ -44,6 +48,12 @@ export default class App extends Component {
     }
 
     app.createSwap(data)
+    this.updateSwaps()
+  }
+
+  removeSwap = (swapId) => {
+    app.removeSwap(swapId)
+    this.updateSwaps()
   }
 
   requestSwap = (swapId) => {
@@ -122,7 +132,7 @@ export default class App extends Component {
                                         }
                                       </Fragment>
                                     ) : (
-                                      <button onClick={() => {}}>REMOVE</button>
+                                      <button onClick={() => this.removeSwap(id)}>REMOVE</button>
                                     )
                                   }
                                 </Fragment>

@@ -5,7 +5,8 @@ import room from './room'
 
 const getUniqueId = (() => {
   let id = Date.now()
-  return () => ++id
+
+  return () => `${storage.me.peer}-${++id}`
 })()
 
 class Swap {
@@ -26,7 +27,7 @@ class Swap {
    * @param {number} data.sellAmount
    */
   constructor(data) {
-    this.id           = getUniqueId()
+    this.id           = data.id || getUniqueId()
     this.owner        = storage.me
     this.participant  = null
     this.requests     = [] // income requests
