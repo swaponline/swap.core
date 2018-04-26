@@ -27,6 +27,14 @@ const app = window.app = new SwapApp({
     instance: web3,
     gasLimit: 40 * 1e5,
   },
+  getBalance: (currency) => {
+    if (currency === 'eth') {
+      return 10
+    }
+    else if (currency === 'btc') {
+      return 1
+    }
+  }
 })
 
 app.on('ready', () => {

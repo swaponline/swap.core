@@ -67,6 +67,10 @@ class Room {
       data.forEach(({ event, data }) => {
         if (data) {
           this.events.dispatch(event, { ...data, fromPeer: message.from })
+
+          if (this._handler) {
+            this._handler({ ...data, fromPeer: message.from })
+          }
         }
       })
     }
@@ -74,6 +78,10 @@ class Room {
 
   subscribe(eventName, handler) {
     this.events.subscribe(eventName, handler)
+  }
+
+  subscribe2(handler) {
+    this._handler = handler
   }
 
   once(eventName, handler) {

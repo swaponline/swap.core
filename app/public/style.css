@@ -18,6 +18,10 @@ table td {
 }
 
 
-.swaps {
-  width: 700px;
+.content {
+  display: flex;
+}
+
+.content > div {
+  width: 50%;
 }

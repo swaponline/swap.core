@@ -1,7 +1,7 @@
 import { events } from './Events'
 import room from './room'
 import { storage } from './Storage'
-import swapCollection, { SwapCollection } from './swapCollection'
+import swapCollection from './swapCollection'
 
 
 class SwapApp {
@@ -34,15 +34,15 @@ class SwapApp {
    * @param {number} data.sellAmount
    */
   createSwap(data) {
-    swapCollection.create(data)
+    this.swapCollection.create(data)
   }
 
   getSwaps() {
-    return swapCollection.items
+    return this.swapCollection.items
   }
 
   getMySwaps() {
-    return SwapCollection.getMySwaps()
+    return this.swapCollection.getMySwaps()
   }
 
   removeSwap(swapId) {

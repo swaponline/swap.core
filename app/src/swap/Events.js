@@ -40,7 +40,14 @@ class Event {
    * @param eventArgs {...array}
    */
   call(...eventArgs) {
-    this.handlers.forEach((handler) => handler(...eventArgs))
+    this.handlers.forEach((handler) => {
+      try {
+        handler(...eventArgs)
+      }
+      catch (err) {
+        console.error(err)
+      }
+    })
   }
 }
 

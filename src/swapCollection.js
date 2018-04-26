@@ -2,6 +2,7 @@ import { events } from './Events'
 import Collection from './Collection'
 import Swap from './Swap'
 import room from './room'
+import { pullProps } from './util'
 
 
 class SwapCollection extends Collection {
@@ -16,7 +17,7 @@ class SwapCollection extends Collection {
     this._persistMySwaps()
 
     room.subscribe('user online', (peer) => {
-      const mySwaps = SwapCollection.getMySwaps()
+      const mySwaps = this.getMySwaps()
 
       if (mySwaps.length) {
         console.log(`Send my orders to ${peer}`, mySwaps)
@@ -46,46 +47,39 @@ class SwapCollection extends Collection {
   }
 
   _persistMySwaps() {
-    SwapCollection.getMySwaps().forEach((swapData) => {
-      const swap = new Swap(swapData)
-
-      this.append(swap, swap.id)
+    this.getMySwaps().forEach((swapData) => {
+      this.handleCreate(swapData)
     })
+  }
+
+  _create(data) {
+    const swap = new Swap({ collection: this, data })
+
+    this.append(swap, swap.id)
+
+    return swap
   }
 
   _saveMySwaps() {
     // clean swaps from other additional props
-    const swaps = this.items.map((item) => {
-      const {
-        id,
-        owner,
-        buyCurrency,
-        sellCurrency,
-        buyAmount,
-        sellAmount,
-        participant,
-        requesting,
-        processing,
-      } = item
-
-      return {
-        id,
-        owner,
-        buyCurrency,
-        sellCurrency,
-        buyAmount,
-        sellAmount,
-        participant,
-        requesting,
-        processing,
-      }
-    })
+    const swaps = this.items.map((item) => pullProps(
+      item,
+      'id',
+      'owner',
+      'buyCurrency',
+      'sellCurrency',
+      'buyAmount',
+      'sellAmount',
+      'participant',
+      'requesting',
+      'processing',
+    ))
 
     global.localStorage.setItem('mySwaps', JSON.stringify(swaps))
   }
 
-  static getMySwaps() {
-    const mySwaps = localStorage.getItem('mySwaps')
+  getMySwaps() {
+    const mySwaps = global.localStorage.getItem('mySwaps')
 
     return mySwaps ? JSON.parse(mySwaps) : []
   }
@@ -106,18 +100,17 @@ class SwapCollection extends Collection {
    * @param {number} data.sellAmount
    */
   create(data) {
-    const swap = new Swap({ collection: this, data })
+    this._create(data)
+    this._saveMySwaps()
 
-    this.append(swap, swap.id)
     room.sendMessage([
       {
         event: 'new swap',
         data: {
-          swap,
+          swap: data,
         },
       },
     ])
-    this._saveMySwaps()
   }
 
   /**
@@ -136,9 +129,7 @@ class SwapCollection extends Collection {
    * @param {number} data.sellAmount
    */
   handleCreate(data) {
-    const swap = new Swap(data)
-
-    this.append(swap, swap.id)
+    const swap = this._create(data)
     events.dispatch('new swap', swap)
   }
 
@@ -146,10 +137,8 @@ class SwapCollection extends Collection {
     const swaps = []
 
     swapsData.forEach((data) => {
-      const swap = new Swap(data)
-
+      const swap = this._create(data)
       swaps.push(swap)
-      this.append(swap, swap.id)
     })
 
     events.dispatch('new swaps', swaps)
@@ -178,7 +167,3 @@ class SwapCollection extends Collection {
 
 
 export default new SwapCollection()
-
-export {
-  SwapCollection,
-}
