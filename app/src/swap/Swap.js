@@ -13,6 +13,7 @@ class Swap {
 
   /**
    *
+   * @param {object} collection
    * @param {object} data
    * @param {string} data.id
    * @param {object} data.owner
@@ -26,7 +27,8 @@ class Swap {
    * @param {number} data.buyAmount
    * @param {number} data.sellAmount
    */
-  constructor(data) {
+  constructor({ collection, data }) {
+    this.collection   = collection
     this.id           = data.id || getUniqueId()
     this.owner        = storage.me
     this.participant  = null
@@ -42,7 +44,6 @@ class Swap {
   }
 
   _onMount() {
-
     // Someone wants to start swap with you
     room.subscribe('request swap', ({ swapId, participant }) => {
       if (swapId === this.id && !this.requests.find(({ peer }) => peer === participant.peer)) {
@@ -93,8 +94,10 @@ class Swap {
       },
     ])
 
-    room.subscribe('accept swap request', ({ swapId }) => {
+    room.subscribe('accept swap request', function ({ swapId }) {
       if (swapId === this.id) {
+        this.unsubscribe()
+
         this.update({
           processing: true,
           requesting: false,
@@ -104,8 +107,10 @@ class Swap {
       }
     })
 
-    room.subscribe('decline swap request', ({ swapId }) => {
+    room.subscribe('decline swap request', function ({ swapId }) {
       if (swapId === this.id) {
+        this.unsubscribe()
+
         this.update({
           requesting: false,
         })
@@ -130,6 +135,9 @@ class Swap {
         },
       },
     ])
+
+    // TODO refactor this with Events
+    this.collection._saveMySwaps()
   }
 
   declineRequest(participantPeer) {
@@ -152,6 +160,9 @@ class Swap {
         },
       },
     ])
+
+    // TODO refactor this with Events
+    this.collection._saveMySwaps()
   }
 }
 

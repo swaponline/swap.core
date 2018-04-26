@@ -55,14 +55,31 @@ class SwapCollection extends Collection {
 
   _saveMySwaps() {
     // clean swaps from other additional props
-    const swaps = this.items.map(({ id, owner, buyCurrency, sellCurrency, buyAmount, sellAmount }) => ({
-      id,
-      owner,
-      buyCurrency,
-      sellCurrency,
-      buyAmount,
-      sellAmount,
-    }))
+    const swaps = this.items.map((item) => {
+      const {
+        id,
+        owner,
+        buyCurrency,
+        sellCurrency,
+        buyAmount,
+        sellAmount,
+        participant,
+        requesting,
+        processing,
+      } = item
+
+      return {
+        id,
+        owner,
+        buyCurrency,
+        sellCurrency,
+        buyAmount,
+        sellAmount,
+        participant,
+        requesting,
+        processing,
+      }
+    })
 
     global.localStorage.setItem('mySwaps', JSON.stringify(swaps))
   }
@@ -89,7 +106,7 @@ class SwapCollection extends Collection {
    * @param {number} data.sellAmount
    */
   create(data) {
-    const swap = new Swap(data)
+    const swap = new Swap({ collection: this, data })
 
     this.append(swap, swap.id)
     room.sendMessage([

@@ -1,0 +1,4 @@
+const onlyProps = (obj, ) => {
+
+}
+

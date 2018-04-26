@@ -19,6 +19,8 @@ export default class App extends Component {
     app.on('remove swap', this.updateSwaps)
     app.on('swap update', this.updateSwaps)
     app.on('new swap request', this.handleRequest)
+    app.on('accept swap request', this.handleAcceptRequest)
+    app.on('decline swap request', this.handleDeclineRequest)
   }
 
   componentWillUnmount() {
@@ -27,6 +29,8 @@ export default class App extends Component {
     app.off('remove swap', this.updateSwaps)
     app.off('swap update', this.updateSwaps)
     app.off('new swap request', this.handleRequest)
+    app.off('accept swap request', this.handleAcceptRequest)
+    app.off('decline swap request', this.handleDeclineRequest)
   }
 
   updateSwaps = () => {
@@ -36,6 +40,14 @@ export default class App extends Component {
   }
 
   handleRequest = ({ swapId, participant }) => {
+    this.updateSwaps()
+  }
+
+  handleAcceptRequest = ({ swapId, participant }) => {
+    this.updateSwaps()
+  }
+
+  handleDeclineRequest = ({ swapId, participant }) => {
     this.updateSwaps()
   }
 
