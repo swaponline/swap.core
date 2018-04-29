@@ -1,21 +1,34 @@
 import { events } from './Events'
 import room from './room'
 import { storage } from './Storage'
-import swapCollection from './swapCollection'
+import orderCollection from './orderCollection'
+import Swap from './Swap'
 
 
-class SwapApp {
+class OrderApp {
 
-  constructor({ me, ipfsConfig, web3 }) {
+  constructor({ me, ipfsConfig, ethConfig, btcConfig }) {
+    this.orderCollection = orderCollection
     this.storage = storage
-    this.swapCollection = swapCollection
 
-    room.setIpfsConfig(ipfsConfig)
-    storage.me = me
+    storage.me          = me
+    storage.ipfsConfig  = ipfsConfig
+    storage.ethConfig   = ethConfig
+    storage.btcConfig   = btcConfig
 
     room.subscribe('ready', () => {
       events.dispatch('ready')
     })
+
+    room.init()
+  }
+
+  getOrders() {
+    return this.orderCollection.items
+  }
+
+  getMyOrders() {
+    return this.orderCollection.getMyOrders()
   }
 
   /**
@@ -33,20 +46,16 @@ class SwapApp {
    * @param {number} data.buyAmount
    * @param {number} data.sellAmount
    */
-  createSwap(data) {
-    this.swapCollection.create(data)
+  createOrder(data) {
+    this.orderCollection.create(data)
   }
 
-  getSwaps() {
-    return this.swapCollection.items
+  removeOrder(orderId) {
+    orderCollection.remove(orderId)
   }
 
-  getMySwaps() {
-    return this.swapCollection.getMySwaps()
-  }
-
-  removeSwap(swapId) {
-    swapCollection.remove(swapId)
+  createSwap(orderId) {
+    return new Swap(orderId)
   }
 
   on(eventName, handler) {
@@ -59,4 +68,4 @@ class SwapApp {
 }
 
 
-export default SwapApp
+export default OrderApp

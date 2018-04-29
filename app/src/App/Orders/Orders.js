@@ -2,55 +2,56 @@ import React, { Fragment, Component } from 'react'
 import { app } from '../../swap'
 
 
-export default class Swaps extends Component {
+export default class Orders extends Component {
 
   constructor() {
     super()
 
     this.state = {
-      swaps: app.swapCollection.items,
+      orders: app.orderCollection.items,
     }
   }
 
   componentWillMount() {
-    app.on('new swaps', this.updateSwaps)
-    app.on('new swap', this.updateSwaps)
-    app.on('remove swap', this.updateSwaps)
-    app.on('swap update', this.updateSwaps)
-    app.on('new swap request', this.handleRequest)
+    app.on('new orders', this.updateOrders)
+    app.on('new order', this.updateOrders)
+    app.on('remove order', this.updateOrders)
+    app.on('swap update', this.updateOrders)
+    app.on('new order request', this.handleRequest)
     app.on('accept swap request', this.handleAcceptRequest)
     app.on('decline swap request', this.handleDeclineRequest)
   }
 
   componentWillUnmount() {
-    app.off('new swaps', this.updateSwaps)
-    app.off('new swap', this.updateSwaps)
-    app.off('remove swap', this.updateSwaps)
-    app.off('swap update', this.updateSwaps)
-    app.off('new swap request', this.handleRequest)
+    app.off('new orders', this.updateOrders)
+    app.off('new order', this.updateOrders)
+    app.off('remove order', this.updateOrders)
+    app.off('swap update', this.updateOrders)
+    app.off('new order request', this.handleRequest)
     app.off('accept swap request', this.handleAcceptRequest)
     app.off('decline swap request', this.handleDeclineRequest)
   }
 
-  updateSwaps = () => {
+  updateOrders = () => {
     this.setState({
-      swaps: app.swapCollection.items,
+      orders: app.orderCollection.items,
     })
   }
 
   handleRequest = ({ swapId, participant }) => {
-    this.updateSwaps()
+    this.updateOrders()
   }
 
   handleAcceptRequest = ({ swapId, participant }) => {
-    this.updateSwaps()
+    this.updateOrders()
+    this.handleOrderSelect(swapId)
   }
 
   handleDeclineRequest = ({ swapId, participant }) => {
-    this.updateSwaps()
+    this.updateOrders()
   }
 
-  createSwap = () => {
+  createOrder = () => {
     const data = {
       buyCurrency: 'ETH',
       sellCurrency: 'BTC',
@@ -58,63 +59,70 @@ export default class Swaps extends Component {
       sellAmount: 0.1,
     }
 
-    app.createSwap(data)
-    this.updateSwaps()
+    app.createOrder(data)
+    this.updateOrders()
   }
 
-  removeSwap = (swapId) => {
-    app.removeSwap(swapId)
-    this.updateSwaps()
+  removeOrder = (swapId) => {
+    app.removeOrder(swapId)
+    this.updateOrders()
   }
 
-  requestSwap = (swapId) => {
-    const swap = app.swapCollection.getByKey(swapId)
+  requestOrder = (swapId) => {
+    const swap = app.orderCollection.getByKey(swapId)
 
     swap.sendRequest((isAccepted) => {
       console.log(`user ${swap.owner.peer} ${isAccepted ? 'accepted' : 'declined'} your request`)
     })
-    this.updateSwaps()
+    this.updateOrders()
   }
 
   acceptRequest = (swapId, participantPeer) => {
-    const swap = app.swapCollection.getByKey(swapId)
+    const swap = app.orderCollection.getByKey(swapId)
 
     swap.acceptRequest(participantPeer)
-    this.updateSwaps()
+    this.handleOrderSelect(swapId)
+    this.updateOrders()
   }
 
   declineRequest = (swapId, participantPeer) => {
-    const swap = app.swapCollection.getByKey(swapId)
+    const swap = app.orderCollection.getByKey(swapId)
 
     swap.declineRequest(participantPeer)
-    this.updateSwaps()
+    this.updateOrders()
+  }
+
+  handleOrderSelect = (swapId) => {
+    const { onOrderSelect } = this.props
+
+    onOrderSelect(swapId)
   }
 
   render() {
-    const { swaps } = this.state
+    const { orders } = this.state
     const { myPeer } = this.props
 
     return (
       <div>
-        <button onClick={this.createSwap}>Create Swap</button>
+        <button onClick={this.createOrder}>Create Order</button>
         <br /><br />
         {
-          Boolean(swaps && swaps.length) && (
+          Boolean(orders && orders.length) && (
             <table>
               <thead>
                 <tr>
                   <th>Exchange Rate</th>
                   <th>User Reputation</th>
-                  <th>{swaps[0].buyCurrency.toUpperCase()}</th>
-                  <th>{swaps[0].sellCurrency.toUpperCase()}</th>
+                  <th>{orders[0].buyCurrency.toUpperCase()}</th>
+                  <th>{orders[0].sellCurrency.toUpperCase()}</th>
                   <th width="1%" colSpan="2" />
                 </tr>
               </thead>
               <tbody>
                 {
-                  swaps.map((swap) => {
+                  orders.map((swap) => {
                     const {
-                      id, buyAmount, sellAmount, exchangeRate, requests, requesting,
+                      id, buyAmount, sellAmount, exchangeRate, requests, isRequested,
                       owner: { peer: ownerPeer, reputation },
                     } = swap
 
@@ -142,17 +150,17 @@ export default class Swaps extends Component {
                                       }
                                     </Fragment>
                                   ) : (
-                                    <button onClick={() => this.removeSwap(id)}>REMOVE</button>
+                                    <button onClick={() => this.removeOrder(id)}>REMOVE</button>
                                   )
                                 }
                               </Fragment>
                             ) : (
                               <Fragment>
                                 {
-                                  requesting ? (
+                                  isRequested ? (
                                     <div style={{ color: 'red' }}>REQUESTING</div>
                                   ) : (
-                                    <button onClick={() => this.requestSwap(id)}>BUY</button>
+                                    <button onClick={() => this.requestOrder(id)}>BUY</button>
                                   )
                                 }
                               </Fragment>

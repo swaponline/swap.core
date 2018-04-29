@@ -8,12 +8,12 @@ class Room {
     this.events = new Events()
   }
 
-  setIpfsConfig(config) {
+  init() {
     const ipfs = new global.Ipfs({
       EXPERIMENTAL: {
         pubsub: true,
       },
-      config,
+      config: storage.ipfsConfig,
     })
 
     ipfs.once('ready', () => ipfs.id((err, info) => {
@@ -23,14 +23,14 @@ class Room {
         throw err
       }
 
-      this.init({
+      this._init({
         peer: info.id,
         ipfsConnection: ipfs,
       })
     }))
   }
 
-  init({ peer, ipfsConnection }) {
+  _init({ peer, ipfsConnection }) {
     storage.me.peer = peer
 
     this.connection = global.IpfsRoom(ipfsConnection, 'jswaps', {

@@ -17,6 +17,9 @@
     "dev:umd": "NODE_ENV=development webpack --config webpack.config.babel.js --watch",
     "build:umd": "NODE_ENV=production webpack --config webpack.config.babel.js"
   },
+  "peerDependencies": {
+    "bitcoinjs-lib": "~3.3.2"
+  },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-loader": "^7.1.4",

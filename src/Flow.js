@@ -1,5 +1,6 @@
 import Events from './Events'
-import Storage from './Storage'
+import Storage, { storage } from './Storage'
+import room from './room'
 
 
 class Flow {
@@ -16,21 +17,16 @@ class Flow {
 
    */
 
-  constructor({ swap, data, options: { ethSwap, syncData } }) {
-    if (typeof syncData !== 'function') {
-      throw new Error('Flow failed. "syncData" of type function required.')
-    }
-
-    this.ethSwap  = ethSwap
-    this.syncData = syncData
-
+  constructor({ swap, options: { ethSwap } }) {
     this.events   = new Events()
     this.storage  = new Storage({
-      data: data || {
+      storeKey: `flow.${swap.id}`,
+      data: {
         step: 0,
       },
     })
 
+    this.ethSwap  = ethSwap
     this.swap     = swap
     this.steps    = null
     this.index    = 0
@@ -46,39 +42,46 @@ class Flow {
   }
 
   _getInitialSteps() {
-    const { room, storage } = this.swap
     const flow = this
 
     return [
 
-      // Check swap ID, if it doesn't exist wait for data sync
+      // Check if order exists
 
       async () => {
-        if (!storage.id) {
+        const { id: orderId, owner } = this.swap
+
+        if (!owner) {
           flow.storage.update({
             isWaitingParticipant: true, // this means that participant with such order is offline
           })
 
-          const data = await this.syncData()
+          room.subscribe('new orders', function ({ orders }) {
+            const order = orders.find(({ id }) => id === orderId)
 
-          storage.update(data)
+            if (order) {
+              this.unsubscribe()
+
+              const order = orders.getByKey(orderId)
+
+              flow.swap.update(order)
+              flow.finishStep()
+            }
+          })
         }
-
-        flow.finishStep()
+        else {
+          flow.finishStep()
+        }
       },
 
       // Setup data
 
       () => {
-        const isMyOrder = storage.owner.address === storage.me.ethData.address
+        const { id, isMy, participant } = this.swap
 
-        storage.update({
-          isMy: isMyOrder,
-        })
-
-        if (!isMyOrder) {
-          storage.update({
-            participant: storage.owner,
+        if (!isMy) {
+          this.swap.update({
+            participant: this.swap.owner,
           })
 
           flow.storage.update({
@@ -86,7 +89,7 @@ class Flow {
           })
 
           room.subscribe('swap:userConnected', function ({ orderId, participant }) {
-            if (storage.id === orderId) {
+            if (id === orderId) {
               this.unsubscribe()
 
               flow.storage.update({
@@ -97,17 +100,17 @@ class Flow {
           })
         }
 
-        room.sendMessage(storage.participant.peer, [
+        room.sendMessage(participant.peer, [
           {
             event: 'swap:userConnected',
             data: {
-              orderId: storage.id,
+              orderId: id,
               participant: storage.me,
             },
           },
         ])
 
-        if (isMyOrder) {
+        if (isMy) {
           flow.finishStep()
         }
       },
@@ -115,8 +118,10 @@ class Flow {
       // Signs
 
       () => {
+        const { id } = this.swap
+
         room.subscribe('swap:signed', function ({ orderId }) {
-          if (storage.id === orderId) {
+          if (id === orderId) {
             this.unsubscribe()
 
             flow.finishStep({
@@ -173,7 +178,7 @@ class Flow {
   // TODO need to move sign functionality from Flow class coz in other swaps this process could be necessary
 
   async sign() {
-    const { room, storage } = this.swap
+    const { id, participant } = this.swap
 
     this.storage.update({
       isSignFetching: true,
@@ -182,7 +187,7 @@ class Flow {
     await this.ethSwap.sign(
       {
         myAddress: storage.me.ethData.address,
-        participantAddress: storage.participant.eth.address,
+        participantAddress: participant.eth.address,
       },
       (signTransactionUrl) => {
         this.storage.update({
@@ -196,11 +201,11 @@ class Flow {
       isMeSigned: true,
     })
 
-    room.sendMessage(storage.participant.peer, [
+    room.sendMessage(participant.peer, [
       {
         event: 'swap:signed',
         data: {
-          orderId: storage.id,
+          orderId: id,
         },
       },
     ])

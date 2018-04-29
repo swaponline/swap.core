@@ -1,23 +1,30 @@
 import React, { Component } from 'react'
 import { app } from '../swap'
 
-import Swaps from './Swaps/Swaps'
+import Orders from './Orders/Orders'
 import Swap from './Swap/Swap'
 
 
 export default class App extends Component {
 
-  static defaultProps = {
-    myPeer: app.storage.me.peer,
+  state = {
+    activeOrderId: null,
+  }
+
+  handleSelectOrder = (orderId) => {
+    this.setState({
+      activeOrderId: orderId,
+    })
   }
 
   render() {
-    const { myPeer } = this.props
+    const { activeOrderId } = this.state
+    const myPeer = app.storage.me.peer
 
     return (
       <div className="content">
-        <Swaps myPeer={myPeer} />
-        <Swap />
+        <Orders myPeer={myPeer} onOrderSelect={this.handleSelectOrder} />
+        <Swap orderId={activeOrderId} />
       </div>
     )
   }

@@ -1,7 +1,10 @@
+import Web3 from 'web3'
+import bitcoin from 'bitcoinjs-lib'
 import { SwapApp } from './swap/index'
+import { request } from './util'
 
 
-const web3 = new global.Web3(new global.Web3.providers.HttpProvider('https://rinkeby.infura.io/JCnK5ifEPH9qcQkX0Ahl'))
+const web3 = new Web3(new Web3.providers.HttpProvider('https://rinkeby.infura.io/JCnK5ifEPH9qcQkX0Ahl'))
 
 
 const app = window.app = new SwapApp({
@@ -23,23 +26,19 @@ const app = window.app = new SwapApp({
       ],
     },
   },
-  web3Config: {
-    instance: web3,
+  ethConfig: {
+    lib: web3,
     gasLimit: 40 * 1e5,
   },
-  getBalance: (currency) => {
-    if (currency === 'eth') {
-      return 10
-    }
-    else if (currency === 'btc') {
-      return 1
-    }
-  }
+  btcConfig: {
+    lib: bitcoin,
+    fetchUnspents: (address) => request.get(`https://test-insight.bitpay.com/api/addr/${address}/utxo`),
+  },
 })
 
 app.on('ready', () => {
   console.log('swapApp ready')
-  console.log('initial swaps', app.getSwaps())
+  console.log('initial orders', app.getOrders())
 })
 
 app.on('user online', (peer) => {
@@ -50,21 +49,21 @@ app.on('user offline', (peer) => {
   console.log('user offline', peer)
 })
 
-app.on('new swaps', (swaps) => {
-  console.log('new swaps', swaps)
+app.on('new orders', (swaps) => {
+  console.log('new orders', swaps)
 })
 
-app.on('new swap', (swap) => {
-  console.log('new swap', swap)
+app.on('new order', (swap) => {
+  console.log('new order', swap)
 })
 
-app.on('remove swap', (swap) => {
-  console.log('remove swap', swap)
+app.on('remove order', (swap) => {
+  console.log('remove order', swap)
 })
 
-app.on('new swap request', ({ swapId, participant }) => {
+app.on('new order request', ({ swapId, participant }) => {
   console.error(`user ${participant.peer} requesting swap`, {
-    swap: app.swapCollection.getByKey(swapId),
+    swap: app.orderCollection.getByKey(swapId),
     participant,
   })
 })

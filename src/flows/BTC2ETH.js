@@ -1,5 +1,7 @@
-import crypto from 'swap-crypto'
+import crypto from 'bitcoinjs-lib/src/crypto'
 import Flow from '../Flow'
+import { storage } from '../Storage'
+import room from '../room'
 
 
 class BTC2ETH extends Flow {
@@ -42,7 +44,6 @@ class BTC2ETH extends Flow {
   }
 
   _getSteps() {
-    const { room, storage } = this.swap
     const flow = this
 
     return [
@@ -60,10 +61,12 @@ class BTC2ETH extends Flow {
       // Create BTC Script
 
       () => {
+        const { participant } = this.swap
+
         const btcScriptData = this.btcSwap.createScript({
           secretHash:         flow.storage.secretHash,
           btcOwnerPublicKey:  storage.me.btcData.publicKey,
-          ethOwnerPublicKey:  storage.participant.btcData.publicKey,
+          ethOwnerPublicKey:  participant.btcData.publicKey,
         })
 
         // Timeout to show dumb loader - like smth is going
@@ -77,17 +80,19 @@ class BTC2ETH extends Flow {
       // Fund BTC Script, notify participant
 
       async () => {
+        const { id, sellAmount, participant } = this.swap
+
         await this.btcSwap.fundScript({
-          btcData:  user.btcData,
+          btcData:  storage.me.btcData,
           script:   flow.storage.btcScriptData.script,
-          amount:   storage.requiredAmount,
+          amount:   sellAmount,
         })
 
-        room.sendMessage(storage.participant.peer, [
+        room.sendMessage(participant.peer, [
           {
             event: 'swap:btcScriptCreated',
             data: {
-              orderId:        storage.id,
+              orderId:        id,
               secretHash:     flow.storage.secretHash,
               btcScriptData:  flow.storage.btcScriptData,
             },
@@ -151,7 +156,7 @@ class BTC2ETH extends Flow {
   }
 
   submitSecret(secret) {
-    const secretHash = crypto.ripemd160(secret)
+    const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
     this.finishStep({
       secret,

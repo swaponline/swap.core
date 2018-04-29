@@ -1,10 +1,10 @@
 import SwapApp from './SwapApp'
 import Swap from './Swap'
-import Flow from './Flow'
+import swaps from './swaps'
 
 
 export {
   SwapApp,
-  Flow,
   Swap,
+  swaps,
 }
