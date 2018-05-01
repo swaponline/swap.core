@@ -1,10 +1,90 @@
 import React, { Component, Fragment } from 'react'
+import { web3, bitcoin } from '../../swap'
+import { EthSwap, BtcSwap } from '../../swap/swaps'
+import { ETH2BTC } from '../../swap/flows'
+import { request } from '../../util'
 
 
 export default class EthToBtc extends Component {
 
-  signSwap = () => {
+  state = {
+    flow: null,
+  }
 
+  componentWillMount() {
+    // TODO this might be from url query
+    const { swap } = this.props
+
+    const ethSwap = new EthSwap({
+      lib: web3,
+      gasLimit: 40 * 1e5,
+    })
+
+    const btcSwap = new BtcSwap({
+      lib: bitcoin,
+      account: {},
+      address: '0x0',
+      keyPair: {},
+      fetchUnspents: (address) => request.get(`https://test-insight.bitpay.com/api/addr/${address}/utxo`),
+    })
+
+    const getBalance = () => {
+      // TODO resolve balance from crypto instances
+      return 100
+    }
+
+    const flow = swap.setFlow(ETH2BTC, {
+      ethSwap,
+      btcSwap,
+      getBalance,
+    })
+
+    this.state.flow = flow.storage
+
+    // swap.storage.on('update', this.handleStorageUpdate)
+    swap.flow.storage.on('update', this.handleFlowStorageUpdate)
+    swap.flow.on('leave step', this.handleLeaveStep)
+    swap.flow.on('enter step', this.handleEnterStep)
+  }
+
+  componentWillUnmount() {
+    const { swap } = this.props
+
+    // swap.storage.off('update', this.handleStorageUpdate)
+    swap.flow.storage.off('update', this.handleFlowStorageUpdate)
+    swap.flow.off('leave step', this.handleLeaveStep)
+    swap.flow.off('enter step', this.handleEnterStep)
+  }
+
+  // handleStorageUpdate = (values) => {
+  //   console.log('new order storage values', values)
+  //
+  //   this.setState({
+  //     swap: values,
+  //   })
+  // }
+
+  handleFlowStorageUpdate = (values) => {
+    console.log('new flow storage values', values)
+
+    this.setState({
+      flow: values,
+    })
+  }
+
+  handleLeaveStep = (index) => {
+    console.log('leave step', index)
+  }
+
+  handleEnterStep = (index) => {
+    console.log('\n-----------------------------\n\n')
+    console.log('enter step', index)
+  }
+
+  signSwap = () => {
+    const { swap } = this.props
+
+    swap.flow.sign()
   }
 
   confirmBTCScriptChecked = () => {
@@ -16,13 +96,16 @@ export default class EthToBtc extends Component {
   }
 
   render() {
-    const { swap, swap: { id: swapId, order: { isMy: isMyOrder }, flow } } = this.props
+    const { flow } = this.state
+    const { swap } = this.props
+
+    console.log('EthToBtc flow:', flow)
 
     return (
       <div>
         {
-          swapId && (
-            isMyOrder ? (
+          swap.id && (
+            swap.isMy ? (
               <strong>{swap.sellAmount} {swap.sellCurrency} &#10230; {swap.buyAmount} {swap.buyCurrency}</strong>
             ) : (
               <strong>{swap.buyAmount} {swap.buyCurrency} &#10230; {swap.sellAmount} {swap.sellCurrency}</strong>
@@ -31,8 +114,8 @@ export default class EthToBtc extends Component {
         }
 
         {
-          !swapId && (
-            isMyOrder ? (
+          !swap.id && (
+            swap.isMy ? (
               <h3>This order doesn't have a buyer</h3>
             ) : (
               <Fragment>
@@ -44,7 +127,7 @@ export default class EthToBtc extends Component {
         }
 
         {
-          flow.isWaitingParticipant && (
+          flow.isWaitingForOwner && (
             <Fragment>
               <h3>Waiting for other user when he connect to the order</h3>
               <div>Loading...</div>
@@ -53,12 +136,12 @@ export default class EthToBtc extends Component {
         }
 
         {
-          (flow.isSigning || flow.isMeSigned) && (
+          (flow.step === 1 || flow.isMeSigned) && (
             <h3>1. Please confirm your participation to begin the deal</h3>
           )
         }
         {
-          flow.isSigning && (
+          flow.step === 1 && (
             <Fragment>
               <div>
                 Confirmation of the transaction is necessary for crediting the reputation.

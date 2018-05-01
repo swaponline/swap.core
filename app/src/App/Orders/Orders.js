@@ -18,8 +18,6 @@ export default class Orders extends Component {
     app.on('remove order', this.updateOrders)
     app.on('swap update', this.updateOrders)
     app.on('new order request', this.handleRequest)
-    app.on('accept swap request', this.handleAcceptRequest)
-    app.on('decline swap request', this.handleDeclineRequest)
   }
 
   componentWillUnmount() {
@@ -28,8 +26,6 @@ export default class Orders extends Component {
     app.off('remove order', this.updateOrders)
     app.off('swap update', this.updateOrders)
     app.off('new order request', this.handleRequest)
-    app.off('accept swap request', this.handleAcceptRequest)
-    app.off('decline swap request', this.handleDeclineRequest)
   }
 
   updateOrders = () => {
@@ -39,15 +35,6 @@ export default class Orders extends Component {
   }
 
   handleRequest = ({ swapId, participant }) => {
-    this.updateOrders()
-  }
-
-  handleAcceptRequest = ({ swapId, participant }) => {
-    this.updateOrders()
-    this.handleOrderSelect(swapId)
-  }
-
-  handleDeclineRequest = ({ swapId, participant }) => {
     this.updateOrders()
   }
 
@@ -68,19 +55,21 @@ export default class Orders extends Component {
     this.updateOrders()
   }
 
-  requestOrder = (swapId) => {
+  sendRequest = (swapId) => {
     const swap = app.orderCollection.getByKey(swapId)
 
     swap.sendRequest((isAccepted) => {
       console.log(`user ${swap.owner.peer} ${isAccepted ? 'accepted' : 'declined'} your request`)
+
+      this.handleOrderSelect(swapId)
     })
     this.updateOrders()
   }
 
   acceptRequest = (swapId, participantPeer) => {
-    const swap = app.orderCollection.getByKey(swapId)
+    const order = app.orderCollection.getByKey(swapId)
 
-    swap.acceptRequest(participantPeer)
+    order.acceptRequest(participantPeer)
     this.handleOrderSelect(swapId)
     this.updateOrders()
   }
@@ -100,7 +89,7 @@ export default class Orders extends Component {
 
   render() {
     const { orders } = this.state
-    const { myPeer } = this.props
+    const { myPeer, activeOrderId } = this.props
 
     return (
       <div>
@@ -122,51 +111,64 @@ export default class Orders extends Component {
                 {
                   orders.map((swap) => {
                     const {
-                      id, buyAmount, sellAmount, exchangeRate, requests, isRequested,
+                      id, buyAmount, sellAmount, exchangeRate, requests, isRequested, isProcessing,
                       owner: { peer: ownerPeer, reputation },
                     } = swap
 
                     return (
-                      <tr key={id}>
+                      <tr key={id} style={{ backgroundColor: myPeer === ownerPeer ? '#fff4d5' : '' }}>
                         <td>{exchangeRate}</td>
                         <td>{reputation}</td>
                         <td>{sellAmount}</td>
                         <td>{buyAmount}</td>
-                        <td>
-                          {
-                            myPeer === ownerPeer ? (
-                              <Fragment>
-                                {
-                                  Boolean(requests && requests.length) ? (
-                                    <Fragment>
-                                      {
-                                        requests.map(({ peer, reputation }) => (
-                                          <div key={peer}>
-                                            User {peer} with <b>{reputation}</b> reputation wants to swap.
-                                            <button onClick={() => this.acceptRequest(id, peer)}>ACCEPT</button>
-                                            <button onClick={() => this.declineRequest(id, peer)}>DECLINE</button>
-                                          </div>
-                                        ))
-                                      }
-                                    </Fragment>
-                                  ) : (
-                                    <button onClick={() => this.removeOrder(id)}>REMOVE</button>
-                                  )
-                                }
-                              </Fragment>
-                            ) : (
-                              <Fragment>
-                                {
-                                  isRequested ? (
-                                    <div style={{ color: 'red' }}>REQUESTING</div>
-                                  ) : (
-                                    <button onClick={() => this.requestOrder(id)}>BUY</button>
-                                  )
-                                }
-                              </Fragment>
-                            )
-                          }
-                        </td>
+                        {
+                          isProcessing ? (
+                            <td>
+                              <div style={{ color: 'red' }}>PROCESSING</div>
+                              {
+                                activeOrderId !== id && (
+                                  <button onClick={() => this.handleOrderSelect(id)}>OPEN</button>
+                                )
+                              }
+                            </td>
+                          ) : (
+                            <td>
+                              {
+                                myPeer === ownerPeer ? (
+                                  <Fragment>
+                                    {
+                                      Boolean(requests && requests.length) ? (
+                                        <Fragment>
+                                          {
+                                            requests.map(({ peer, reputation }) => (
+                                              <div key={peer}>
+                                                User {peer} with <b>{reputation}</b> reputation wants to swap.
+                                                <button onClick={() => this.acceptRequest(id, peer)}>ACCEPT</button>
+                                                <button onClick={() => this.declineRequest(id, peer)}>DECLINE</button>
+                                              </div>
+                                            ))
+                                          }
+                                        </Fragment>
+                                      ) : (
+                                        <button onClick={() => this.removeOrder(id)}>REMOVE</button>
+                                      )
+                                    }
+                                  </Fragment>
+                                ) : (
+                                  <Fragment>
+                                    {
+                                      isRequested ? (
+                                        <div style={{ color: 'red' }}>REQUESTING</div>
+                                      ) : (
+                                        <button onClick={() => this.sendRequest(id)}>BUY</button>
+                                      )
+                                    }
+                                  </Fragment>
+                                )
+                              }
+                            </td>
+                          )
+                        }
                       </tr>
                     )
                   })

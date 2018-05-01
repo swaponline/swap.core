@@ -11,11 +11,14 @@ class OrderCollection extends Collection {
   constructor() {
     super()
 
-    this._persistMyOrders()
     this._onMount()
   }
 
   _onMount() {
+    room.subscribe('ready', () => {
+      this._persistMyOrders()
+    })
+
     room.subscribe('user online', (peer) => {
       let myOrders = this.getMyOrders()
 
@@ -46,8 +49,23 @@ class OrderCollection extends Collection {
       }
     })
 
-    room.subscribe('new orders', ({ orders }) => {
-      this._handleMultipleCreate(orders)
+    room.subscribe('user offline', (peer) => {
+      const peerOrders = this.getPeerOrders(peer)
+
+      if (peerOrders.length) {
+        peerOrders.forEach(({ id }) => {
+          this._handleRemove(id)
+        })
+      }
+    })
+
+    room.subscribe('new orders', ({ fromPeer, orders }) => {
+      // ductape to check if such orders already exist
+      const filteredOrders = orders.filter(({ id }) => !this.getByKey(id))
+
+      console.log(`Receive orders from ${fromPeer}`, filteredOrders)
+
+      this._handleMultipleCreate(filteredOrders)
     })
 
     room.subscribe('new order', ({ order: data }) => {
@@ -148,6 +166,10 @@ class OrderCollection extends Collection {
     return localStorage.getItem('myOrders') || []
   }
 
+  getPeerOrders(peer) {
+    return this.items.filter(({ owner }) => peer === owner.peer)
+  }
+
   /**
    *
    * @param {object} data
@@ -157,7 +179,7 @@ class OrderCollection extends Collection {
    * @param {number} data.sellAmount
    */
   create(data) {
-    this._create({
+    const order = this._create({
       ...data,
       owner: storage.me,
     })
@@ -167,7 +189,17 @@ class OrderCollection extends Collection {
       {
         event: 'new order',
         data: {
-          order: data,
+          order: pullProps(
+            order,
+            'id',
+            'owner',
+            'buyCurrency',
+            'sellCurrency',
+            'buyAmount',
+            'sellAmount',
+            'isRequested',
+            'isProcessing',
+          ),
         },
       },
     ])

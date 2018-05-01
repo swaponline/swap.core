@@ -7,20 +7,16 @@ import Swap from './Swap'
 
 class OrderApp {
 
-  constructor({ me, ipfsConfig, ethConfig, btcConfig }) {
+  constructor({ me, ipfsConfig }) {
     this.orderCollection = orderCollection
     this.storage = storage
-
-    storage.me          = me
-    storage.ipfsConfig  = ipfsConfig
-    storage.ethConfig   = ethConfig
-    storage.btcConfig   = btcConfig
+    this.storage.me = me
 
     room.subscribe('ready', () => {
       events.dispatch('ready')
     })
 
-    room.init()
+    room.init(ipfsConfig)
   }
 
   getOrders() {

@@ -1,7 +1,7 @@
 import crypto from 'bitcoinjs-lib/src/crypto'
 import Flow from '../Flow'
-import { storage } from '../Storage'
 import room from '../room'
+import { storage } from '../Storage'
 
 
 class BTC2ETH extends Flow {
@@ -9,6 +9,11 @@ class BTC2ETH extends Flow {
   /*
 
     Flow storage data:
+
+    {string}    signTransactionUrl
+    {boolean}   isSignFetching
+    {boolean}   isMeSigned
+    {boolean}   isParticipantSigned
 
     {string}    secret
     {string}    secretHash
@@ -22,8 +27,8 @@ class BTC2ETH extends Flow {
 
    */
 
-  constructor({ swap, data, options: { ethSwap, btcSwap, syncData, getBalance } }) {
-    super({ swap, data, options: { ethSwap, syncData } })
+  constructor({ swap, data, options: { ethSwap, btcSwap, getBalance } }) {
+    super({ swap })
 
     if (!ethSwap) {
       throw new Error('BTC2ETH failed. "ethSwap" of type object required.')
@@ -35,12 +40,11 @@ class BTC2ETH extends Flow {
       throw new Error('BTC2ETH failed. "getBalance" of type function required.')
     }
 
-    this.swap       = swap
     this.ethSwap    = ethSwap
     this.btcSwap    = btcSwap
     this.getBalance = getBalance
 
-    this._persist()
+    this._persistState()
   }
 
   _getSteps() {
@@ -48,9 +52,35 @@ class BTC2ETH extends Flow {
 
     return [
 
+      // Signs
+
+      () => {
+        console.log(8888)
+
+        const { id } = this.swap
+
+        room.subscribe('swap sign', function ({ orderId }) {
+          if (id === orderId) {
+            this.unsubscribe()
+
+            flow.finishStep({
+              isParticipantSigned: true,
+            })
+
+            const { isMeSigned, isParticipantSigned } = flow.storage
+
+            if (isMeSigned && isParticipantSigned) {
+              flow.finishStep()
+            }
+          }
+        })
+      },
+
       // Create secret, secret hash
 
-      () => {},
+      () => {
+        console.log(99999)
+      },
 
       // Check balance
 
@@ -65,8 +95,8 @@ class BTC2ETH extends Flow {
 
         const btcScriptData = this.btcSwap.createScript({
           secretHash:         flow.storage.secretHash,
-          btcOwnerPublicKey:  storage.me.btcData.publicKey,
-          ethOwnerPublicKey:  participant.btcData.publicKey,
+          btcOwnerPublicKey:  storage.me.btc.publicKey,
+          ethOwnerPublicKey:  participant.btc.publicKey,
         })
 
         // Timeout to show dumb loader - like smth is going
@@ -83,14 +113,15 @@ class BTC2ETH extends Flow {
         const { id, sellAmount, participant } = this.swap
 
         await this.btcSwap.fundScript({
-          btcData:  storage.me.btcData,
-          script:   flow.storage.btcScriptData.script,
-          amount:   sellAmount,
+          myAddress:  storage.me.btc.address,
+          myKeyPair:  storage.me.btc,
+          script:     flow.storage.btcScriptData.script,
+          amount:     sellAmount,
         })
 
         room.sendMessage(participant.peer, [
           {
-            event: 'swap:btcScriptCreated',
+            event: 'create btc script',
             data: {
               orderId:        id,
               secretHash:     flow.storage.secretHash,
@@ -107,8 +138,10 @@ class BTC2ETH extends Flow {
       // Wait participant creates ETH Contract
 
       () => {
-        room.subscribe('swap:ethSwapCreated', function ({ orderId }) {
-          if (storage.id === orderId) {
+        const { id } = this.swap
+      
+        room.subscribe('create eth contract', function ({ orderId }) {
+          if (id === orderId) {
             this.unsubscribe()
 
             flow.finishStep({
@@ -121,9 +154,11 @@ class BTC2ETH extends Flow {
       // Withdraw
 
       async () => {
+        const { id, participant } = this.swap
+      
         const data = {
-          myAddress:      storage.me.ethData.address,
-          ownerAddress:   storage.participant.ethData.address,
+          myAddress:      storage.me.eth.address,
+          ownerAddress:   participant.eth.address,
           secret:         flow.storage.secret,
         }
 
@@ -133,11 +168,11 @@ class BTC2ETH extends Flow {
           })
         })
 
-        room.sendMessage(storage.participant.peer, [
+        room.sendMessage(participant.peer, [
           {
-            event: 'swap:ethWithdrawDone',
+            event: 'finish eth withdraw',
             data: {
-              orderId: storage.id,
+              orderId: id,
             },
           },
         ])
@@ -155,6 +190,46 @@ class BTC2ETH extends Flow {
     ]
   }
 
+  async sign() {
+    const { id, participant } = this.swap
+
+    this.storage.update({
+      isSignFetching: true,
+    })
+
+    await this.ethSwap.sign(
+      {
+        myAddress: storage.me.eth.address,
+        participantAddress: participant.eth.address,
+      },
+      (signTransactionUrl) => {
+        this.storage.update({
+          signTransactionUrl,
+        })
+      }
+    )
+
+    this.storage.update({
+      isSignFetching: false,
+      isMeSigned: true,
+    })
+
+    room.sendMessage(participant.peer, [
+      {
+        event: 'swap:signed',
+        data: {
+          orderId: id,
+        },
+      },
+    ])
+
+    const { isMeSigned, isParticipantSigned } = this.storage
+
+    if (isMeSigned && isParticipantSigned) {
+      this.finishStep()
+    }
+  }
+
   submitSecret(secret) {
     const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
@@ -165,14 +240,14 @@ class BTC2ETH extends Flow {
   }
 
   async syncBalance() {
-    const { storage } = this.swap
+    const { sellAmount } = this.swap
 
     this.storage.update({
       checkingBalance: true,
     })
 
     const balance = await this.getBalance()
-    const isEnoughMoney = storage.requiredAmount <= balance
+    const isEnoughMoney = sellAmount <= balance
 
     if (isEnoughMoney) {
       this.finishStep({

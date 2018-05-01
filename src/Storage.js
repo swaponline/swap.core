@@ -16,9 +16,11 @@ class Storage {
   }
 
   _persistState() {
-    const data = localStorage.getItem(this.storeKey)
+    if (this.storeKey) {
+      const data = localStorage.getItem(this.storeKey)
 
-    this._update(data)
+      this._update(data)
+    }
   }
 
   _update(values) {

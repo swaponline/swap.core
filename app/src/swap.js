@@ -1,7 +1,6 @@
 import Web3 from 'web3'
 import bitcoin from 'bitcoinjs-lib'
 import { SwapApp } from './swap/index'
-import { request } from './util'
 
 
 const web3 = new Web3(new Web3.providers.HttpProvider('https://rinkeby.infura.io/JCnK5ifEPH9qcQkX0Ahl'))
@@ -25,14 +24,6 @@ const app = window.app = new SwapApp({
         '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
       ],
     },
-  },
-  ethConfig: {
-    lib: web3,
-    gasLimit: 40 * 1e5,
-  },
-  btcConfig: {
-    lib: bitcoin,
-    fetchUnspents: (address) => request.get(`https://test-insight.bitpay.com/api/addr/${address}/utxo`),
   },
 })
 
@@ -71,4 +62,6 @@ app.on('new order request', ({ swapId, participant }) => {
 
 export {
   app,
+  web3,
+  bitcoin,
 }

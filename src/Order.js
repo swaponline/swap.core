@@ -44,7 +44,7 @@ class Order {
 
     this._update({
       ...data,
-      isMy: data.owner.peer === storage.me,
+      isMy: data.owner.peer === storage.me.peer,
     })
 
     this._onMount()
@@ -82,6 +82,8 @@ class Order {
    * @param callback - awaiting for response - accept / decline
    */
   sendRequest(callback) {
+    const self = this
+
     if (storage.me.peer === this.owner.peer) {
       console.warn('You are the owner of this Order. You can\'t send request to yourself.')
       return
@@ -107,10 +109,10 @@ class Order {
     ])
 
     room.subscribe('accept swap request', function ({ swapId }) {
-      if (swapId === this.id) {
+      if (swapId === self.id) {
         this.unsubscribe()
 
-        this.update({
+        self.update({
           isProcessing: true,
           isRequested: false,
         })
@@ -120,10 +122,10 @@ class Order {
     })
 
     room.subscribe('decline swap request', function ({ swapId }) {
-      if (swapId === this.id) {
+      if (swapId === self.id) {
         this.unsubscribe()
 
-        this.update({
+        self.update({
           isRequested: false,
         })
 
@@ -142,6 +144,8 @@ class Order {
       participant,
       requests: [],
     })
+
+    console.log(1111, participantPeer)
 
     room.sendMessage(participantPeer, [
       {

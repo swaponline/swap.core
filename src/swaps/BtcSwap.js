@@ -1,17 +1,14 @@
-import { storage } from '../Storage'
-
-
 const utcNow = () => Math.floor(Date.now() / 1000)
 const getLockTime = () => utcNow() + 3600 * 3 // 3 days from now
 
-
 class BtcSwap {
 
-  constructor() {
-    const { lib, fetchUnspents } = storage.btcConfig
-
+  constructor({ lib, fetchUnspents, account, address, keyPair }) {
     this.bitcoin        = lib
     this.fetchUnspents  = fetchUnspents
+    this.account        = account
+    this.address        = address
+    this.keyPair        = keyPair
   }
 
   createScript({ secretHash, btcOwnerPublicKey, ethOwnerPublicKey, lockTime: _lockTime }) {
@@ -68,8 +65,8 @@ class BtcSwap {
     }
   }
 
-  fundScript({ btcData, script, amount }) {
-    console.log('\n\nFund BTC Swap Script', { btcData, script, amount })
+  fundScript({ script, amount }) {
+    console.log('\n\nFund BTC Swap Script', { script, amount })
 
     return new Promise(async (resolve, reject) => {
       // const script        = hexStringToByte(scriptHash)
@@ -78,7 +75,7 @@ class BtcSwap {
         const scriptAddress = this.bitcoin.address.fromOutputScript(scriptPubKey, this.bitcoin.testnet)
 
         const tx            = new this.bitcoin.TransactionBuilder(this.bitcoin.testnet)
-        const unspents      = await this.fetchUnspents(btcData.address)
+        const unspents      = await this.fetchUnspents(this.address)
 
         const fundValue     = Math.floor(Number(amount) * 1e8)
         const feeValue      = 4e5
@@ -91,9 +88,9 @@ class BtcSwap {
           tx.addInput(txid, vout)
         })
         tx.addOutput(scriptAddress, fundValue)
-        tx.addOutput(btcData.address, skipValue)
+        tx.addOutput(this.address, skipValue)
         tx.inputs.forEach((input, index) => {
-          tx.sign(index, btcData.keyPair)
+          tx.sign(index, this.keyPair)
         })
 
         const txRaw     = tx.buildIncomplete()
@@ -112,8 +109,8 @@ class BtcSwap {
     })
   }
 
-  withdraw({ btcData, script, secret }) {
-    console.log('\n\nWithdraw money from BTC Swap Script', { btcData, script, secret })
+  withdraw({ script, secret }) {
+    console.log('\n\nWithdraw money from BTC Swap Script', { secret })
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -131,16 +128,16 @@ class BtcSwap {
         unspents.forEach(({ txid, vout }) => {
           tx.addInput(txid, vout, 0xfffffffe)
         })
-        tx.addOutput(btcData.address, totalUnspent - feeValue)
+        tx.addOutput(this.address, totalUnspent - feeValue)
 
         const txRaw               = tx.buildIncomplete()
         const signatureHash       = txRaw.hashForSignature(0, script, hashType)
-        const signature           = btcData.account.sign(signatureHash).toScriptSignature(hashType)
+        const signature           = this.account.sign(signatureHash).toScriptSignature(hashType)
 
         const scriptSig = this.bitcoin.script.scriptHash.input.encode(
           [
             signature,
-            btcData.account.getPublicKeyBuffer(),
+            this.account.getPublicKeyBuffer(),
             Buffer.from(secret.replace(/^0x/, ''), 'hex'),
           ],
           script,
@@ -164,7 +161,7 @@ class BtcSwap {
     })
   }
 
-  refund({ btcData, script, lockTime, secret }, handleTransactionHash) {
+  refund({ script, lockTime, secret }, handleTransactionHash) {
     console.log('\n\nRefund money from BTC Swap Script')
 
     return new Promise(async (resolve, reject) => {
@@ -184,16 +181,16 @@ class BtcSwap {
         unspents.forEach(({ txid, vout }) => {
           tx.addInput(txid, vout, 0xfffffffe)
         })
-        tx.addOutput(btcData.address, totalUnspent - feeValue)
+        tx.addOutput(this.address, totalUnspent - feeValue)
 
         const txRaw               = tx.buildIncomplete()
         const signatureHash       = txRaw.hashForSignature(0, script, hashType)
-        const signature           = btcData.account.sign(signatureHash).toScriptSignature(hashType)
+        const signature           = this.account.sign(signatureHash).toScriptSignature(hashType)
 
         const scriptSig = this.bitcoin.script.scriptHash.input.encode(
           [
             signature,
-            btcData.account.getPublicKeyBuffer(),
+            this.account.getPublicKeyBuffer(),
             Buffer.from(secret, 'hex'),
           ],
           script,

@@ -8,12 +8,12 @@ class Room {
     this.events = new Events()
   }
 
-  init() {
+  init(config) {
     const ipfs = new global.Ipfs({
       EXPERIMENTAL: {
         pubsub: true,
       },
-      config: storage.ipfsConfig,
+      config,
     })
 
     ipfs.once('ready', () => ipfs.id((err, info) => {
@@ -51,7 +51,7 @@ class Room {
   }
 
   handleUserOffline = (peer) => {
-    if (peer === storage.me.peer) {
+    if (peer !== storage.me.peer) {
       this.events.dispatch('user offline', peer)
     }
   }

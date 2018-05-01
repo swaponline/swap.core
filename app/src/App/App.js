@@ -23,7 +23,11 @@ export default class App extends Component {
 
     return (
       <div className="content">
-        <Orders myPeer={myPeer} onOrderSelect={this.handleSelectOrder} />
+        <Orders
+          myPeer={myPeer}
+          activeOrderId={activeOrderId}
+          onOrderSelect={this.handleSelectOrder}
+        />
         <Swap orderId={activeOrderId} />
       </div>
     )

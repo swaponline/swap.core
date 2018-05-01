@@ -1,4 +1,6 @@
 import Flow from '../Flow'
+import room from '../room'
+import { storage } from '../Storage'
 
 
 class ETH2BTC extends Flow {
@@ -6,6 +8,11 @@ class ETH2BTC extends Flow {
   /*
 
     Flow storage data:
+
+    {string}    signTransactionUrl
+    {boolean}   isSignFetching
+    {boolean}   isMeSigned
+    {boolean}   isParticipantSigned
 
     {boolean}   secretHash
     {boolean}   checkingBalance
@@ -20,29 +27,28 @@ class ETH2BTC extends Flow {
 
    */
 
-  constructor({ swap, data, options: { ethSwap, btcSwap, syncData, getBalance } }) {
-    super({ swap, data, options: { ethSwap, syncData } })
+  constructor({ swap, data, options: { ethSwap, btcSwap, getBalance } }) {
+    super({ swap })
 
     if (!ethSwap) {
-      throw new Error('BTC2ETH failed. "ethSwap" of type object required.')
+      throw new Error('ETH2BTC failed. "ethSwap" of type object required.')
     }
     if (!btcSwap) {
-      throw new Error('BTC2ETH failed. "btcSwap" of type object required.')
+      throw new Error('ETH2BTC failed. "btcSwap" of type object required.')
     }
     if (typeof getBalance !== 'function') {
-      throw new Error('BTC2ETH failed. "getBalance" of type function required.')
+      throw new Error('ETH2BTC failed. "getBalance" of type function required.')
     }
 
-    this.swap       = swap
     this.ethSwap    = ethSwap
     this.btcSwap    = btcSwap
     this.getBalance = getBalance
 
-    this._persist()
+    this._persistState()
   }
 
   _getSteps() {
-    const { room, storage } = this.swap
+    const { id } = this.swap
     const flow = this
 
     return [
@@ -50,8 +56,8 @@ class ETH2BTC extends Flow {
       // Wait participant create BTC Script
 
       () => {
-        room.subscribe('swap:btcScriptCreated', function ({ orderId, secretHash, btcScriptData }) {
-          if (storage.id === orderId) {
+        room.subscribe('create btc script', function ({ orderId, secretHash, btcScriptData }) {
+          if (id === orderId) {
             this.unsubscribe()
 
             flow.finishStep({
@@ -79,11 +85,13 @@ class ETH2BTC extends Flow {
       // Create ETH Contract
 
       async () => {
+        const { participant, sellAmount } = this.swap
+
         const swapData = {
-          myAddress:            storage.me.ethData.address,
-          participantAddress:   storage.participant.ethData.address,
+          myAddress:            storage.me.eth.address,
+          participantAddress:   participant.eth.address,
           secretHash:           flow.storage.secretHash,
-          amount:               storage.requiredAmount,
+          amount:               sellAmount,
         }
 
         await this.ethSwap.create(swapData, (transactionUrl) => {
@@ -92,9 +100,9 @@ class ETH2BTC extends Flow {
           })
         })
 
-        room.sendMessage(storage.participant.peer, [
+        room.sendMessage(participant.peer, [
           {
-            event: 'swap:ethSwapCreated',
+            event: 'create eth contract',
             data: {
               orderId: storage.id,
             },
@@ -109,7 +117,7 @@ class ETH2BTC extends Flow {
       // Wait participant withdraw
 
       () => {
-        room.subscribe('swap:ethWithdrawDone', function ({ orderId }) {
+        room.subscribe('finish eth withdraw', function ({ orderId }) {
           if (storage.id === orderId) {
             this.unsubscribe()
 
@@ -123,9 +131,11 @@ class ETH2BTC extends Flow {
       // Withdraw
 
       async () => {
+        const { participant } = this.swap
+
         const myAndParticipantData = {
-          myAddress: storage.me.ethData.address,
-          participantAddress: storage.participant.ethData.address,
+          myAddress: storage.me.eth.address,
+          participantAddress: participant.eth.address,
         }
 
         const secret = await this.ethSwap.getSecret(myAndParticipantData)
@@ -157,6 +167,46 @@ class ETH2BTC extends Flow {
 
       },
     ]
+  }
+
+  async sign() {
+    const { id, participant } = this.swap
+
+    this.storage.update({
+      isSignFetching: true,
+    })
+
+    await this.ethSwap.sign(
+      {
+        myAddress: storage.me.eth.address,
+        participantAddress: participant.eth.address,
+      },
+      (signTransactionUrl) => {
+        this.storage.update({
+          signTransactionUrl,
+        })
+      }
+    )
+
+    this.storage.update({
+      isSignFetching: false,
+      isMeSigned: true,
+    })
+
+    room.sendMessage(participant.peer, [
+      {
+        event: 'swap:signed',
+        data: {
+          orderId: id,
+        },
+      },
+    ])
+
+    const { isMeSigned, isParticipantSigned } = this.storage
+
+    if (isMeSigned && isParticipantSigned) {
+      this.finishStep()
+    }
   }
 
   async syncBalance() {

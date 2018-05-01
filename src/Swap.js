@@ -1,6 +1,6 @@
 import Events from './Events'
 import orderCollection from './orderCollection'
-import { pullProps } from './util'
+import { localStorage, pullProps } from './util'
 
 
 class Swap {
@@ -22,7 +22,7 @@ class Swap {
   }
 
   _persistState() {
-    const order = orderCollection.getByKey(this.id)
+    const order = localStorage.getItem(`swap.${this.id}`) || orderCollection.getByKey(this.id)
 
     if (order) {
       const { isMy, buyAmount, sellAmount, ...rest } = pullProps(
@@ -44,6 +44,7 @@ class Swap {
       }
 
       this.update(data)
+      localStorage.setItem(`swap.${this.id}`, data)
     }
   }
 

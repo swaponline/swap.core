@@ -1,32 +1,50 @@
 import React, { Component, Fragment } from 'react'
+import { web3, bitcoin } from '../../swap'
 import { EthSwap, BtcSwap } from '../../swap/swaps'
 import { BTC2ETH } from '../../swap/flows'
+import { request } from '../../util'
 
 
 export default class BtcToEth extends Component {
+
+  state = {
+    flow: null,
+  }
 
   componentWillMount() {
     // TODO this might be from url query
     const { swap } = this.props
 
-    const ethSwap = new EthSwap()
-    const btcSwap = new BtcSwap()
+    const ethSwap = new EthSwap({
+      lib: web3,
+      gasLimit: 40 * 1e5,
+    })
+
+    const btcSwap = new BtcSwap({
+      lib: bitcoin,
+      account: {},
+      address: '0x0',
+      keyPair: {},
+      fetchUnspents: (address) => request.get(`https://test-insight.bitpay.com/api/addr/${address}/utxo`),
+    })
 
     const getBalance = () => {
       // TODO resolve balance from crypto instances
       return 10
     }
 
-    swap.setFlow(BTC2ETH, {
+    const flow = swap.setFlow(BTC2ETH, {
       ethSwap,
       btcSwap,
       getBalance,
     })
 
+    this.state.flow = flow.storage
+
     // swap.storage.on('update', this.handleStorageUpdate)
     swap.flow.storage.on('update', this.handleFlowStorageUpdate)
-    swap.flow.on('leaveStep', this.handleEnterStep)
-    swap.flow.on('enterStep', this.handleLeaveStep)
+    swap.flow.on('leave step', this.handleLeaveStep)
+    swap.flow.on('enter step', this.handleEnterStep)
   }
 
   componentWillUnmount() {
@@ -34,8 +52,8 @@ export default class BtcToEth extends Component {
 
     // swap.storage.off('update', this.handleStorageUpdate)
     swap.flow.storage.off('update', this.handleFlowStorageUpdate)
-    swap.flow.off('leaveStep', this.handleEnterStep)
-    swap.flow.off('enterStep', this.handleLeaveStep)
+    swap.flow.off('leave step', this.handleLeaveStep)
+    swap.flow.off('enter step', this.handleEnterStep)
   }
 
   // handleStorageUpdate = (values) => {
@@ -61,12 +79,18 @@ export default class BtcToEth extends Component {
   }
 
   handleEnterStep = (index) => {
-    console.log('\n\n-----------------------------\n')
+    console.log('\n-----------------------------\n\n')
     console.log('enter step', index)
+
+    this.setState({
+      flowStep: index,
+    })
   }
 
   signSwap = () => {
+    const { swap } = this.props
 
+    swap.flow.sign()
   }
 
   submitSecret = () => {
@@ -78,23 +102,26 @@ export default class BtcToEth extends Component {
   }
 
   render() {
-    const { swap, swap: { id: swapId, order: { isMy: isMyOrder }, flow } } = this.props
+    const { flow } = this.state
+    const { swap } = this.props
+
+    console.log('BtcToEth flow:', flow)
 
     return (
       <div>
         {
-          swapId && (
-            isMyOrder ? (
-              <strong>{swap.buyAmount} {swap.buyCurrency} &#10230; {swap.sellAmount} {swap.sellCurrency}</strong>
-            ) : (
+          swap.id && (
+            swap.isMy ? (
               <strong>{swap.sellAmount} {swap.sellCurrency} &#10230; {swap.buyAmount} {swap.buyCurrency}</strong>
+            ) : (
+              <strong>{swap.buyAmount} {swap.buyCurrency} &#10230; {swap.sellAmount} {swap.sellCurrency}</strong>
             )
           )
         }
 
         {
-          !swapId && (
-            isMyOrder ? (
+          !swap.id && (
+            swap.isMy ? (
               <h3>This order doesn't have a buyer</h3>
             ) : (
               <Fragment>
@@ -106,7 +133,7 @@ export default class BtcToEth extends Component {
         }
         
         {
-          flow.isWaitingParticipant && (
+          flow.isWaitingForOwner && (
             <Fragment>
               <h3>Waiting for other user when he connect to the order</h3>
               <div>Loading...</div>
@@ -115,12 +142,12 @@ export default class BtcToEth extends Component {
         }
         
         {
-          (flow.isSigning || flow.isMeSigned) && (
+          (flow.step === 1 || flow.isMeSigned) && (
             <h3>1. Please confirm your participation to begin the deal</h3>
           )
         }
         {
-          flow.isSigning && (
+          flow.step === 1 && (
             <Fragment>
               <div>
                 Confirmation of the transaction is necessary for crediting the reputation.

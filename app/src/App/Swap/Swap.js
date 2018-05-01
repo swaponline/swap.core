@@ -13,9 +13,9 @@ const swapComponents = {
 export default class Swap extends Component {
 
   state = {
-    swap: null,
+    swap: app.createSwap({ orderId: 'QmZ1aTi5Jod3iuPB8SwPSLuWUs6TJV5upmzH1h9YnzqpSQ-1525181053520' }),
   }
-  
+
   componentWillReceiveProps({ orderId }) {
     const { swap } = this.state
     
@@ -35,7 +35,7 @@ export default class Swap extends Component {
       return null
     }
 
-    console.log(333, swap)
+    console.log('Swap data:', swap)
 
     const { isMy: isMyOrder, buyCurrency, sellCurrency } = swap
 
@@ -45,7 +45,9 @@ export default class Swap extends Component {
     const SwapComponent = swapComponents[`${firstPart.toLowerCase()}${lastPart.toLowerCase()}`]
 
     return (
-      <SwapComponent swap={swap} />
+      <div style={{ paddingLeft: '30px' }}>
+        <SwapComponent swap={swap} />
+      </div>
     )
   }
 }

@@ -54,8 +54,8 @@ class Collection {
    */
   removeByKey(key) {
     console.log('removeByKey', key)
-    console.log('items', JSON.parse(JSON.stringify(this.items)))
-    console.log('itemIds', JSON.parse(JSON.stringify(this.itemIds)))
+    console.log('items', [ ...this.items ])
+    console.log('itemIds', { ...this.itemIds })
 
     const index = this.itemIds[key]
 
@@ -65,7 +65,7 @@ class Collection {
       this.items.splice(index, 1)
       delete this.itemIds[key]
 
-      console.log('items after removing', JSON.parse(JSON.stringify(this.items)))
+      console.log('items after removing', [ ...this.items ])
 
       Object.keys(this.itemIds).forEach((key) => {
         if (this.itemIds[key] > index) {
@@ -73,7 +73,7 @@ class Collection {
         }
       })
 
-      console.log('items after reindexing', JSON.parse(JSON.stringify(this.items)))
+      console.log('items after reindexing', [ ...this.items ])
     }
   }
 
