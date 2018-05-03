@@ -8,7 +8,7 @@ class Flow {
   constructor({ swap }) {
     this.events   = new Events()
     this.swap     = swap
-    this.steps    = null
+    this.steps    = []
 
     this.state = {
       step: 0,
@@ -25,14 +25,16 @@ class Flow {
         ...state,
       }
     }
+  }
+
+  _persistSteps() {
+    this.steps = [
+      ...this._getInitialSteps(),
+      ...this._getSteps(),
+    ]
 
     // wait events placed
     setTimeout(() => {
-      this.steps = [
-        ...this._getInitialSteps(),
-        ...this._getSteps(),
-      ]
-
       this.goStep(this.state.step)
     }, 0)
   }
@@ -106,7 +108,7 @@ class Flow {
 
     this._saveState()
     this.events.dispatch('enter step', this.state.step)
-    this.steps[this.index]()
+    this.steps[this.state.step]()
   }
 
   setState(values) {

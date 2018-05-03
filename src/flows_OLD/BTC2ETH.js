@@ -6,6 +6,27 @@ import { storage } from '../Storage'
 
 class BTC2ETH extends Flow {
 
+  /*
+
+    Flow storage data:
+
+    {string}    signTransactionUrl
+    {boolean}   isSignFetching
+    {boolean}   isMeSigned
+    {boolean}   isParticipantSigned
+
+    {string}    secret
+    {string}    secretHash
+    {boolean}   isBalanceFetching
+    {boolean}   isBalanceEnough
+    {object}    btcScriptData
+    {boolean}   isBtcScriptFunded
+    {boolean}   isEthContractFunded
+    {string}    ethSwapWithdrawTransactionUrl
+    {boolean}   isWithdrawn
+
+   */
+
   constructor({ swap, data, options: { ethSwap, btcSwap, getBalance } }) {
     super({ swap })
 
@@ -23,35 +44,7 @@ class BTC2ETH extends Flow {
     this.btcSwap    = btcSwap
     this.getBalance = getBalance
 
-    this.state = {
-      step: 0,
-
-      signTransactionUrl: null,
-      isSignFetching: false,
-      isMeSigned: false,
-      isParticipantSigned: false,
-
-      secretHash: null,
-      btcScriptValues: null,
-
-      btcScriptVerified: false,
-
-      isBalanceFetching: false,
-      isBalanceEnough: false,
-
-      ethSwapCreationTransactionUrl: null,
-      isEthContractFunded: false,
-
-      isEthWithdrawn: false,
-      isBtcWithdrawn: false,
-    }
-
-    super._persistSteps()
     this._persistState()
-  }
-
-  _persistState() {
-    super._persistState()
   }
 
   _getSteps() {
@@ -59,58 +52,70 @@ class BTC2ETH extends Flow {
 
     return [
 
-      // 1. Signs
+      // Signs
 
       () => {
+        console.log(8888)
+
         const { id } = this.swap
 
         room.subscribe('swap sign', function ({ orderId }) {
           if (id === orderId) {
             this.unsubscribe()
 
+            flow.finishStep({
+              isParticipantSigned: true,
+            })
+
             const { isMeSigned, isParticipantSigned } = flow.storage
 
             if (isMeSigned && isParticipantSigned) {
-              flow.finishStep({
-                isParticipantSigned: true,
-              })
-            }
-            else {
-              flow.storage.update({
-                isParticipantSigned: true,
-              })
+              flow.finishStep()
             }
           }
         })
       },
 
-      // 2. Create secret, secret hash
+      // Create secret, secret hash
 
       () => {
         console.log(99999)
       },
 
-      // 3. Check balance
+      // Check balance
 
       () => {
         this.syncBalance()
       },
 
-      // 4. Create BTC Script, fund, notify participant
+      // Create BTC Script
 
-      async () => {
-        const { id, sellAmount, participant } = this.swap
+      () => {
+        const { participant } = this.swap
 
-        const { script: btcScript, ...scriptValues } = this.btcSwap.createScript({
+        const btcScriptData = this.btcSwap.createScript({
           secretHash:         flow.storage.secretHash,
           btcOwnerPublicKey:  storage.me.btc.publicKey,
           ethOwnerPublicKey:  participant.btc.publicKey,
         })
 
+        // Timeout to show dumb loader - like smth is going
+        setTimeout(() => {
+          flow.finishStep({
+            btcScriptData,
+          })
+        }, 1500)
+      },
+
+      // Fund BTC Script, notify participant
+
+      async () => {
+        const { id, sellAmount, participant } = this.swap
+
         await this.btcSwap.fundScript({
           myAddress:  storage.me.btc.address,
           myKeyPair:  storage.me.btc,
-          script:     btcScript,
+          script:     flow.storage.btcScriptData.script,
           amount:     sellAmount,
         })
 
@@ -118,8 +123,9 @@ class BTC2ETH extends Flow {
           {
             event: 'create btc script',
             data: {
-              orderId: id,
-              scriptValues,
+              orderId:        id,
+              secretHash:     flow.storage.secretHash,
+              btcScriptData:  flow.storage.btcScriptData,
             },
           },
         ])
@@ -129,7 +135,7 @@ class BTC2ETH extends Flow {
         })
       },
 
-      // 5. Wait participant creates ETH Contract
+      // Wait participant creates ETH Contract
 
       () => {
         const { id } = this.swap
@@ -145,7 +151,7 @@ class BTC2ETH extends Flow {
         })
       },
 
-      // 6. Withdraw
+      // Withdraw
 
       async () => {
         const { id, participant } = this.swap
@@ -172,11 +178,11 @@ class BTC2ETH extends Flow {
         ])
 
         flow.finishStep({
-          isEthWithdrawn: true,
+          isWithdrawn: true,
         })
       },
 
-      // 7. Finish
+      // Finish
 
       () => {
 
@@ -246,13 +252,13 @@ class BTC2ETH extends Flow {
     if (isEnoughMoney) {
       this.finishStep({
         isBalanceFetching: false,
-        isBalanceEnough: true,
+        isBalanceEnough: false,
       })
     }
     else {
       this.storage.update({
         isBalanceFetching: false,
-        isBalanceEnough: false,
+        isBalanceEnough: true,
       })
     }
   }

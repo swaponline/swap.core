@@ -12,9 +12,9 @@ class BtcSwap {
   }
 
   createScript({ secretHash, btcOwnerPublicKey, ethOwnerPublicKey, lockTime: _lockTime }) {
-    console.log('\n\nCreate BTC Swap Script', { secretHash, btcOwnerPublicKey, ethOwnerPublicKey, lockTime: _lockTime })
-
     const lockTime = _lockTime || getLockTime()
+
+    console.log('\n\nCreate BTC Swap Script', { secretHash, btcOwnerPublicKey, ethOwnerPublicKey, lockTime: _lockTime })
 
     // const script = this.bitcoin.script.compile([
     //   this.bitcoin.opcodes.OP_RIPEMD160,
@@ -47,27 +47,16 @@ class BtcSwap {
       this.bitcoin.opcodes.OP_ENDIF,
     ])
 
-    const scriptPubKey    = this.bitcoin.script.scriptHash.output.encode(this.bitcoin.crypto.hash160(script))
-    const scriptAddress   = this.bitcoin.address.fromOutputScript(scriptPubKey, this.bitcoin.testnet)
-
-    console.log('BTC Swap created', {
-      script,
-      scriptAddress,
-    })
-
     return {
       script,
-      address: scriptAddress,
       secretHash,
-      lockTime,
       btcOwnerPublicKey,
       ethOwnerPublicKey,
+      lockTime,
     }
   }
 
   fundScript({ script, amount }) {
-    console.log('\n\nFund BTC Swap Script', { script, amount })
-
     return new Promise(async (resolve, reject) => {
       // const script        = hexStringToByte(scriptHash)
       try {
@@ -82,8 +71,6 @@ class BtcSwap {
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue
 
-        console.log('Data', { totalUnspent, fundValue, feeValue, skipValue, tx, scriptAddress })
-
         unspents.forEach(({ txid, vout }) => {
           tx.addInput(txid, vout)
         })
@@ -96,8 +83,17 @@ class BtcSwap {
         const txRaw     = tx.buildIncomplete()
         const txRawHex  = txRaw.toHex()
 
-        console.log('tx', tx)
-        console.log('txRawHex', txRawHex)
+        console.log('\n\nFund BTC Swap Script', {
+          script,
+          scriptAddress,
+          totalUnspent,
+          amount,
+          fundValue,
+          feeValue,
+          skipValue,
+          tx,
+          txRawHex,
+        })
 
         const result = await this.bitcoin.broadcastTx(txRawHex)
 

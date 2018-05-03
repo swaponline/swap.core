@@ -147,3 +147,79 @@ swap.acceptRequest()
 // owner decline participant request
 swap.declineRequest()
 ```
+
+
+# Flow
+
+<table>
+  <thead style="font-weight: bold;">
+    <tr>
+      <td>Alice persist</td>
+      <td>Alice <b>BTC -> ETH</b></td>
+      <td>Bob <b>ETH -> BTC</b></td>
+      <td>Bob persist</td>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>EthContract.checkSign()</td>
+      <td>1) Sign</td>
+      <td>1) Sign</td>
+      <td>EthContract.checkSign()</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>2) Create secret hash</td>
+      <td rowspan="4">2) Wait for BTC script</td>
+      <td rowspan="4">BtcSwap.checkBalance()</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>3) Check balance (if not enough wait until user fill balance on this step)</td>
+      <!--td></td-->
+      <!--td></td-->
+    </tr>
+    <tr>
+      <td></td>
+      <td>4) Create BTC script</td>
+      <!--td></td-->
+      <!--td></td-->
+    </tr>
+    <tr>
+      <td></td>
+      <td>5) Fund BTC script</td>
+      <!--td></td-->
+      <!--td></td-->
+    </tr>
+    <tr>
+      <td rowspan="3">EthSwap.checkBalance()</td>
+      <td rowspan="3">6) Wait for ETH contract</td>
+      <td>3) Verify BTC script</td>
+      <td></td>
+    </tr>
+    <tr>
+      <!--td></td-->
+      <!--td></td-->
+      <td>4) Check balance (if not enough wait until user fill balance on this step)</td>
+      <td></td>
+    </tr>
+    <tr>
+      <!--td></td-->
+      <!--td></td-->
+      <td>5) Create ETH contract</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>7) Withdraw from ETH contract</td>
+      <td>6) Wait for withdraw from ETH contract</td>
+      <td>EthSwap.getSecret()</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td>7) Withdraw from BTC script</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>

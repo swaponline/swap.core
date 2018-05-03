@@ -9,6 +9,7 @@
     "eject": "react-scripts eject"
   },
   "dependencies": {
+    "bigi": "^1.4.2",
     "react": "^16.3.2",
     "react-dom": "^16.3.2",
     "superagent": "^3.8.3",

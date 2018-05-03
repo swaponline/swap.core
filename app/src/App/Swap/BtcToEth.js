@@ -39,10 +39,9 @@ export default class BtcToEth extends Component {
       getBalance,
     })
 
-    this.state.flow = flow.storage
+    this.state.flow = flow.state
 
-    // swap.storage.on('update', this.handleStorageUpdate)
-    swap.flow.storage.on('update', this.handleFlowStorageUpdate)
+    swap.flow.on('state update', this.handleFlowStateUpdate)
     swap.flow.on('leave step', this.handleLeaveStep)
     swap.flow.on('enter step', this.handleEnterStep)
   }
@@ -50,22 +49,15 @@ export default class BtcToEth extends Component {
   componentWillUnmount() {
     const { swap } = this.props
 
-    // swap.storage.off('update', this.handleStorageUpdate)
-    swap.flow.storage.off('update', this.handleFlowStorageUpdate)
+    swap.flow.off('state update', this.handleFlowStateUpdate)
     swap.flow.off('leave step', this.handleLeaveStep)
     swap.flow.off('enter step', this.handleEnterStep)
   }
 
-  // handleStorageUpdate = (values) => {
-  //   console.log('new order storage values', values)
-  //
-  //   this.setState({
-  //     swap: values,
-  //   })
-  // }
+  handleFlowStateUpdate = (values) => {
+    console.log('new flow state values', values)
 
-  handleFlowStorageUpdate = (values) => {
-    console.log('new flow storage values', values)
+    console.log(333, values)
 
     this.setState({
       flow: values,
@@ -222,7 +214,7 @@ export default class BtcToEth extends Component {
               }
 
               {
-                flow.step === 3 && flow.notEnoughMoney && !flow.checkingBalance && (
+                flow.step === 3 && flow.isBalanceEnough && !flow.isBalanceFetching && (
                   <Fragment>
                     <h3>Not enough money for this swap. Please charge the balance</h3>
                     <div>
@@ -237,7 +229,7 @@ export default class BtcToEth extends Component {
                 )
               }
               {
-                flow.step === 3 && flow.checkingBalance && (
+                flow.step === 3 && flow.isBalanceFetching && (
                   <div>Checking balance..</div>
                 )
               }
@@ -255,13 +247,13 @@ export default class BtcToEth extends Component {
               }
 
               {
-                (flow.step === 6 || flow.isEthSwapCreated) && (
+                (flow.step === 6 || flow.isEthContractFunded) && (
                   <h3>5. ETH Owner received Bitcoin Script and Secret Hash. Waiting when he creates ETH Contract</h3>
                 )
               }
 
               {
-                (flow.step === 7 || flow.isWithdrawn) && (
+                (flow.step === 7 || flow.isEthWithdrawn) && (
                   <h3>6. ETH Contract created and charged. Requesting withdrawal from ETH Contract. Please wait</h3>
                 )
               }
@@ -277,7 +269,7 @@ export default class BtcToEth extends Component {
               }
 
               {
-                flow.isWithdrawn && (
+                flow.isEthWithdrawn && (
                   <Fragment>
                     <h3>7. Money was transferred to your wallet. Check the balance.</h3>
                     <h2>Thank you for using Swap.Online!</h2>
@@ -286,7 +278,7 @@ export default class BtcToEth extends Component {
               }
 
               {
-                ((flow.step > 3 && flow.step !== 8) || flow.checkingBalance) && (
+                ((flow.step > 3 && flow.step !== 8) || flow.isBalanceFetching) && (
                   <div>Loading...</div>
                 )
               }

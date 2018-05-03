@@ -1,9 +1,6 @@
-import Web3 from 'web3'
 import bitcoin from 'bitcoinjs-lib'
 import { SwapApp } from './swap/index'
-
-
-const web3 = new Web3(new Web3.providers.HttpProvider('https://rinkeby.infura.io/JCnK5ifEPH9qcQkX0Ahl'))
+import { web3 } from './instances/ethereum'
 
 
 const app = window.app = new SwapApp({
@@ -18,11 +15,16 @@ const app = window.app = new SwapApp({
       publicKey: '0x0',
     },
   },
-  ipfsConfig: {
-    Addresses: {
-      Swarm: [
-        '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
-      ],
+  config: {
+    ipfs: {
+      Addresses: {
+        Swarm: [
+          '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
+        ],
+      },
+    },
+    btc: {
+
     },
   },
 })
