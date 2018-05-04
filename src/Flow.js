@@ -51,7 +51,7 @@ class Flow {
 
         // if there is no order it orderCollection that means owner is offline, so `swap.owner` will be undefined
         if (!owner) {
-          flow.storage.update({
+          flow.setState({
             isWaitingForOwner: true,
           })
 
@@ -96,7 +96,7 @@ class Flow {
     const nextIndex = this.state.step + 1
 
     this.events.dispatch('leave step', this.state.step)
-    this.storage.update({
+    this.setState({
       step: nextIndex,
       ...(data || {}),
     })

@@ -2,6 +2,20 @@
 Swap Core
 
 
+## Run App example
+
+Run watcher to copy files from `./src` to `./app/src/swap`
+```
+npm run watch
+```
+
+Run react-scripts app in additional terminal tab
+```
+cd ./app
+npm start
+```
+
+
 ## Get Started
 
 ### App

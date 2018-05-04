@@ -72,7 +72,7 @@ class ETH2BTC extends Flow {
               isParticipantSigned: true,
             })
 
-            const { isMeSigned, isParticipantSigned } = flow.storage
+            const { isMeSigned, isParticipantSigned } = flow.state
 
             if (isMeSigned && isParticipantSigned) {
               flow.finishStep()
@@ -118,12 +118,12 @@ class ETH2BTC extends Flow {
         const swapData = {
           myAddress:            storage.me.eth.address,
           participantAddress:   participant.eth.address,
-          secretHash:           flow.storage.secretHash,
+          secretHash:           flow.state.secretHash,
           amount:               sellAmount,
         }
 
         await this.ethSwap.create(swapData, (transactionUrl) => {
-          this.storage.update({
+          this.setState({
             ethSwapCreationTransactionUrl: transactionUrl,
           })
         })
@@ -170,7 +170,7 @@ class ETH2BTC extends Flow {
 
         await flow.ethSwap.close(myAndParticipantData)
 
-        const { script } = flow.btcSwap.createScript(flow.storage.btcScriptValues)
+        const { script } = flow.btcSwap.createScript(flow.state.btcScriptValues)
 
         await flow.btcSwap.withdraw({
           // TODO here is the problem... now in `btcData` stored bitcoinjs-lib instance with additional functionality
@@ -179,7 +179,7 @@ class ETH2BTC extends Flow {
           script,
           secret,
         }, (transactionUrl) => {
-          flow.storage.update({
+          flow.setState({
             btcSwapWithdrawTransactionUrl: transactionUrl,
           })
         })
@@ -200,7 +200,7 @@ class ETH2BTC extends Flow {
   async sign() {
     const { id, participant } = this.swap
 
-    this.storage.update({
+    this.setState({
       isSignFetching: true,
     })
 
@@ -210,13 +210,13 @@ class ETH2BTC extends Flow {
         participantAddress: participant.eth.address,
       },
       (signTransactionUrl) => {
-        this.storage.update({
+        this.setState({
           signTransactionUrl,
         })
       }
     )
 
-    this.storage.update({
+    this.setState({
       isSignFetching: false,
       isMeSigned: true,
     })
@@ -230,7 +230,7 @@ class ETH2BTC extends Flow {
       },
     ])
 
-    const { isMeSigned, isParticipantSigned } = this.storage
+    const { isMeSigned, isParticipantSigned } = this.state
 
     if (isMeSigned && isParticipantSigned) {
       this.finishStep()
@@ -240,7 +240,7 @@ class ETH2BTC extends Flow {
   async syncBalance() {
     const { sellAmount } = this.swap
 
-    this.storage.update({
+    this.setState({
       isBalanceFetching: true,
     })
 
@@ -254,7 +254,7 @@ class ETH2BTC extends Flow {
       })
     }
     else {
-      this.storage.update({
+      this.setState({
         isBalanceFetching: false,
         isBalanceEnough: false,
       })

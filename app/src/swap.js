@@ -1,18 +1,29 @@
 import bitcoin from 'bitcoinjs-lib'
 import { SwapApp } from './swap/index'
 import { web3 } from './instances/ethereum'
+import { ethereum as ethereumInstance, bitcoin as bitcoinInstance } from './instances'
+
+
+const ethPrivateKey = localStorage.getItem('ethPrivateKey')
+const btcPrivateKey = localStorage.getItem('btcPrivateKey')
+
+const ethData = ethereumInstance.login(ethPrivateKey)
+const btcData = bitcoinInstance.login(btcPrivateKey)
+
+localStorage.setItem('ethPrivateKey', ethData.privateKey)
+localStorage.setItem('btcPrivateKey', btcData.privateKey)
 
 
 const app = window.app = new SwapApp({
   me: {
     reputation: 10,
     eth: {
-      address: '0x0',
-      publicKey: '0x0',
+      address: ethData.address,
+      publicKey: ethData.publicKey,
     },
     btc: {
-      address: '0x0',
-      publicKey: '0x0',
+      address: btcData.address,
+      publicKey: btcData.publicKey,
     },
   },
   config: {

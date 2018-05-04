@@ -13,7 +13,7 @@ const swapComponents = {
 export default class Swap extends Component {
 
   state = {
-    swap: app.createSwap({ orderId: 'QmZ1aTi5Jod3iuPB8SwPSLuWUs6TJV5upmzH1h9YnzqpSQ-1525181053520' }),
+    swap: null // app.createSwap({ orderId: 'QmZ1aTi5Jod3iuPB8SwPSLuWUs6TJV5upmzH1h9YnzqpSQ-1525181053520' }),
   }
 
   componentWillReceiveProps({ orderId }) {
