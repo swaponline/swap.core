@@ -1,4 +1,3 @@
-import BigInteger from 'bigi'
 import bitcoin from 'bitcoinjs-lib'
 import { request } from '../util'
 
@@ -19,38 +18,31 @@ class Bitcoin {
     })
   }
 
-  login(privateKey) {
-    let keyPair
+  login(_privateKey) {
+    let privateKey = _privateKey
 
-    if (privateKey) {
-      const hash  = this.core.crypto.sha256(privateKey)
-      const d     = BigInteger.fromBuffer(hash)
-
-      keyPair     = new this.core.ECPair(d, null, { network: this.testnet })
-    }
-    else {
-      keyPair     = this.core.ECPair.makeRandom({ network: this.testnet })
-      privateKey  = keyPair.toWIF()
+    if (!privateKey) {
+      const keyPair = this.core.ECPair.makeRandom({ network: this.testnet })
+      privateKey    = keyPair.toWIF()
     }
 
-    const address     = keyPair.getAddress()
     const account     = new this.core.ECPair.fromWIF(privateKey, this.testnet)
+    const address     = account.getAddress()
     const publicKey   = account.getPublicKeyBuffer().toString('hex')
 
-    const data = {
+    account.__proto__.getPrivateKey = () => privateKey
+
+    console.info('Logged in with Bitcoin', {
       account,
-      keyPair,
       address,
       privateKey,
       publicKey,
-    }
+    })
 
-    console.info('Logged in with Bitcoin', data)
-
-    return data
+    return account
   }
 
-  getBalance(address) {
+  fetchBalance(address) {
     return request.get(`https://test-insight.bitpay.com/api/addr/${address}`)
       .then(({ balance }) => {
         console.log('BTC Balance:', balance)

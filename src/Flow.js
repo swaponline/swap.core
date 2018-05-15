@@ -1,3 +1,4 @@
+import SwapRoom from './SwapRoom'
 import Events from './Events'
 import room from './room'
 import { localStorage } from './util'
@@ -25,6 +26,10 @@ class Flow {
         ...state,
       }
     }
+
+    this.swap.room.subscribe('persist state', (values) => {
+      this.setState(values, true)
+    })
   }
 
   _persistSteps() {
@@ -35,6 +40,8 @@ class Flow {
 
     // wait events placed
     setTimeout(() => {
+      console.log('GO INITIAL STEP', this.state.step)
+
       this.goStep(this.state.step)
     }, 0)
   }
@@ -49,6 +56,8 @@ class Flow {
       async () => {
         const { id: orderId, owner } = this.swap
 
+        // TODO how can we don't know who is participant???
+        // TODO if there is no participant in `order` then no need to create Flow...
         // if there is no order it orderCollection that means owner is offline, so `swap.owner` will be undefined
         if (!owner) {
           flow.setState({
@@ -63,6 +72,10 @@ class Flow {
 
               const order = orders.getByKey(orderId)
 
+              // TODO move this to Swap.js
+              flow.swap.room = new SwapRoom({
+                participantPeer: order.owner.peer,
+              })
               flow.swap.update({
                 ...order,
                 participant: order.owner,
@@ -86,38 +99,47 @@ class Flow {
 
   _saveState() {
     localStorage.setItem(`flow.${this.swap.id}`, this.state)
+    console.error('state saved', this.state)
   }
 
   finishStep(data) {
+    console.log('FINISH STEP', data)
+
     this.goNextStep(data)
   }
 
   goNextStep(data) {
-    const nextIndex = this.state.step + 1
+    console.log('GO NEXT STEP', data)
 
-    this.events.dispatch('leave step', this.state.step)
+    const { step } = this.state
+    const newStep = step + 1
+
+    this.events.dispatch('leave step', step)
+
     this.setState({
-      step: nextIndex,
+      step: newStep,
       ...(data || {}),
-    })
-    this.goStep(nextIndex, data)
+    }, true)
+
+    this.goStep(newStep)
   }
 
   goStep(index) {
-    this.state.step = index
-
-    this._saveState()
-    this.events.dispatch('enter step', this.state.step)
-    this.steps[this.state.step]()
+    this.events.dispatch('enter step', index)
+    this.steps[index]()
   }
 
-  setState(values) {
+  setState(values, save) {
     this.state = {
       ...this.state,
       ...values,
     }
 
-    this.events.dispatch('state update', values)
+    if (save) {
+      this._saveState()
+    }
+
+    this.events.dispatch('state update', this.state, values)
   }
 
   on(eventName, handler) {

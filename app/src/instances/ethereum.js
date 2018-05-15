@@ -27,7 +27,7 @@ class Ethereum {
     return account
   }
 
-  getBalance(address) {
+  fetchBalance(address) {
     return this.core.eth.getBalance(address)
       .then((wei) => {
         return Number(this.core.utils.fromWei(wei))

@@ -1,4 +1,5 @@
 import Events from './Events'
+import SwapRoom from './SwapRoom'
 import orderCollection from './orderCollection'
 import { localStorage, pullProps } from './util'
 
@@ -7,6 +8,7 @@ class Swap {
 
   constructor({ orderId }) {
     this.events         = new Events()
+    this.room           = null
     this.flow           = null
 
     this.id             = orderId
@@ -24,6 +26,10 @@ class Swap {
   _persistState() {
     const order = localStorage.getItem(`swap.${this.id}`) || orderCollection.getByKey(this.id)
 
+    // if no `order` that means that participant is offline
+    // TODO it's better to create swapCollection and store all swaps data there
+    // TODO bcs if user offline and I'd like to continue Flow steps I don't need to w8 him
+    // TODO so no need to get data from orderCollection
     if (order) {
       const { isMy, buyAmount, sellAmount, ...rest } = pullProps(
         order,
@@ -42,6 +48,14 @@ class Swap {
         buyAmount: isMy ? buyAmount : sellAmount,
         sellAmount: isMy ? sellAmount : buyAmount,
       }
+
+      if (!data.participant && !isMy) {
+        data.participant = data.owner
+      }
+
+      this.room = new SwapRoom({
+        participantPeer: data.participant.peer,
+      })
 
       this.update(data)
       localStorage.setItem(`swap.${this.id}`, data)

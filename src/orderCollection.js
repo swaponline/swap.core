@@ -23,8 +23,6 @@ class OrderCollection extends Collection {
       let myOrders = this.getMyOrders()
 
       if (myOrders.length) {
-        console.log(`Send my orders to ${peer}`, myOrders)
-
         // clean orders from other additional props
         myOrders = this.items.map((item) => pullProps(
           item,
@@ -37,6 +35,8 @@ class OrderCollection extends Collection {
           'isRequested',
           'isProcessing',
         ))
+
+        console.log(`Send my orders to ${peer}`, myOrders)
 
         room.sendMessage(peer, [
           {

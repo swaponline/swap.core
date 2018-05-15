@@ -1,12 +1,11 @@
 import crypto from 'bitcoinjs-lib/src/crypto'
 import Flow from '../Flow'
-import room from '../room'
 import { storage } from '../Storage'
 
 
 class BTC2ETH extends Flow {
 
-  constructor({ swap, data, options: { ethSwap, btcSwap, getBalance } }) {
+  constructor({ swap, data, options: { ethSwap, btcSwap, fetchBalance } }) {
     super({ swap })
 
     if (!ethSwap) {
@@ -15,13 +14,13 @@ class BTC2ETH extends Flow {
     if (!btcSwap) {
       throw new Error('BTC2ETH failed. "btcSwap" of type object required.')
     }
-    if (typeof getBalance !== 'function') {
-      throw new Error('BTC2ETH failed. "getBalance" of type function required.')
+    if (typeof fetchBalance !== 'function') {
+      throw new Error('BTC2ETH failed. "fetchBalance" of type function required.')
     }
 
-    this.ethSwap    = ethSwap
-    this.btcSwap    = btcSwap
-    this.getBalance = getBalance
+    this.ethSwap        = ethSwap
+    this.btcSwap        = btcSwap
+    this.fetchBalance   = fetchBalance
 
     this.state = {
       step: 0,
@@ -38,6 +37,7 @@ class BTC2ETH extends Flow {
 
       isBalanceFetching: false,
       isBalanceEnough: false,
+      balance: null,
 
       ethSwapCreationTransactionUrl: null,
       isEthContractFunded: false,
@@ -52,6 +52,19 @@ class BTC2ETH extends Flow {
 
   _persistState() {
     super._persistState()
+
+    const { isMeSigned, isParticipantSigned } = this.state
+
+    this.swap.room.once('participant joined', () => {
+      // if I was signed and
+      if (isMeSigned && !isParticipantSigned) {
+        console.log(111)
+
+        this.swap.room.sendMessage('persist state', {
+          isParticipantSigned: isMeSigned,
+        })
+      }
+    })
   }
 
   _getSteps() {
@@ -62,24 +75,18 @@ class BTC2ETH extends Flow {
       // 1. Signs
 
       () => {
-        const { id } = this.swap
+        this.swap.room.once('swap sign', () => {
+          const { isMeSigned } = flow.state
 
-        room.subscribe('swap sign', function ({ orderId }) {
-          if (id === orderId) {
-            this.unsubscribe()
-
-            const { isMeSigned, isParticipantSigned } = flow.state
-
-            if (isMeSigned && isParticipantSigned) {
-              flow.finishStep({
-                isParticipantSigned: true,
-              })
-            }
-            else {
-              flow.setState({
-                isParticipantSigned: true,
-              })
-            }
+          if (isMeSigned) {
+            flow.finishStep({
+              isParticipantSigned: true,
+            })
+          }
+          else {
+            flow.setState({
+              isParticipantSigned: true,
+            })
           }
         })
       },
@@ -87,7 +94,7 @@ class BTC2ETH extends Flow {
       // 2. Create secret, secret hash
 
       () => {
-        console.log(99999)
+        // this.submitSecret()
       },
 
       // 3. Check balance
@@ -99,7 +106,7 @@ class BTC2ETH extends Flow {
       // 4. Create BTC Script, fund, notify participant
 
       async () => {
-        const { id, sellAmount, participant } = this.swap
+        const { sellAmount, participant } = this.swap
 
         const { script: btcScript, ...scriptValues } = this.btcSwap.createScript({
           secretHash:         flow.state.secretHash,
@@ -114,15 +121,9 @@ class BTC2ETH extends Flow {
           amount:     sellAmount,
         })
 
-        room.sendMessage(participant.peer, [
-          {
-            event: 'create btc script',
-            data: {
-              orderId: id,
-              scriptValues,
-            },
-          },
-        ])
+        this.swap.room.sendMessage('create btc script', {
+          scriptValues,
+        })
 
         flow.finishStep({
           isBtcScriptFunded: true,
@@ -132,23 +133,17 @@ class BTC2ETH extends Flow {
       // 5. Wait participant creates ETH Contract
 
       () => {
-        const { id } = this.swap
-      
-        room.subscribe('create eth contract', function ({ orderId }) {
-          if (id === orderId) {
-            this.unsubscribe()
-
-            flow.finishStep({
-              isEthContractFunded: true,
-            })
-          }
+        this.swap.room.once('create eth contract', () => {
+          flow.finishStep({
+            isEthContractFunded: true,
+          })
         })
       },
 
       // 6. Withdraw
 
       async () => {
-        const { id, participant } = this.swap
+        const { participant } = this.swap
       
         const data = {
           myAddress:      storage.me.eth.address,
@@ -162,14 +157,7 @@ class BTC2ETH extends Flow {
           })
         })
 
-        room.sendMessage(participant.peer, [
-          {
-            event: 'finish eth withdraw',
-            data: {
-              orderId: id,
-            },
-          },
-        ])
+        this.swap.room.sendMessage('finish eth withdraw')
 
         flow.finishStep({
           isEthWithdrawn: true,
@@ -185,11 +173,15 @@ class BTC2ETH extends Flow {
   }
 
   async sign() {
-    const { id, participant } = this.swap
+    const { participant } = this.swap
 
     this.setState({
       isSignFetching: true,
     })
+
+    // TODO add check if already signed
+    // Looks like need to add `signWasRequested` to state and on next page load check this prop
+    // if it's exist then check if user has already been signed
 
     await this.ethSwap.sign(
       {
@@ -203,19 +195,14 @@ class BTC2ETH extends Flow {
       }
     )
 
+    await setTimeout(() => {}, 1500)
+
     this.setState({
       isSignFetching: false,
       isMeSigned: true,
-    })
+    }, true)
 
-    room.sendMessage(participant.peer, [
-      {
-        event: 'swap:signed',
-        data: {
-          orderId: id,
-        },
-      },
-    ])
+    this.swap.room.sendMessage('swap sign')
 
     const { isMeSigned, isParticipantSigned } = this.state
 
@@ -240,17 +227,19 @@ class BTC2ETH extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.getBalance()
+    const balance = await this.fetchBalance()
     const isEnoughMoney = sellAmount <= balance
 
     if (isEnoughMoney) {
       this.finishStep({
+        balance,
         isBalanceFetching: false,
         isBalanceEnough: true,
       })
     }
     else {
       this.setState({
+        balance,
         isBalanceFetching: false,
         isBalanceEnough: false,
       })

@@ -145,8 +145,6 @@ class Order {
       requests: [],
     })
 
-    console.log(1111, participantPeer)
-
     room.sendMessage(participantPeer, [
       {
         event: 'accept swap request',

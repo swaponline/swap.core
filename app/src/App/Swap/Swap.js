@@ -40,8 +40,8 @@ export default class Swap extends Component {
     const { isMy: isMyOrder, buyCurrency, sellCurrency } = swap
 
     // TODO dynamically resolve Swap component to use
-    const firstPart     = isMyOrder ? buyCurrency : sellCurrency
-    const lastPart      = isMyOrder ? sellCurrency : buyCurrency
+    const firstPart     = isMyOrder ? sellCurrency : buyCurrency
+    const lastPart      = isMyOrder ? buyCurrency : sellCurrency
     const SwapComponent = swapComponents[`${firstPart.toLowerCase()}${lastPart.toLowerCase()}`]
 
     return (

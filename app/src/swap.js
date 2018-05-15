@@ -1,29 +1,45 @@
-import bitcoin from 'bitcoinjs-lib'
+import bitcoinJsLib from 'bitcoinjs-lib'
 import { SwapApp } from './swap/index'
 import { web3 } from './instances/ethereum'
-import { ethereum as ethereumInstance, bitcoin as bitcoinInstance } from './instances'
+import { ethereumInstance, bitcoinInstance } from './instances'
 
+
+// Chrome
+// localStorage.setItem('ethPrivateKey', '0x0e9e9ce7f6fac62ee715cf4cf65095db65050b5f3173cfd41586e15ed8e4896e')
+// localStorage.setItem('btcPrivateKey', 'cPEbuS2XrE1nb65XBk4me2wd5jtyQijDaKTBaBfLF74W5QrXKePs')
+
+// Yandex
+// localStorage.setItem('ethPrivateKey', '0x32c7a260f58d9217219a94504d8121eedefd15ab7febf4634a6ae9cac9166272')
+// localStorage.setItem('btcPrivateKey', 'cN2N9ZMWxHAsrRmerTxZfLNzXPGyJsTUDQH9dCCVCqiE9uTnAEaB')
 
 const ethPrivateKey = localStorage.getItem('ethPrivateKey')
 const btcPrivateKey = localStorage.getItem('btcPrivateKey')
 
-const ethData = ethereumInstance.login(ethPrivateKey)
-const btcData = bitcoinInstance.login(btcPrivateKey)
+const ethAccount = ethereumInstance.login(ethPrivateKey)
+const btcAccount = bitcoinInstance.login(btcPrivateKey)
 
-localStorage.setItem('ethPrivateKey', ethData.privateKey)
-localStorage.setItem('btcPrivateKey', btcData.privateKey)
+localStorage.setItem('ethPrivateKey', ethAccount.privateKey)
+localStorage.setItem('btcPrivateKey', btcAccount.getPrivateKey())
+
+const localClear = localStorage.clear.bind(localStorage)
+
+global.clear = localStorage.clear = () => {
+  localClear()
+  localStorage.setItem('ethPrivateKey', ethAccount.privateKey)
+  localStorage.setItem('btcPrivateKey', btcAccount.getPrivateKey())
+}
 
 
 const app = window.app = new SwapApp({
   me: {
     reputation: 10,
     eth: {
-      address: ethData.address,
-      publicKey: ethData.publicKey,
+      address: ethAccount.address,
+      publicKey: ethAccount.publicKey,
     },
     btc: {
-      address: btcData.address,
-      publicKey: btcData.publicKey,
+      address: btcAccount.getAddress(),
+      publicKey: btcAccount.getPublicKeyBuffer().toString('hex'),
     },
   },
   config: {
@@ -76,5 +92,7 @@ app.on('new order request', ({ swapId, participant }) => {
 export {
   app,
   web3,
-  bitcoin,
+  bitcoinJsLib,
+  ethAccount,
+  btcAccount,
 }

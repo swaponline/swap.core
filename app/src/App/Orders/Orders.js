@@ -42,8 +42,8 @@ export default class Orders extends Component {
     const data = {
       buyCurrency: 'ETH',
       sellCurrency: 'BTC',
-      buyAmount: 1,
-      sellAmount: 0.1,
+      buyAmount: 0.001,
+      sellAmount: 0.0001,
     }
 
     app.createOrder(data)
@@ -102,8 +102,8 @@ export default class Orders extends Component {
                 <tr>
                   <th>Exchange Rate</th>
                   <th>User Reputation</th>
-                  <th>{orders[0].buyCurrency.toUpperCase()}</th>
                   <th>{orders[0].sellCurrency.toUpperCase()}</th>
+                  <th>{orders[0].buyCurrency.toUpperCase()}</th>
                   <th width="1%" colSpan="2" />
                 </tr>
               </thead>

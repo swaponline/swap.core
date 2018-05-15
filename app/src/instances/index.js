@@ -3,6 +3,6 @@ import bitcoin from './bitcoin'
 
 
 export {
-  ethereum,
-  bitcoin,
+  ethereum as ethereumInstance,
+  bitcoin as bitcoinInstance,
 }
