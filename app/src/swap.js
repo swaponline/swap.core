@@ -4,13 +4,13 @@ import { web3 } from './instances/ethereum'
 import { ethereumInstance, bitcoinInstance } from './instances'
 
 
-// Chrome
-// localStorage.setItem('ethPrivateKey', '0x0e9e9ce7f6fac62ee715cf4cf65095db65050b5f3173cfd41586e15ed8e4896e')
-// localStorage.setItem('btcPrivateKey', 'cPEbuS2XrE1nb65XBk4me2wd5jtyQijDaKTBaBfLF74W5QrXKePs')
+// // Chrome
+// localStorage.setItem('ethPrivateKey', '0xa6316e9e231fa70f2f41ce755f3846b74af10e8c5def8d333ec89af3b9b4193b')
+// localStorage.setItem('btcPrivateKey', 'cUSH65TpCkU5rsMem8WND5itr3SVF192EAKA8E5ipqs15fTJiRbc')
 
-// Yandex
-// localStorage.setItem('ethPrivateKey', '0x32c7a260f58d9217219a94504d8121eedefd15ab7febf4634a6ae9cac9166272')
-// localStorage.setItem('btcPrivateKey', 'cN2N9ZMWxHAsrRmerTxZfLNzXPGyJsTUDQH9dCCVCqiE9uTnAEaB')
+// // Yandex
+// localStorage.setItem('ethPrivateKey', '0xe32a5cb068a13836b6bc80f54585bbfcc2d5d9089f0c5381b27d039b6d2404ec')
+// localStorage.setItem('btcPrivateKey', 'cRF7Az481ffsuhhZ28x32Xk4ZvPh98zhKv7hCi1pKjifqvv7AcuX')
 
 const ethPrivateKey = localStorage.getItem('ethPrivateKey')
 const btcPrivateKey = localStorage.getItem('btcPrivateKey')
@@ -46,7 +46,8 @@ const app = window.app = new SwapApp({
     ipfs: {
       Addresses: {
         Swarm: [
-          '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
+          // '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
+          '/dns4/star.wpmix.net/tcp/443/wss/p2p-websocket-star',
         ],
       },
     },

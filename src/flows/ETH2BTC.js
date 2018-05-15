@@ -27,7 +27,6 @@ class ETH2BTC extends Flow {
       signTransactionUrl: null,
       isSignFetching: false,
       isMeSigned: false,
-      isParticipantSigned: false,
 
       secretHash: null,
       btcScriptValues: null,
@@ -51,44 +50,17 @@ class ETH2BTC extends Flow {
 
   _persistState() {
     super._persistState()
-
-    const { isMeSigned, isParticipantSigned } = this.state
-
-    this.swap.room.once('participant joined', () => {
-      // if I was signed and
-      if (isMeSigned && !isParticipantSigned) {
-        console.log(222)
-
-        this.swap.room.sendMessage('persist state', {
-          isParticipantSigned: isMeSigned,
-        })
-      }
-    })
   }
 
   _getSteps() {
-    const { id } = this.swap
     const flow = this
 
     return [
 
-      // 1. Signs
+      // 1. Sign swap to start
 
       () => {
-        this.swap.room.once('swap sign', () => {
-          const { isMeSigned } = flow.state
-
-          if (isMeSigned) {
-            flow.finishStep({
-              isParticipantSigned: true,
-            })
-          }
-          else {
-            flow.setState({
-              isParticipantSigned: true,
-            }, true)
-          }
-        })
+        // this.sign()
       },
 
       // 2. Wait participant create, fund BTC Script
@@ -197,10 +169,6 @@ class ETH2BTC extends Flow {
       isSignFetching: true,
     })
 
-    // TODO add check if already signed
-    // Looks like need to add `signWasRequested` to state and on next page load check this prop
-    // if it's exist then check if user has already been signed
-
     await this.ethSwap.sign(
       {
         myAddress: storage.me.eth.address,
@@ -213,18 +181,11 @@ class ETH2BTC extends Flow {
       }
     )
 
-    this.setState({
-      isSignFetching: false,
-      isMeSigned: true,
-    }, true)
-
     this.swap.room.sendMessage('swap sign')
 
-    const { isMeSigned, isParticipantSigned } = this.state
-
-    if (isMeSigned && isParticipantSigned) {
-      this.finishStep()
-    }
+    this.finishStep({
+      isMeSigned: true,
+    })
   }
 
   verifyBtcScript() {

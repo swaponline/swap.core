@@ -27,7 +27,6 @@ class BTC2ETH extends Flow {
 
       signTransactionUrl: null,
       isSignFetching: false,
-      isMeSigned: false,
       isParticipantSigned: false,
 
       secretHash: null,
@@ -52,19 +51,6 @@ class BTC2ETH extends Flow {
 
   _persistState() {
     super._persistState()
-
-    const { isMeSigned, isParticipantSigned } = this.state
-
-    this.swap.room.once('participant joined', () => {
-      // if I was signed and
-      if (isMeSigned && !isParticipantSigned) {
-        console.log(111)
-
-        this.swap.room.sendMessage('persist state', {
-          isParticipantSigned: isMeSigned,
-        })
-      }
-    })
   }
 
   _getSteps() {
@@ -76,18 +62,9 @@ class BTC2ETH extends Flow {
 
       () => {
         this.swap.room.once('swap sign', () => {
-          const { isMeSigned } = flow.state
-
-          if (isMeSigned) {
-            flow.finishStep({
-              isParticipantSigned: true,
-            })
-          }
-          else {
-            flow.setState({
-              isParticipantSigned: true,
-            })
-          }
+          flow.finishStep({
+            isParticipantSigned: true,
+          })
         })
       },
 
@@ -127,6 +104,7 @@ class BTC2ETH extends Flow {
 
         flow.finishStep({
           isBtcScriptFunded: true,
+          btcScriptValues: scriptValues,
         })
       },
 
@@ -170,45 +148,6 @@ class BTC2ETH extends Flow {
 
       },
     ]
-  }
-
-  async sign() {
-    const { participant } = this.swap
-
-    this.setState({
-      isSignFetching: true,
-    })
-
-    // TODO add check if already signed
-    // Looks like need to add `signWasRequested` to state and on next page load check this prop
-    // if it's exist then check if user has already been signed
-
-    await this.ethSwap.sign(
-      {
-        myAddress: storage.me.eth.address,
-        participantAddress: participant.eth.address,
-      },
-      (signTransactionUrl) => {
-        this.setState({
-          signTransactionUrl,
-        })
-      }
-    )
-
-    await setTimeout(() => {}, 1500)
-
-    this.setState({
-      isSignFetching: false,
-      isMeSigned: true,
-    }, true)
-
-    this.swap.room.sendMessage('swap sign')
-
-    const { isMeSigned, isParticipantSigned } = this.state
-
-    if (isMeSigned && isParticipantSigned) {
-      this.finishStep()
-    }
   }
 
   submitSecret(secret) {

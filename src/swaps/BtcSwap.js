@@ -71,7 +71,7 @@ class BtcSwap {
         const unspents      = await this.fetchUnspents(this.address)
 
         const fundValue     = Math.floor(Number(amount) * 1e8)
-        const feeValue      = 4e3 // TODO how to get this value
+        const feeValue      = 15000 // TODO how to get this value
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue
 
@@ -124,7 +124,7 @@ class BtcSwap {
   }
 
   withdraw({ script, secret }) {
-    console.log('\n\nWithdraw money from BTC Swap Script', { secret })
+    console.log('\n\nWithdraw money from BTC Swap Script', { script, secret })
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -136,13 +136,21 @@ class BtcSwap {
 
         const unspents      = await this.fetchUnspents(scriptAddress)
 
-        const feeValue      = 4e5
+        const feeValue      = 15000 // TODO how to get this value
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
 
         unspents.forEach(({ txid, vout }) => {
+          console.log('Add input from unspents:', txid, vout)
           tx.addInput(txid, vout, 0xfffffffe)
         })
         tx.addOutput(this.address, totalUnspent - feeValue)
+
+        console.log('Data:', {
+          self: this,
+          scriptAddress,
+          totalUnspent,
+          feeValue,
+        })
 
         const txRaw               = tx.buildIncomplete()
         const signatureHash       = txRaw.hashForSignature(0, script, hashType)

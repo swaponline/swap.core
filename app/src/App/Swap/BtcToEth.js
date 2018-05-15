@@ -19,13 +19,13 @@ export default class BtcToEth extends Component {
 
     const ethSwap = new EthSwap({
       lib: web3,
-      gasLimit: 40 * 1e5,
+      gasLimit: 3e6,
     })
 
     const btcSwap = new BtcSwap({
       lib: bitcoinJsLib,
       account: btcAccount,
-      fetchUnspents: () => bitcoinInstance.fetchUnspents(btcAccount.getAddress()),
+      fetchUnspents: (scriptAddress) => bitcoinInstance.fetchUnspents(scriptAddress),
       broadcastTx: (txRaw) => bitcoinInstance.broadcastTx(txRaw),
     })
 
@@ -134,61 +134,9 @@ export default class BtcToEth extends Component {
         
         {
           (flow.step === 1 || flow.isMeSigned) && (
-            <h3>1. Please confirm your participation to begin the deal</h3>
-          )
-        }
-        {
-          flow.step === 1 && (
             <Fragment>
-              <div>
-                Confirmation of the transaction is necessary for crediting the reputation.
-                If a user does not bring the deal to the end he gets a negative reputation.
-              </div>
-              {
-                flow.isParticipantSigned && (
-                  <h4>Other user confirmed his participation</h4>
-                )
-              }
-              {
-                !flow.isSignFetching && !flow.isMeSigned && (
-                  <button onClick={this.signSwap}>Confirm</button>
-                )
-              }
-              {
-                (flow.isSignFetching || flow.signTransactionUrl) && (
-                  <Fragment>
-                    <h4>Please wait. Confirmation processing</h4>
-                    {
-                      flow.signTransactionUrl && (
-                        <div>
-                          Transaction:
-                          <strong>
-                            <a href={flow.signTransactionUrl} rel="noopener noreferrer" target="_blank">{flow.signTransactionUrl}</a>
-                          </strong>
-                        </div>
-                      )
-                    }
-                    {
-                      flow.isSignFetching && (
-                        <Loader />
-                      )
-                    }
-                  </Fragment>
-                )
-              }
-              {
-                flow.isMeSigned && (
-                  <h4 style={{ color: 'green' }}>You successfully confirmed your participation</h4>
-                )
-              }
-              {
-                flow.isMeSigned && !flow.isParticipantSigned && (
-                  <Fragment>
-                    <h4 style={{ color: 'red' }}>Waiting when other user confirm his participation</h4>
-                    <Loader />
-                  </Fragment>
-                )
-              }
+              <h3>1. Waiting participant confirm this swap</h3>
+              <Loader />
             </Fragment>
           )
         }
@@ -196,7 +144,7 @@ export default class BtcToEth extends Component {
         {/* ----------------------------------------------------------- */}
 
         {
-          flow.isMeSigned && flow.isParticipantSigned && (
+          flow.isParticipantSigned && (
             <Fragment>
               <h3>2. Create a secret key</h3>
 
@@ -233,25 +181,42 @@ export default class BtcToEth extends Component {
               }
               {
                 flow.step === 3 && flow.isBalanceFetching && (
-                  <div>Checking balance..</div>
+                  <Fragment>
+                    <div>Checking balance..</div>
+                    <Loader />
+                  </Fragment>
                 )
               }
 
               {
-                (flow.step === 4 || flow.btcScriptData) && (
-                  <h3>3. Creating Bitcoin Script. Please wait, it will take a while</h3>
+                (flow.step === 4 || flow.btcScriptValues) && (
+                  <Fragment>
+                    <h3>3. Creating Bitcoin Script. Please wait, it will take a while</h3>
+                    {
+                      !flow.btcScriptValues && (
+                        <Loader />
+                      )
+                    }
+                  </Fragment>
                 )
               }
 
               {
                 (flow.step === 5 || flow.isEthContractFunded) && (
-                  <h3>5. ETH Owner received Bitcoin Script and Secret Hash. Waiting when he creates ETH Contract</h3>
+                  <Fragment>
+                    <h3>4. ETH Owner received Bitcoin Script and Secret Hash. Waiting when he creates ETH Contract</h3>
+                    {
+                      !flow.isEthContractFunded && (
+                        <Loader />
+                      )
+                    }
+                  </Fragment>
                 )
               }
 
               {
                 (flow.step === 6 || flow.isEthWithdrawn) && (
-                  <h3>6. ETH Contract created and charged. Requesting withdrawal from ETH Contract. Please wait</h3>
+                  <h3>5. ETH Contract created and charged. Requesting withdrawal from ETH Contract. Please wait</h3>
                 )
               }
               {
@@ -264,19 +229,18 @@ export default class BtcToEth extends Component {
                   </div>
                 )
               }
-
               {
-                flow.isEthWithdrawn && (
-                  <Fragment>
-                    <h3>7. Money was transferred to your wallet. Check the balance.</h3>
-                    <h2>Thank you for using Swap.Online!</h2>
-                  </Fragment>
+                flow.step === 6 && (
+                  <Loader />
                 )
               }
 
               {
-                ((flow.step > 3 && flow.step !== 7) || flow.isBalanceFetching) && (
-                  <Loader />
+                flow.isEthWithdrawn && (
+                  <Fragment>
+                    <h3>6. Money was transferred to your wallet. Check the balance.</h3>
+                    <h2>Thank you for using Swap.Online!</h2>
+                  </Fragment>
                 )
               }
             </Fragment>

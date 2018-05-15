@@ -58,8 +58,25 @@ class Swap {
       })
 
       this.update(data)
-      localStorage.setItem(`swap.${this.id}`, data)
+      this._saveState()
     }
+  }
+
+  _saveState() {
+    const data = pullProps(
+      'id',
+      'isMy',
+      'owner',
+      'participant',
+      'buyCurrency',
+      'sellCurrency',
+      'buyAmount',
+      'sellAmount',
+    )
+
+    console.log('New Swap state:', data)
+
+    localStorage.setItem(`swap.${this.id}`, data)
   }
 
   setFlow(Flow, options) {
@@ -75,6 +92,7 @@ class Swap {
     Object.keys(values).forEach((key) => {
       this[key] = values[key]
     })
+    this._saveState()
   }
 
   on(eventName, handler) {

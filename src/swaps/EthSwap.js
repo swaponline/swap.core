@@ -1,8 +1,8 @@
 class EthSwap {
 
   constructor({ lib, gasLimit }) {
-    const address = '0xa283cc6666fe6c08e96773596f51f850f7038627'
-    const abi = [ { "constant": false, "inputs": [ { "name": "_user", "type": "address" } ], "name": "changeRating", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [ { "name": "_participantAddress", "type": "address" } ], "name": "close", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [ { "name": "_secretHash", "type": "bytes20" }, { "name": "_participantAddress", "type": "address" } ], "name": "create", "outputs": [], "payable": true, "stateMutability": "payable", "type": "function" }, { "constant": false, "inputs": [ { "name": "_participantAddress", "type": "address" } ], "name": "refund", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [ { "name": "_ratingContractAddress", "type": "address" } ], "name": "setRatingAddress", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [ { "name": "participantAddress", "type": "address" } ], "name": "sign", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "payable": false, "stateMutability": "nonpayable", "type": "constructor" }, { "constant": false, "inputs": [ { "name": "_secret", "type": "bytes32" }, { "name": "_ownerAddress", "type": "address" } ], "name": "withdraw", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [ { "name": "_participantAddress", "type": "address" } ], "name": "checkIfSigned", "outputs": [ { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "_ownerAddress", "type": "address" }, { "name": "_participantAddress", "type": "address" } ], "name": "getInfo", "outputs": [ { "name": "", "type": "uint256" }, { "name": "", "type": "bytes32" }, { "name": "", "type": "bytes20" }, { "name": "", "type": "uint256" }, { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "_participantAddress", "type": "address" } ], "name": "getSecret", "outputs": [ { "name": "", "type": "bytes32" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "_ownerAddress", "type": "address" }, { "name": "_participantAddress", "type": "address" } ], "name": "unsafeGetSecret", "outputs": [ { "name": "", "type": "bytes32" } ], "payable": false, "stateMutability": "view", "type": "function" } ]
+    const address = '0xfb7229135058750e189849103c326656c52cc012'
+    const abi = [ { "constant": false, "inputs": [ { "name": "_ownerAddress", "type": "address" } ], "name": "abort", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [ { "name": "_participantAddress", "type": "address" } ], "name": "close", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [ { "name": "_secretHash", "type": "bytes20" }, { "name": "_participantAddress", "type": "address" } ], "name": "createSwap", "outputs": [], "payable": true, "stateMutability": "payable", "type": "function" }, { "constant": false, "inputs": [ { "name": "_participantAddress", "type": "address" } ], "name": "refund", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [ { "name": "_ratingContractAddress", "type": "address" } ], "name": "setReputationAddress", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [ { "name": "_participantAddress", "type": "address" } ], "name": "sign", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "payable": false, "stateMutability": "nonpayable", "type": "constructor" }, { "constant": false, "inputs": [ { "name": "_secret", "type": "bytes32" }, { "name": "_ownerAddress", "type": "address" } ], "name": "withdraw", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [ { "name": "_ownerAddress", "type": "address" } ], "name": "checkSign", "outputs": [ { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "_ownerAddress", "type": "address" }, { "name": "_participantAddress", "type": "address" } ], "name": "getInfo", "outputs": [ { "name": "", "type": "bytes32" }, { "name": "", "type": "bytes20" }, { "name": "", "type": "uint256" }, { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "_participantAddress", "type": "address" } ], "name": "getSecret", "outputs": [ { "name": "", "type": "bytes32" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [], "name": "owner", "outputs": [ { "name": "", "type": "address" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "address" }, { "name": "", "type": "address" } ], "name": "participantSigns", "outputs": [ { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [], "name": "ratingContractAddress", "outputs": [ { "name": "", "type": "address" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "address" }, { "name": "", "type": "address" } ], "name": "swaps", "outputs": [ { "name": "secret", "type": "bytes32" }, { "name": "secretHash", "type": "bytes20" }, { "name": "createdAt", "type": "uint256" }, { "name": "balance", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "_ownerAddress", "type": "address" }, { "name": "_participantAddress", "type": "address" } ], "name": "unsafeGetSecret", "outputs": [ { "name": "", "type": "bytes32" } ], "payable": false, "stateMutability": "view", "type": "function" } ]
 
     this.web3       = lib
     this.gasLimit   = gasLimit
@@ -34,9 +34,8 @@ class EthSwap {
           // console.log('ETH Swap > confirmation', confirmationNumber)
         })
         .on('error', (err) => {
-          console.error('ETH Swap > receipt', err)
-
-          reject()
+          console.error('ETH Swap > error', err)
+          reject(err)
         })
 
       console.log('ETH Swap sign complete:', receipt)
@@ -51,10 +50,9 @@ class EthSwap {
    * @param {string} data.secretHash
    * @param {string} data.participantAddress
    * @param {number} data.amount
-   * @param {number} data._lockTime - required just for AVA test
    * @param {function} handleTransaction
    */
-  create({ myAddress, secretHash, participantAddress, amount, _lockTime }, handleTransaction) {
+  create({ myAddress, secretHash, participantAddress, amount }, handleTransaction) {
     return new Promise(async (resolve, reject) => {
       const hash      = `0x${secretHash.replace(/^0x/, '')}`
 
@@ -67,14 +65,9 @@ class EthSwap {
 
       const values = [ hash, participantAddress ]
 
-      // ductape for ava test
-      if (_lockTime) {
-        values.push(_lockTime)
-      }
-
       console.log('\n\nStart creating ETH Swap', { values, params })
 
-      const receipt = await this.contract.methods.create(...values).send(params)
+      const receipt = await this.contract.methods.createSwap(...values).send(params)
         .on('transactionHash', (hash) => {
           console.log('ETH Swap > transactionHash', `https://rinkeby.etherscan.io/tx/${hash}`)
           handleTransaction && handleTransaction(`https://rinkeby.etherscan.io/tx/${hash}`)
@@ -83,9 +76,8 @@ class EthSwap {
           // console.log('ETH Swap > confirmation', confirmationNumber)
         })
         .on('error', (err) => {
-          console.error('ETH Swap > receipt', err)
-
-          reject()
+          console.error('ETH Swap > error', err)
+          reject(err)
         })
 
       console.log('ETH Swap created:', receipt)
@@ -122,9 +114,8 @@ class EthSwap {
           // console.log('ETH Swap > confirmation', confirmationNumber)
         })
         .on('error', (err) => {
-          console.error('ETH Swap > receipt', err)
-
-          reject()
+          console.error('ETH Swap > error', err)
+          reject(err)
         })
 
       console.log('ETH Swap withdraw complete:', receipt)
@@ -177,9 +168,8 @@ class EthSwap {
           // console.log('ETH Swap > confirmation', confirmationNumber)
         })
         .on('error', (err) => {
-          console.error('ETH Swap > receipt', err)
-
-          reject()
+          console.error('ETH Swap > error', err)
+          reject(err)
         })
 
       console.log('ETH Swap closed')
