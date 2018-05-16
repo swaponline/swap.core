@@ -3,11 +3,15 @@ import { app } from '../../swap'
 
 import BtcToEth from './BtcToEth'
 import EthToBtc from './EthToBtc'
+import EthTokenToBtc from './EthTokenToBtc'
+import BtcToEthToken from './BtcToEthToken'
 
 
 const swapComponents = {
   'btceth': BtcToEth,
   'ethbtc': EthToBtc,
+  'ethtokenbtc': EthTokenToBtc,
+  'btcethtoken': BtcToEthToken,
 }
 
 export default class Swap extends Component {

@@ -1,8 +1,8 @@
 import React, { Component, Fragment } from 'react'
 import { web3, bitcoinJsLib, btcAccount, ethAccount } from '../../swap'
 import { bitcoinInstance, ethereumInstance } from '../../instances'
-import { EthSwap, BtcSwap } from '../../swap/swaps'
-import { ETH2BTC } from '../../swap/flows'
+import { EthTokenSwap, BtcSwap } from '../../swap/swaps'
+import { ETHTOKEN2BTC } from '../../swap/flows'
 import Loader from '../Loader/Loader'
 
 
@@ -16,7 +16,7 @@ export default class EthToBtc extends Component {
     // TODO this might be from url query
     const { swap } = this.props
 
-    const ethSwap = new EthSwap({
+    const ethSwap = new EthTokenSwap({
       lib: web3,
       gasLimit: 3e6,
     })
@@ -28,9 +28,9 @@ export default class EthToBtc extends Component {
       broadcastTx: (txRaw) => bitcoinInstance.broadcastTx(txRaw),
     })
 
-    const fetchBalance = () => ethereumInstance.fetchBalance(ethAccount.address)
+    const fetchBalance = () => ethereumInstance.fetchTokenBalance(ethAccount.address)
 
-    const flow = swap.setFlow(ETH2BTC, {
+    const flow = swap.setFlow(ETHTOKEN2BTC, {
       ethSwap,
       btcSwap,
       fetchBalance,

@@ -1,4 +1,5 @@
 import Web3 from 'web3'
+import { request } from '../util'
 
 
 const web3 = new Web3(new Web3.providers.HttpProvider('https://rinkeby.infura.io/JCnK5ifEPH9qcQkX0Ahl'))
@@ -32,6 +33,11 @@ class Ethereum {
       .then((wei) => {
         return Number(this.core.utils.fromWei(wei))
       })
+  }
+
+  fetchTokenBalance(address) {
+    return request.get(`https://rinkeby.etherscan.io/api?module=account&action=tokenbalance&contractaddress=0x60c205722c6c797c725a996cf9cca11291f90749&address=${address}`)
+      .then(({ result }) => result)
   }
 }
 
