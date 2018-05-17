@@ -108,9 +108,9 @@ app.on('new order request', ({ orderId, participant }) => {
 ```
 
 
-### Swap
+### Order
 
-Each instance of Swap class represents order object with own fields and functionality:
+Each instance of Order class represents order object with own fields and functionality:
 
 #### Data structure
 
