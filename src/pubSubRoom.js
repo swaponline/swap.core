@@ -5,15 +5,41 @@ import { storage } from './Storage'
 class Room {
 
   constructor() {
-    this.events = new Events()
+    this.events   = new Events()
+    this.lib      = null
+    this.roomLib  = null
   }
 
+  /**
+   *
+   * @param {object} config
+   * @param {function} config.lib
+   * @param {array} config.swarm
+   */
   init(config) {
-    const ipfs = new global.Ipfs({
+    if (!config || typeof config !== 'object') {
+      throw new Error('Room failed. "config" of type object required.')
+    }
+
+    const { lib, roomLib, swarm } = config
+
+    if (!lib || typeof lib !== 'function') {
+      throw new Error('Room failed. "lib" of type object required.')
+    }
+    if (!swarm || !Array.isArray(swarm)) {
+      throw new Error('Room failed. "swarm" of type array required.')
+    }
+
+    this.lib = lib
+    this.roomLib = roomLib
+
+    const ipfs = new this.lib({
       EXPERIMENTAL: {
         pubsub: true,
       },
-      config,
+      Addresses: {
+        Swarm: swarm,
+      },
     })
 
     ipfs.once('ready', () => ipfs.id((err, info) => {
@@ -33,7 +59,7 @@ class Room {
   _init({ peer, ipfsConnection }) {
     storage.me.peer = peer
 
-    this.connection = global.IpfsRoom(ipfsConnection, 'jswaps', {
+    this.connection = this.roomLib(ipfsConnection, 'jswaps', {
       pollInterval: 5000,
     })
 

@@ -5,9 +5,9 @@ import orderCollection from './orderCollection'
 import Swap from './Swap'
 
 
-class OrderApp {
+class SwapApp {
 
-  constructor({ me, ipfsConfig }) {
+  constructor({ me, config }) {
     this.orderCollection = orderCollection
     this.storage = storage
     this.storage.me = me
@@ -16,7 +16,7 @@ class OrderApp {
       events.dispatch('ready')
     })
 
-    room.init(ipfsConfig)
+    room.init(config.ipfs)
   }
 
   getOrders() {
@@ -64,4 +64,4 @@ class OrderApp {
 }
 
 
-export default OrderApp
+export default SwapApp
