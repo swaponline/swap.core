@@ -1,5 +1,5 @@
 import React, { Component, Fragment } from 'react'
-import { web3, bitcoinJsLib, btcAccount, ethAccount } from '../../swap'
+import { btcAccount, ethAccount } from '../../swap'
 import { bitcoinInstance, ethereumInstance } from '../../instances'
 import { EthSwap, BtcSwap } from '../../swap/swaps'
 import { ETH2BTC } from '../../swap/flows'
@@ -17,12 +17,10 @@ export default class EthToBtc extends Component {
     const { swap } = this.props
 
     const ethSwap = new EthSwap({
-      lib: web3,
       gasLimit: 3e6,
     })
 
     const btcSwap = new BtcSwap({
-      lib: bitcoinJsLib,
       account: btcAccount,
       fetchUnspents: (scriptAddress) => bitcoinInstance.fetchUnspents(scriptAddress),
       broadcastTx: (txRaw) => bitcoinInstance.broadcastTx(txRaw),

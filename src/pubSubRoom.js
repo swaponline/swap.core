@@ -1,46 +1,24 @@
 import Events from './Events'
 import { storage } from './Storage'
+import { env } from './util'
 
 
 class Room {
 
   constructor() {
     this.events   = new Events()
-    this.lib      = null
-    this.roomLib  = null
   }
 
   /**
    *
    * @param {object} config
-   * @param {function} config.lib
-   * @param {array} config.swarm
    */
   init(config) {
     if (!config || typeof config !== 'object') {
       throw new Error('Room failed. "config" of type object required.')
     }
 
-    const { lib, roomLib, swarm } = config
-
-    if (!lib || typeof lib !== 'function') {
-      throw new Error('Room failed. "lib" of type object required.')
-    }
-    if (!swarm || !Array.isArray(swarm)) {
-      throw new Error('Room failed. "swarm" of type array required.')
-    }
-
-    this.lib = lib
-    this.roomLib = roomLib
-
-    const ipfs = new this.lib({
-      EXPERIMENTAL: {
-        pubsub: true,
-      },
-      Addresses: {
-        Swarm: swarm,
-      },
-    })
+    const ipfs = new env.Ipfs(config)
 
     ipfs.once('ready', () => ipfs.id((err, info) => {
       console.info('IPFS ready!')
@@ -59,7 +37,7 @@ class Room {
   _init({ peer, ipfsConnection }) {
     storage.me.peer = peer
 
-    this.connection = this.roomLib(ipfsConnection, 'jswaps', {
+    this.connection = env.IpfsRoom(ipfsConnection, 'jswaps', {
       pollInterval: 5000,
     })
 

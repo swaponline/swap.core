@@ -1,8 +1,8 @@
 import SwapApp from './SwapApp'
-import Swap from './Swap'
+import { setupEnv } from './util'
 
 
 export {
+  setupEnv,
   SwapApp,
-  Swap,
 }

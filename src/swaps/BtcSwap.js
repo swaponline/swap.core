@@ -1,10 +1,13 @@
+import { env } from '../util'
+
+
 const utcNow = () => Math.floor(Date.now() / 1000)
 const getLockTime = () => utcNow() + 3600 * 3 // 3 days from now
 
+
 class BtcSwap {
 
-  constructor({ lib, account, fetchUnspents, broadcastTx }) {
-    this.bitcoinJsLib   = lib
+  constructor({ account, fetchUnspents, broadcastTx }) {
     this.account        = account
     this.address        = account.getAddress()
     this.fetchUnspents  = fetchUnspents
@@ -16,39 +19,39 @@ class BtcSwap {
 
     console.log('\n\nCreate BTC Swap Script', { secretHash, btcOwnerPublicKey, ethOwnerPublicKey, lockTime })
 
-    // const script = this.bitcoinJsLib.script.compile([
-    //   this.bitcoinJsLib.opcodes.OP_RIPEMD160,
+    // const script = env.bitcoinJs.script.compile([
+    //   env.bitcoinJs.opcodes.OP_RIPEMD160,
     //   Buffer.from(secretHash, 'hex'),
-    //   this.bitcoinJsLib.opcodes.OP_EQUALVERIFY,
+    //   env.bitcoinJs.opcodes.OP_EQUALVERIFY,
     //   Buffer.from(ethOwnerPublicKey, 'hex'),
-    //   this.bitcoinJsLib.opcodes.OP_CHECKSIG,
+    //   env.bitcoinJs.opcodes.OP_CHECKSIG,
     // ])
 
-    const script = this.bitcoinJsLib.script.compile([
-      this.bitcoinJsLib.opcodes.OP_RIPEMD160,
+    const script = env.bitcoinJs.script.compile([
+      env.bitcoinJs.opcodes.OP_RIPEMD160,
       Buffer.from(secretHash, 'hex'),
-      this.bitcoinJsLib.opcodes.OP_EQUALVERIFY,
+      env.bitcoinJs.opcodes.OP_EQUALVERIFY,
 
       Buffer.from(ethOwnerPublicKey, 'hex'),
-      this.bitcoinJsLib.opcodes.OP_EQUAL,
-      this.bitcoinJsLib.opcodes.OP_IF,
+      env.bitcoinJs.opcodes.OP_EQUAL,
+      env.bitcoinJs.opcodes.OP_IF,
 
       Buffer.from(ethOwnerPublicKey, 'hex'),
-      this.bitcoinJsLib.opcodes.OP_CHECKSIG,
+      env.bitcoinJs.opcodes.OP_CHECKSIG,
 
-      this.bitcoinJsLib.opcodes.OP_ELSE,
+      env.bitcoinJs.opcodes.OP_ELSE,
 
-      this.bitcoinJsLib.script.number.encode(lockTime),
-      this.bitcoinJsLib.opcodes.OP_CHECKLOCKTIMEVERIFY,
-      this.bitcoinJsLib.opcodes.OP_DROP,
+      env.bitcoinJs.script.number.encode(lockTime),
+      env.bitcoinJs.opcodes.OP_CHECKLOCKTIMEVERIFY,
+      env.bitcoinJs.opcodes.OP_DROP,
       Buffer.from(btcOwnerPublicKey, 'hex'),
-      this.bitcoinJsLib.opcodes.OP_CHECKSIG,
+      env.bitcoinJs.opcodes.OP_CHECKSIG,
 
-      this.bitcoinJsLib.opcodes.OP_ENDIF,
+      env.bitcoinJs.opcodes.OP_ENDIF,
     ])
 
-    const scriptPubKey  = this.bitcoinJsLib.script.scriptHash.output.encode(this.bitcoinJsLib.crypto.hash160(script))
-    const scriptAddress = this.bitcoinJsLib.address.fromOutputScript(scriptPubKey, this.bitcoinJsLib.networks.testnet)
+    const scriptPubKey  = env.bitcoinJs.script.scriptHash.output.encode(env.bitcoinJs.crypto.hash160(script))
+    const scriptAddress = env.bitcoinJs.address.fromOutputScript(scriptPubKey, env.bitcoinJs.networks.testnet)
 
     return {
       address: scriptAddress,
@@ -64,10 +67,10 @@ class BtcSwap {
     return new Promise(async (resolve, reject) => {
       // const script        = hexStringToByte(scriptHash)
       try {
-        const scriptPubKey  = this.bitcoinJsLib.script.scriptHash.output.encode(this.bitcoinJsLib.crypto.hash160(script))
-        const scriptAddress = this.bitcoinJsLib.address.fromOutputScript(scriptPubKey, this.bitcoinJsLib.networks.testnet)
+        const scriptPubKey  = env.bitcoinJs.script.scriptHash.output.encode(env.bitcoinJs.crypto.hash160(script))
+        const scriptAddress = env.bitcoinJs.address.fromOutputScript(scriptPubKey, env.bitcoinJs.networks.testnet)
 
-        const tx            = new this.bitcoinJsLib.TransactionBuilder(this.bitcoinJsLib.networks.testnet)
+        const tx            = new env.bitcoinJs.TransactionBuilder(env.bitcoinJs.networks.testnet)
         const unspents      = await this.fetchUnspents(this.address)
 
         const fundValue     = Math.floor(Number(amount) * 1e8)
@@ -128,11 +131,11 @@ class BtcSwap {
 
     return new Promise(async (resolve, reject) => {
       try {
-        const scriptPubKey  = this.bitcoinJsLib.script.scriptHash.output.encode(this.bitcoinJsLib.crypto.hash160(script))
-        const scriptAddress = this.bitcoinJsLib.address.fromOutputScript(scriptPubKey, this.bitcoinJsLib.networks.testnet)
+        const scriptPubKey  = env.bitcoinJs.script.scriptHash.output.encode(env.bitcoinJs.crypto.hash160(script))
+        const scriptAddress = env.bitcoinJs.address.fromOutputScript(scriptPubKey, env.bitcoinJs.networks.testnet)
 
-        const hashType      = this.bitcoinJsLib.Transaction.SIGHASH_ALL
-        const tx            = new this.bitcoinJsLib.TransactionBuilder(this.bitcoinJsLib.networks.testnet)
+        const hashType      = env.bitcoinJs.Transaction.SIGHASH_ALL
+        const tx            = new env.bitcoinJs.TransactionBuilder(env.bitcoinJs.networks.testnet)
 
         const unspents      = await this.fetchUnspents(scriptAddress)
 
@@ -156,7 +159,7 @@ class BtcSwap {
         const signatureHash       = txRaw.hashForSignature(0, script, hashType)
         const signature           = this.account.sign(signatureHash).toScriptSignature(hashType)
 
-        const scriptSig = this.bitcoinJsLib.script.scriptHash.input.encode(
+        const scriptSig = env.bitcoinJs.script.scriptHash.input.encode(
           [
             signature,
             this.account.getPublicKeyBuffer(),
@@ -188,11 +191,11 @@ class BtcSwap {
 
     return new Promise(async (resolve, reject) => {
       try {
-        const scriptPubKey  = this.bitcoinJsLib.script.scriptHash.output.encode(this.bitcoinJsLib.crypto.hash160(script))
-        const scriptAddress = this.bitcoinJsLib.address.fromOutputScript(scriptPubKey, this.bitcoinJsLib.networks.testnet)
+        const scriptPubKey  = env.bitcoinJs.script.scriptHash.output.encode(env.bitcoinJs.crypto.hash160(script))
+        const scriptAddress = env.bitcoinJs.address.fromOutputScript(scriptPubKey, env.bitcoinJs.networks.testnet)
 
-        const hashType      = this.bitcoinJsLib.Transaction.SIGHASH_ALL
-        const tx            = new this.bitcoinJsLib.TransactionBuilder(this.bitcoinJsLib.networks.testnet)
+        const hashType      = env.bitcoinJs.Transaction.SIGHASH_ALL
+        const tx            = new env.bitcoinJs.TransactionBuilder(env.bitcoinJs.networks.testnet)
 
         const unspents      = await this.fetchUnspents(scriptAddress)
 
@@ -209,7 +212,7 @@ class BtcSwap {
         const signatureHash       = txRaw.hashForSignature(0, script, hashType)
         const signature           = this.account.sign(signatureHash).toScriptSignature(hashType)
 
-        const scriptSig = this.bitcoinJsLib.script.scriptHash.input.encode(
+        const scriptSig = env.bitcoinJs.script.scriptHash.input.encode(
           [
             signature,
             this.account.getPublicKeyBuffer(),

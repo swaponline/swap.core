@@ -1,5 +1,5 @@
 import bitcoinJsLib from 'bitcoinjs-lib'
-import { SwapApp } from './swap/index'
+import { SwapApp, setupEnv } from './swap/index'
 import { web3 } from './instances/ethereum'
 import { ethereumInstance, bitcoinInstance } from './instances'
 
@@ -30,6 +30,13 @@ global.clear = localStorage.clear = () => {
 }
 
 
+setupEnv({
+  web3,
+  bitcoinJs: bitcoinJsLib,
+  Ipfs: global.Ipfs,
+  IpfsRoom: global.IpfsRoom,
+})
+
 const app = window.app = new SwapApp({
   me: {
     reputation: 10,
@@ -44,12 +51,15 @@ const app = window.app = new SwapApp({
   },
   config: {
     ipfs: {
-      lib: global.Ipfs,
-      roomLib: global.IpfsRoom,
-      swarm: [
-        // '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
-        '/dns4/star.wpmix.net/tcp/443/wss/p2p-websocket-star',
-      ],
+      EXPERIMENTAL: {
+        pubsub: true,
+      },
+      Addresses: {
+        Swarm: [
+          // '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
+          '/dns4/star.wpmix.net/tcp/443/wss/p2p-websocket-star',
+        ],
+      },
     },
   },
 })
