@@ -3,6 +3,7 @@ const env = {
   bitcoinJs: null,
   Ipfs: null,
   IpfsRoom: null,
+  localStorage: global.localStorage,
 }
 
 const setupEnv = (values) => {
