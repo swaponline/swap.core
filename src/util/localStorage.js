@@ -1,8 +1,8 @@
 let isLocalStorageEnabled
 
 try {
-  window.localStorage.setItem('test', 'test')
-  window.localStorage.removeItem('test')
+  global.localStorage.setItem('test', 'test')
+  global.localStorage.removeItem('test')
   isLocalStorageEnabled = true
 }
 catch (e) {
@@ -12,13 +12,13 @@ catch (e) {
 
 const setItem = (key, value) => {
   if (isLocalStorageEnabled) {
-    window.localStorage.setItem(key, JSON.stringify(value))
+    global.localStorage.setItem(key, JSON.stringify(value))
   }
 }
 
 const getItem = (key) => {
   if (isLocalStorageEnabled) {
-    const value = window.localStorage.getItem(key)
+    const value = global.localStorage.getItem(key)
 
     try {
       return JSON.parse(value)
@@ -32,13 +32,13 @@ const getItem = (key) => {
 
 const removeItem = (key) => {
   if (isLocalStorageEnabled) {
-    return window.localStorage.removeItem(key)
+    return global.localStorage.removeItem(key)
   }
 }
 
 const clear = () => {
   if (isLocalStorageEnabled) {
-    window.localStorage.clear()
+    global.localStorage.clear()
   }
 }
 
