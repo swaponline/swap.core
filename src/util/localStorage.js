@@ -1,26 +1,34 @@
 import { env } from './env'
 
 
-let isLocalStorageEnabled
+let _isLocalStorageEnabled = null
 
-try {
-  env.localStorage.setItem('test', 'test')
-  env.localStorage.removeItem('test')
-  isLocalStorageEnabled = true
-}
-catch (e) {
-  isLocalStorageEnabled = false
+const isLocalStorageEnabled = () => {
+  if (_isLocalStorageEnabled !== null) {
+    return _isLocalStorageEnabled
+  }
+
+  try {
+    env.localStorage.setItem('test', 'test')
+    env.localStorage.removeItem('test')
+    _isLocalStorageEnabled = true
+  }
+  catch (e) {
+    _isLocalStorageEnabled = false
+  }
+
+  return _isLocalStorageEnabled
 }
 
 
 const setItem = (key, value) => {
-  if (isLocalStorageEnabled) {
+  if (isLocalStorageEnabled()) {
     env.localStorage.setItem(key, JSON.stringify(value))
   }
 }
 
 const getItem = (key) => {
-  if (isLocalStorageEnabled) {
+  if (isLocalStorageEnabled()) {
     const value = env.localStorage.getItem(key)
 
     try {
@@ -34,16 +42,17 @@ const getItem = (key) => {
 }
 
 const removeItem = (key) => {
-  if (isLocalStorageEnabled) {
+  if (isLocalStorageEnabled()) {
     return env.localStorage.removeItem(key)
   }
 }
 
 const clear = () => {
-  if (isLocalStorageEnabled) {
+  if (isLocalStorageEnabled()) {
     env.localStorage.clear()
   }
 }
+
 
 export default {
   setItem,
