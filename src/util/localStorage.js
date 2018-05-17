@@ -4,17 +4,15 @@ import { env } from './env'
 let _isLocalStorageEnabled = null
 
 const isLocalStorageEnabled = () => {
-  if (_isLocalStorageEnabled !== null) {
-    return _isLocalStorageEnabled
-  }
-
-  try {
-    env.localStorage.setItem('test', 'test')
-    env.localStorage.removeItem('test')
-    _isLocalStorageEnabled = true
-  }
-  catch (e) {
-    _isLocalStorageEnabled = false
+  if (_isLocalStorageEnabled === null) {
+    try {
+      env.localStorage.setItem('test', 'test')
+      env.localStorage.removeItem('test')
+      _isLocalStorageEnabled = true
+    }
+    catch (e) {
+      _isLocalStorageEnabled = false
+    }
   }
 
   return _isLocalStorageEnabled
