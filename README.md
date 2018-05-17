@@ -1,10 +1,10 @@
-# swap-core
+# order-core
 Swap Core
 
 
 ## Run App example
 
-Run watcher to copy files from `./src` to `./app/src/swap`
+Run watcher to copy files from `./src` to `./app/src/order`
 ```
 npm run watch
 ```
@@ -20,7 +20,7 @@ npm start
 
 ### App
 
-First of all you need to create swapApp. **The specified structure and fields data is required!**
+First of all you need to create orderApp. **The specified structure and fields data is required!**
 
 ```
 const app = new SwapApp({
@@ -58,25 +58,25 @@ const data = {
   sellAmount: 0.1,
 }
 
-// creates new swap
-app.createSwap(data)
+// creates new order
+app.createOrder(data)
 ```
 
 ```
-// returns all swaps
-app.getSwaps()
+// returns all orders
+app.getOrders()
 ```
 
 ```
-// returns only swaps created by current user
-app.getMySwaps()
+// returns only orders created by current user
+app.getMyOrders()
 ```
 
 ```
-// send request to swap owner to start swap process
-swap.sendRequest((isAccepted) => {
+// send request to order owner to start order process
+order.sendRequest((isAccepted) => {
   // callback to be invoked when owner will resolve your request
-  console.log(`user ${swap.owner.peer} ${isAccepted ? 'accepted' : 'declined'} your request`)
+  console.log(`user ${order.owner.peer} ${isAccepted ? 'accepted' : 'declined'} your request`)
 })
 ```
 
@@ -84,7 +84,7 @@ swap.sendRequest((isAccepted) => {
 
 ```
 app.on('ready', () => {
-  console.log('swapApp ready')
+  console.log('orderApp ready')
 })
 
 app.on('user online', (peer) => {
@@ -95,13 +95,13 @@ app.on('user offline', (peer) => {
   console.log('user offline', peer)
 })
 
-app.on('new swap', (swap) => {
-  console.log('new swap', swap)
+app.on('new order', (order) => {
+  console.log('new order', order)
 })
 
-app.on('new swap request', ({ swapId, participant }) => {
-  console.error(`user ${participant.peer} requesting swap`, {
-    swap: app.swapCollection.getByKey(swapId),
+app.on('new order request', ({ orderId, participant }) => {
+  console.error(`user ${participant.peer} requesting order`, {
+    order: app.orderCollection.getByKey(orderId),
     participant,
   })
 })
@@ -110,7 +110,7 @@ app.on('new swap request', ({ swapId, participant }) => {
 
 ### Swap
 
-Each instance of Swap class represents swap object with own fields and functionality:
+Each instance of Swap class represents order object with own fields and functionality:
 
 #### Data structure
 
@@ -139,27 +139,18 @@ Each instance of Swap class represents swap object with own fields and functiona
 #### Methods
 
 ```
-// updates swap data
-swap.update({
-  participant: {
-    peer: '0x0',
-  },
-})
-```
-
-```
-// send request to this swap owner
-swap.sendRequest()
+// send request to this order owner
+order.sendRequest()
 ```
 
 ```
 // owner accept participant request
-swap.acceptRequest()
+order.acceptRequest()
 ```
 
 ```
 // owner decline participant request
-swap.declineRequest()
+order.declineRequest()
 ```
 
 

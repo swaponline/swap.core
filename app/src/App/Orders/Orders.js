@@ -16,7 +16,7 @@ export default class Orders extends Component {
     app.on('new orders', this.updateOrders)
     app.on('new order', this.updateOrders)
     app.on('remove order', this.updateOrders)
-    app.on('swap update', this.updateOrders)
+    app.on('order update', this.updateOrders)
     app.on('new order request', this.handleRequest)
   }
 
@@ -24,7 +24,7 @@ export default class Orders extends Component {
     app.off('new orders', this.updateOrders)
     app.off('new order', this.updateOrders)
     app.off('remove order', this.updateOrders)
-    app.off('swap update', this.updateOrders)
+    app.off('order update', this.updateOrders)
     app.off('new order request', this.handleRequest)
   }
 
@@ -34,7 +34,7 @@ export default class Orders extends Component {
     })
   }
 
-  handleRequest = ({ swapId, participant }) => {
+  handleRequest = ({ orderId, participant }) => {
     this.updateOrders()
   }
 
@@ -50,34 +50,34 @@ export default class Orders extends Component {
     this.updateOrders()
   }
 
-  removeOrder = (swapId) => {
-    app.removeOrder(swapId)
+  removeOrder = (orderId) => {
+    app.removeOrder(orderId)
     this.updateOrders()
   }
 
-  sendRequest = (swapId) => {
-    const swap = app.orderCollection.getByKey(swapId)
+  sendRequest = (orderId) => {
+    const order = app.orderCollection.getByKey(orderId)
 
-    swap.sendRequest((isAccepted) => {
-      console.log(`user ${swap.owner.peer} ${isAccepted ? 'accepted' : 'declined'} your request`)
+    order.sendRequest((isAccepted) => {
+      console.log(`user ${order.owner.peer} ${isAccepted ? 'accepted' : 'declined'} your request`)
 
-      this.handleOrderSelect(swapId)
+      this.handleOrderSelect(orderId)
     })
     this.updateOrders()
   }
 
-  acceptRequest = (swapId, participantPeer) => {
-    const order = app.orderCollection.getByKey(swapId)
+  acceptRequest = (orderId, participantPeer) => {
+    const order = app.orderCollection.getByKey(orderId)
 
     order.acceptRequest(participantPeer)
-    this.handleOrderSelect(swapId)
+    this.handleOrderSelect(orderId)
     this.updateOrders()
   }
 
-  declineRequest = (swapId, participantPeer) => {
-    const swap = app.orderCollection.getByKey(swapId)
+  declineRequest = (orderId, participantPeer) => {
+    const order = app.orderCollection.getByKey(orderId)
 
-    swap.declineRequest(participantPeer)
+    order.declineRequest(participantPeer)
     this.updateOrders()
   }
 
