@@ -21,7 +21,7 @@ class Room {
     const ipfs = new env.Ipfs(config)
 
     ipfs.once('ready', () => ipfs.id((err, info) => {
-      console.info('IPFS ready!')
+      console.info('IPFS ready!', info)
 
       if (err) {
         throw err
