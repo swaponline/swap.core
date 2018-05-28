@@ -5,8 +5,8 @@ import { ethereumInstance, bitcoinInstance } from './instances'
 
 
 // // Chrome
-// localStorage.setItem('ethPrivateKey', '0xa6316e9e231fa70f2f41ce755f3846b74af10e8c5def8d333ec89af3b9b4193b')
-// localStorage.setItem('btcPrivateKey', 'cUSH65TpCkU5rsMem8WND5itr3SVF192EAKA8E5ipqs15fTJiRbc')
+localStorage.setItem('ethPrivateKey', '0xa6316e9e231fa70f2f41ce755f3846b74af10e8c5def8d333ec89af3b9b4193b')
+localStorage.setItem('btcPrivateKey', 'cUSH65TpCkU5rsMem8WND5itr3SVF192EAKA8E5ipqs15fTJiRbc')
 
 // // Yandex
 // localStorage.setItem('ethPrivateKey', '0xe32a5cb068a13836b6bc80f54585bbfcc2d5d9089f0c5381b27d039b6d2404ec')
@@ -41,8 +41,8 @@ const app = window.app = new SwapApp({
   me: {
     reputation: 10,
     eth: {
-      address: ethAccount.address,
-      publicKey: ethAccount.publicKey,
+        address: ethAccount.address,
+        publicKey: ethAccount.publicKey
     },
     btc: {
       address: btcAccount.getAddress(),
