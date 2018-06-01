@@ -1,5 +1,5 @@
 import React, { Fragment, Component } from 'react'
-import { app } from '../../swap'
+import app from '../../swapApp'
 
 
 export default class Orders extends Component {
@@ -8,29 +8,29 @@ export default class Orders extends Component {
     super()
 
     this.state = {
-      orders: app.orderCollection.items,
+      orders: app.orders.items,
     }
   }
 
   componentWillMount() {
-    app.on('new orders', this.updateOrders)
-    app.on('new order', this.updateOrders)
-    app.on('remove order', this.updateOrders)
-    app.on('order update', this.updateOrders)
-    app.on('new order request', this.handleRequest)
+    app.orders.on('new orders', this.updateOrders)
+    app.orders.on('new order', this.updateOrders)
+    app.orders.on('remove order', this.updateOrders)
+    app.orders.on('order update', this.updateOrders)
+    app.orders.on('new order request', this.handleRequest)
   }
 
   componentWillUnmount() {
-    app.off('new orders', this.updateOrders)
-    app.off('new order', this.updateOrders)
-    app.off('remove order', this.updateOrders)
-    app.off('order update', this.updateOrders)
-    app.off('new order request', this.handleRequest)
+    app.orders.off('new orders', this.updateOrders)
+    app.orders.off('new order', this.updateOrders)
+    app.orders.off('remove order', this.updateOrders)
+    app.orders.off('order update', this.updateOrders)
+    app.orders.off('new order request', this.handleRequest)
   }
 
   updateOrders = () => {
     this.setState({
-      orders: app.orderCollection.items,
+      orders: app.orders.items,
     })
   }
 
@@ -46,17 +46,17 @@ export default class Orders extends Component {
       sellAmount: 0.001,
     }
 
-    app.createOrder(data)
+    app.orders.create(data)
     this.updateOrders()
   }
 
   removeOrder = (orderId) => {
-    app.removeOrder(orderId)
+    app.orders.remove(orderId)
     this.updateOrders()
   }
 
   sendRequest = (orderId) => {
-    const order = app.orderCollection.getByKey(orderId)
+    const order = app.orders.getByKey(orderId)
 
     order.sendRequest((isAccepted) => {
       console.log(`user ${order.owner.peer} ${isAccepted ? 'accepted' : 'declined'} your request`)
@@ -67,7 +67,7 @@ export default class Orders extends Component {
   }
 
   acceptRequest = (orderId, participantPeer) => {
-    const order = app.orderCollection.getByKey(orderId)
+    const order = app.orders.getByKey(orderId)
 
     order.acceptRequest(participantPeer)
     this.handleOrderSelect(orderId)
@@ -75,7 +75,7 @@ export default class Orders extends Component {
   }
 
   declineRequest = (orderId, participantPeer) => {
-    const order = app.orderCollection.getByKey(orderId)
+    const order = app.orders.getByKey(orderId)
 
     order.declineRequest(participantPeer)
     this.updateOrders()
@@ -90,6 +90,8 @@ export default class Orders extends Component {
   render() {
     const { orders } = this.state
     const { myPeer, activeOrderId } = this.props
+
+    console.log('orders', orders)
 
     return (
       <div>
