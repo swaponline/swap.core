@@ -111,9 +111,10 @@ class BTC2ETH extends Flow {
       // 5. Wait participant creates ETH Contract
 
       () => {
-        this.swap.room.once('create eth contract', () => {
+        this.swap.room.once('create eth contract', ({ ethSwapCreationTransactionUrl }) => {
           flow.finishStep({
             isEthContractFunded: true,
+            ethSwapCreationTransactionUrl,
           })
         })
       },
