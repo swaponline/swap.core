@@ -61,19 +61,27 @@ class OrderCollection extends Collection {
 
     room.subscribe('new orders', ({ fromPeer, orders }) => {
       // ductape to check if such orders already exist
-      const filteredOrders = orders.filter(({ id }) => !this.getByKey(id))
+      const filteredOrders = orders.filter(({ id, owner: { peer } }) => (
+        !this.getByKey(id) && peer === fromPeer
+      ))
 
       console.log(`Receive orders from ${fromPeer}`, filteredOrders)
 
       this._handleMultipleCreate(filteredOrders)
     })
 
-    room.subscribe('new order', ({ order: data }) => {
-      this._handleCreate(data)
+    room.subscribe('new order', ({ fromPeer, order }) => {
+      if (order && order.owner && order.owner.peer === fromPeer) {
+        this._handleCreate(data)
+      }
     })
 
-    room.subscribe('remove order', ({ orderId }) => {
-      this._handleRemove(orderId)
+    room.subscribe('remove order', ({ fromPeer, orderId }) => {
+      const order = this.getByKey(orderId)
+
+      if (order && order.owner && order.owner.peer === fromPeer) {
+        this._handleRemove(orderId)
+      }
     })
   }
 
