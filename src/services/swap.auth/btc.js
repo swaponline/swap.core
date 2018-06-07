@@ -1,4 +1,4 @@
-import SwapCore from '../swap.core'
+import SwapApp from '../../swap.app'
 
 
 class BtcAuth {
@@ -9,10 +9,10 @@ class BtcAuth {
 
   login(privateKey) {
     if (!privateKey) {
-      privateKey = SwapCore.env.bitcoin.ECPair.makeRandom({ network: SwapCore.env.bitcoin.networks.testnet }).toWIF()
+      privateKey = SwapApp.env.bitcoin.ECPair.makeRandom({ network: SwapApp.env.bitcoin.networks.testnet }).toWIF()
     }
 
-    this.account = new SwapCore.env.bitcoin.ECPair.fromWIF(privateKey, SwapCore.env.bitcoin.networks.testnet)
+    this.account = new SwapApp.env.bitcoin.ECPair.fromWIF(privateKey, SwapApp.env.bitcoin.networks.testnet)
 
     this.account.__proto__.getPublicKey = () => this.account.getPublicKeyBuffer().toString('hex')
     this.account.__proto__.getPrivateKey = () => privateKey

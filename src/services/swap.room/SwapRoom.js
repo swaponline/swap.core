@@ -1,30 +1,30 @@
-import SwapCore, { Events } from '../swap.core'
+import SwapApp, { Events, ServiceInterface } from '../../swap.app'
 
 
-class SwapRoomService {
+class SwapRoom extends ServiceInterface {
 
   constructor(config) {
+    super()
+
     if (!config || typeof config !== 'object') {
       throw new Error('SwapRoomService: "config" of type object required')
     }
 
-    this._name   = 'room'
+    this._serviceName   = 'room'
     this.events         = new Events()
     this.config         = config
     this.peer           = null
-
-    this._onMount()
   }
 
-  _onMount() {
-    if (!SwapCore.env.Ipfs) {
+  _initService() {
+    if (!SwapApp.env.Ipfs) {
       throw new Error('SwapRoomService: Ipfs required')
     }
-    if (!SwapCore.env.IpfsRoom) {
+    if (!SwapApp.env.IpfsRoom) {
       throw new Error('SwapRoomService: IpfsRoom required')
     }
 
-    const ipfs = new SwapCore.env.Ipfs(this.config)
+    const ipfs = new SwapApp.env.Ipfs(this.config)
 
     ipfs.once('error', (err) => {
       console.log('IPFS error!', err)
@@ -47,7 +47,7 @@ class SwapRoomService {
   _init({ peer, ipfsConnection }) {
     this.peer = peer
 
-    this.connection = SwapCore.env.IpfsRoom(ipfsConnection, '../swap.online', {
+    this.connection = SwapApp.env.IpfsRoom(ipfsConnection, '../swap.online', {
       pollInterval: 5000,
     })
 
@@ -107,4 +107,4 @@ class SwapRoomService {
 }
 
 
-export default SwapRoomService
+export default SwapRoom

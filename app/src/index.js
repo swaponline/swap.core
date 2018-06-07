@@ -1,12 +1,12 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-
+import SwapApp from './swap/swap.app'
 import App from './App/App'
-import swapApp from './swapApp'
+import './swapApp'
 
 
 ReactDOM.render(<div>loading...</div>, document.getElementById('root'))
 
-swapApp.room.once('ready', () => {
+SwapApp.services.room.once('ready', () => {
   ReactDOM.render(<App />, document.getElementById('root'))
 })

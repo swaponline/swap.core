@@ -1,5 +1,11 @@
 class Collection {
 
+  // _constructor for aggregation
+  _constructor() {
+    this.items = []
+    this.itemIds = {}
+  }
+
   constructor() {
     this.items = []
     this.itemIds = {}

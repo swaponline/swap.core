@@ -1,20 +1,22 @@
-import setupServices from './setupServices'
-import setupSwaps from './setupSwaps'
+import SwapApp from './SwapApp'
+import ServiceInterface from './ServiceInterface'
+import SwapInterface from './SwapInterface'
+import Collection from './Collection'
+import Events from './Events'
 
+import constants from './constants'
+import util from './util'
 
-class SwapApp {
-
-  /**
-   *
-   * @param options
-   * @param options.services
-   * @param options.swaps
-   */
-  constructor(options) {
-    setupServices(this, options.services)
-    this.swaps = setupSwaps(options.swaps)
-  }
-}
 
 
 export default SwapApp
+
+export {
+  ServiceInterface,
+  SwapInterface,
+  Collection,
+  Events,
+
+  constants,
+  util,
+}

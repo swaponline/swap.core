@@ -5,6 +5,8 @@ import { EthSwap, BtcSwap } from '../../swap/swaps'
 import { BTC2ETH } from '../../swap/flows'
 import Loader from '../Loader/Loader'
 
+import app from '../../swapApp'
+
 
 export default class BtcToEth extends Component {
 
@@ -14,32 +16,7 @@ export default class BtcToEth extends Component {
   }
 
   componentWillMount() {
-    // TODO this might be from url query
-    const { swap } = this.props
-
-    const ethSwap = new EthSwap({
-      gasLimit: 3e6,
-    })
-
-    const btcSwap = new BtcSwap({
-      account: btcAccount,
-      fetchUnspents: (scriptAddress) => bitcoinInstance.fetchUnspents(scriptAddress),
-      broadcastTx: (txRaw) => bitcoinInstance.broadcastTx(txRaw),
-    })
-
-    const fetchBalance = () => bitcoinInstance.fetchBalance(btcAccount.getAddress())
-
-    const flow = swap.setFlow(BTC2ETH, {
-      ethSwap,
-      btcSwap,
-      fetchBalance,
-    })
-
-    this.state.flow = flow.state
-
-    swap.flow.on('state update', this.handleFlowStateUpdate)
-    swap.flow.on('leave step', this.handleLeaveStep)
-    swap.flow.on('enter step', this.handleEnterStep)
+    app.createSwap()
   }
 
   componentWillUnmount() {

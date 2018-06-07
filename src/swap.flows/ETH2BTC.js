@@ -1,4 +1,4 @@
-import SwapCore from '../swap.core'
+import SwapApp from '../swap.app'
 import { Flow } from '../swap.swap'
 
 
@@ -8,8 +8,8 @@ class ETH2BTC extends Flow {
     super()
 
     try {
-      this.ethSwap = SwapCore.swaps.ethSwap
-      this.btcSwap = SwapCore.swaps.btcSwap
+      this.ethSwap = SwapApp.swaps.ethSwap
+      this.btcSwap = SwapApp.swaps.btcSwap
     }
     catch (err) {
       throw new Error(`BTC2ETH: ${err}`)
@@ -67,7 +67,7 @@ class ETH2BTC extends Flow {
       // 2. Wait participant create, fund BTC Script
 
       () => {
-        this.swap.room.once('create btc script', ({ scriptValues }) => {
+        flow.swap.room.once('create btc script', ({ scriptValues }) => {
           flow.finishStep({
             secretHash: scriptValues.secretHash,
             btcScriptValues: scriptValues,
@@ -90,24 +90,26 @@ class ETH2BTC extends Flow {
       // 5. Create ETH Contract
 
       async () => {
-        const { participant, sellAmount } = this.swap
+        const { participant, sellAmount } = flow.swap
 
         const swapData = {
-          myAddress:            SwapCore.services.auth.eth.address,
+          myAddress:            SwapApp.services.auth.eth.address,
           participantAddress:   participant.eth.address,
           secretHash:           flow.state.secretHash,
           amount:               sellAmount,
         }
 
         await this.ethSwap.create(swapData, (transactionUrl) => {
-          this.setState({
+          flow.setState({
             ethSwapCreationTransactionUrl: transactionUrl,
           })
         })
 
-        this.swap.room.sendMessage('create eth contract')
+        flow.swap.room.sendMessage('create eth contract', {
+          ethSwapCreationTransactionUrl: flow.state.ethSwapCreationTransactionUrl,
+        })
 
-        this.finishStep({
+        flow.finishStep({
           isEthContractFunded: true,
         })
       },
@@ -115,7 +117,7 @@ class ETH2BTC extends Flow {
       // 6. Wait participant withdraw
 
       () => {
-        this.swap.room.once('finish eth withdraw', () => {
+        flow.swap.room.once('finish eth withdraw', () => {
           flow.finishStep({
             isEthWithdrawn: true,
           })
@@ -125,14 +127,14 @@ class ETH2BTC extends Flow {
       // 7. Withdraw
 
       async () => {
-        const { participant } = this.swap
+        const { participant } = flow.swap
 
         const myAndParticipantData = {
-          myAddress: SwapCore.services.auth.eth.address,
+          myAddress: SwapApp.services.auth.eth.address,
           participantAddress: participant.eth.address,
         }
 
-        const secret = await this.ethSwap.getSecret(myAndParticipantData)
+        const secret = await flow.ethSwap.getSecret(myAndParticipantData)
 
         await flow.ethSwap.close(myAndParticipantData)
 
@@ -172,7 +174,7 @@ class ETH2BTC extends Flow {
 
     await this.ethSwap.sign(
       {
-        myAddress: SwapCore.services.auth.eth.address,
+        myAddress: SwapApp.services.auth.eth.address,
         participantAddress: participant.eth.address,
       },
       (signTransactionUrl) => {
@@ -202,7 +204,7 @@ class ETH2BTC extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.ethSwap.fetchBalance(SwapCore.services.auth.eth.address)
+    const balance = await this.ethSwap.fetchBalance(SwapApp.services.auth.eth.address)
     const isEnoughMoney = sellAmount <= balance
 
     if (isEnoughMoney) {

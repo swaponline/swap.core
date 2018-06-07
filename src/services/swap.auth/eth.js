@@ -1,4 +1,4 @@
-import SwapCore from '../swap.core'
+import SwapApp from '../../swap.app'
 
 
 class EthAuth {
@@ -9,13 +9,13 @@ class EthAuth {
 
   login(privateKey) {
     if (privateKey) {
-      this.account = SwapCore.env.web3.eth.accounts.privateKeyToAccount(privateKey)
+      this.account = SwapApp.env.web3.eth.accounts.privateKeyToAccount(privateKey)
     }
     else {
-      this.account = SwapCore.env.web3.eth.accounts.create()
+      this.account = SwapApp.env.web3.eth.accounts.create()
     }
 
-    SwapCore.env.web3.eth.accounts.wallet.add(this.account.privateKey)
+    SwapApp.env.web3.eth.accounts.wallet.add(this.account.privateKey)
 
     return this.account
   }

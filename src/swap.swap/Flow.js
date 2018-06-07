@@ -1,4 +1,4 @@
-import SwapCore from '../swap.core'
+import SwapApp from '../swap.app'
 import Room from './Room'
 
 
@@ -19,7 +19,7 @@ class Flow {
   }
 
   _persistState() {
-    const state = SwapCore.env.storage.getItem(`flow.${this.swap.id}`)
+    const state = SwapApp.env.storage.getItem(`flow.${this.swap.id}`)
 
     if (state) {
       this.state = {
@@ -99,7 +99,7 @@ class Flow {
   }
 
   _saveState() {
-    SwapCore.env.storage.setItem(`flow.${this.swap.id}`, this.state)
+    SwapApp.env.storage.setItem(`flow.${this.swap.id}`, this.state)
   }
 
   finishStep(data) {

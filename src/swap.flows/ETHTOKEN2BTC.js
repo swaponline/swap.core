@@ -1,4 +1,4 @@
-import Flow from '../Flow'
+import { Flow } from '../swap.swap'
 import { storage } from '../Storage'
 
 

@@ -10,7 +10,7 @@ class StorageFactory {
       this.storage.removeItem('test')
     }
     catch (err) {
-      throw new Error(`SwapCore.env.StorageFactory: ${err}`)
+      throw new Error(`SwapApp.env.StorageFactory: ${err}`)
     }
   }
 

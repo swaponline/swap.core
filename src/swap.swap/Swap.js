@@ -1,5 +1,4 @@
-import SwapCore, { Events } from '../swap.core'
-import SwapOrders from '../swap.orders'
+import SwapApp, { Events, util } from '../swap.app'
 import Room from './Room'
 
 
@@ -26,14 +25,14 @@ class Swap {
   }
 
   _persistState() {
-    const order = SwapCore.env.storage.getItem(`swap.${this.id}`) || SwapOrders.getByKey(this.id)
+    const order = SwapApp.env.storage.getItem(`swap.${this.id}`) || SwapApp.services.orders.getByKey(this.id)
 
     // if no `order` that means that participant is offline
     // TODO it's better to create swapCollection and store all swaps data there
     // TODO bcs if user offline and I'd like to continue Flow steps I don't need to w8 him
     // TODO so no need to get data from SwapOrders
     if (order) {
-      const { isMy, buyAmount, sellAmount, ...rest } = SwapCore.util.pullProps(
+      const { isMy, buyAmount, sellAmount, ...rest } = util.pullProps(
         order,
         'isMy',
         'owner',
@@ -65,7 +64,7 @@ class Swap {
   }
 
   _saveState() {
-    const data = SwapCore.util.pullProps(
+    const data = util.pullProps(
       this,
       'id',
       'isMy',
@@ -79,7 +78,7 @@ class Swap {
 
     console.log('New Swap state:', data)
 
-    SwapCore.env.storage.setItem(`swap.${this.id}`, data)
+    SwapApp.env.storage.setItem(`swap.${this.id}`, data)
   }
 
   setFlow(Flow, options) {

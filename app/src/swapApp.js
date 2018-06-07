@@ -3,26 +3,53 @@ import bitcoin from 'bitcoinjs-lib'
 import { ethereumInstance, bitcoinInstance } from './instances'
 import { web3 } from './instances/ethereum'
 
-import SwapCore from './swap/swap.core'
-import SwapApp from './swap/swap.app'
-import SwapAuth from './swap/swap.auth'
-import SwapRoom from './swap/swap.room'
-import SwapOrders from './swap/swap.orders'
+import swapApp from './swap/swap.app'
+import SwapAuth from './swap/services/swap.auth'
+import SwapRoom from './swap/services/swap.room'
+import SwapOrders from './swap/services/swap.orders'
 import { EthSwap, BtcSwap } from './swap/swap.swaps'
 
 
-SwapCore.configure({
+// Private Keys ---------------------------------------------- /
+
+// Chrome
+// localStorage.setItem('ethPrivateKey', '0xa6316e9e231fa70f2f41ce755f3846b74af10e8c5def8d333ec89af3b9b4193b')
+// localStorage.setItem('btcPrivateKey', 'cUSH65TpCkU5rsMem8WND5itr3SVF192EAKA8E5ipqs15fTJiRbc')
+
+// Yandex
+// localStorage.setItem('ethPrivateKey', '0xe32a5cb068a13836b6bc80f54585bbfcc2d5d9089f0c5381b27d039b6d2404ec')
+// localStorage.setItem('btcPrivateKey', 'cRF7Az481ffsuhhZ28x32Xk4ZvPh98zhKv7hCi1pKjifqvv7AcuX')
+
+const localClear = localStorage.clear.bind(localStorage)
+
+window.clear = localStorage.clear = () => {
+  const ethPrivateKey = localStorage.getItem('ethPrivateKey')
+  const btcPrivateKey = localStorage.getItem('btcPrivateKey')
+
+  localClear()
+
+  localStorage.setItem('ethPrivateKey', ethPrivateKey)
+  localStorage.setItem('btcPrivateKey', btcPrivateKey)
+}
+
+
+
+// Swap ------------------------------------------------------ /
+
+swapApp.setup({
+  network: 'testnet',
   env: {
     web3,
     bitcoin,
-    Ipfs: global.Ipfs,
-    IpfsRoom: global.IpfsRoom,
-    storage: global.localStorage,
+    Ipfs: window.Ipfs,
+    IpfsRoom: window.IpfsRoom,
+    storage: window.localStorage,
   },
-})
-
-const app = new SwapApp({
   services: [
+    /*
+      service ordering is very important, for example SwapOrders depends on SwapRoom,
+      so the last one must be initialized first
+     */
     new SwapAuth({
       eth: localStorage.getItem('ethPrivateKey'),
       btc: localStorage.getItem('btcPrivateKey'),
@@ -55,8 +82,3 @@ const app = new SwapApp({
     }),
   ],
 })
-
-console.log('app', app)
-
-
-export default app

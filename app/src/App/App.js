@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import app from '../swapApp'
+import SwapApp from '../swap/swap.app'
 
 import Orders from './Orders/Orders'
 // import Swap from './Swap/Swap'
@@ -19,7 +19,7 @@ export default class App extends Component {
 
   render() {
     const { activeOrderId } = this.state
-    const myPeer = app.room.peer
+    const myPeer = SwapApp.services.room.peer
 
     return (
       <div className="content">

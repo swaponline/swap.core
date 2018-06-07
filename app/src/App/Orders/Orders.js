@@ -1,5 +1,5 @@
 import React, { Fragment, Component } from 'react'
-import app from '../../swapApp'
+import SwapApp from '../../swap/swap.app'
 
 
 export default class Orders extends Component {
@@ -8,29 +8,29 @@ export default class Orders extends Component {
     super()
 
     this.state = {
-      orders: app.orders.items,
+      orders: SwapApp.services.orders.items,
     }
   }
 
   componentWillMount() {
-    app.orders.on('new orders', this.updateOrders)
-    app.orders.on('new order', this.updateOrders)
-    app.orders.on('remove order', this.updateOrders)
-    app.orders.on('order update', this.updateOrders)
-    app.orders.on('new order request', this.handleRequest)
+    SwapApp.services.orders.on('new orders', this.updateOrders)
+    SwapApp.services.orders.on('new order', this.updateOrders)
+    SwapApp.services.orders.on('remove order', this.updateOrders)
+    SwapApp.services.orders.on('order update', this.updateOrders)
+    SwapApp.services.orders.on('new order request', this.handleRequest)
   }
 
   componentWillUnmount() {
-    app.orders.off('new orders', this.updateOrders)
-    app.orders.off('new order', this.updateOrders)
-    app.orders.off('remove order', this.updateOrders)
-    app.orders.off('order update', this.updateOrders)
-    app.orders.off('new order request', this.handleRequest)
+    SwapApp.services.orders.off('new orders', this.updateOrders)
+    SwapApp.services.orders.off('new order', this.updateOrders)
+    SwapApp.services.orders.off('remove order', this.updateOrders)
+    SwapApp.services.orders.off('order update', this.updateOrders)
+    SwapApp.services.orders.off('new order request', this.handleRequest)
   }
 
   updateOrders = () => {
     this.setState({
-      orders: app.orders.items,
+      orders: SwapApp.services.orders.items,
     })
   }
 
@@ -46,17 +46,17 @@ export default class Orders extends Component {
       sellAmount: 0.001,
     }
 
-    app.orders.create(data)
+    SwapApp.services.orders.create(data)
     this.updateOrders()
   }
 
   removeOrder = (orderId) => {
-    app.orders.remove(orderId)
+    SwapApp.services.orders.remove(orderId)
     this.updateOrders()
   }
 
   sendRequest = (orderId) => {
-    const order = app.orders.getByKey(orderId)
+    const order = SwapApp.services.orders.getByKey(orderId)
 
     order.sendRequest((isAccepted) => {
       console.log(`user ${order.owner.peer} ${isAccepted ? 'accepted' : 'declined'} your request`)
@@ -67,7 +67,7 @@ export default class Orders extends Component {
   }
 
   acceptRequest = (orderId, participantPeer) => {
-    const order = app.orders.getByKey(orderId)
+    const order = SwapApp.services.orders.getByKey(orderId)
 
     order.acceptRequest(participantPeer)
     this.handleOrderSelect(orderId)
@@ -75,7 +75,7 @@ export default class Orders extends Component {
   }
 
   declineRequest = (orderId, participantPeer) => {
-    const order = app.orders.getByKey(orderId)
+    const order = SwapApp.services.orders.getByKey(orderId)
 
     order.declineRequest(participantPeer)
     this.updateOrders()

@@ -1,4 +1,4 @@
-import SwapCore from '../swap.core'
+import SwapApp from '../../swap.app'
 import events from './events'
 
 
@@ -21,7 +21,6 @@ class Order {
    * @param {number}  data.sellAmount
    */
   constructor(parent, data) {
-    this.swapApp        = parent.swapApp
     this.id             = data.id
     this.isMy           = null
     this.owner          = null
@@ -38,14 +37,14 @@ class Order {
 
     this._update({
       ...data,
-      isMy: data.owner.peer === this.swapApp.room.peer,
+      isMy: data.owner.peer === SwapApp.services.room.peer,
     })
 
     this._onMount()
   }
 
   _onMount() {
-    this.swapApp.room.subscribe('request swap', ({ orderId, participant }) => {
+    SwapApp.services.room.subscribe('request swap', ({ orderId, participant }) => {
       if (orderId === this.id && !this.requests.find(({ peer }) => peer === participant.peer)) {
         this.requests.push(participant)
 
@@ -77,7 +76,7 @@ class Order {
   sendRequest(callback) {
     const self = this
 
-    if (this.swapApp.room.peer === this.owner.peer) {
+    if (SwapApp.services.room.peer === this.owner.peer) {
       console.warn('You are the owner of this Order. You can\'t send request to yourself.')
       return
     }
@@ -91,18 +90,18 @@ class Order {
       isRequested: true,
     })
 
-    this.swapApp.room.sendMessage(this.owner.peer, [
+    SwapApp.services.room.sendMessage(this.owner.peer, [
       {
         event: 'request swap',
         data: {
           orderId: this.id,
           // TODO why do we send this info?
-          participant: this.swapApp.auth.getPublicData(),
+          participant: SwapApp.services.auth.getPublicData(),
         },
       },
     ])
 
-    this.swapApp.room.subscribe('accept swap request', function ({ orderId }) {
+    SwapApp.services.room.subscribe('accept swap request', function ({ orderId }) {
       if (orderId === self.id) {
         this.unsubscribe()
 
@@ -115,7 +114,7 @@ class Order {
       }
     })
 
-    this.swapApp.room.subscribe('decline swap request', function ({ orderId }) {
+    SwapApp.services.room.subscribe('decline swap request', function ({ orderId }) {
       if (orderId === self.id) {
         this.unsubscribe()
 
@@ -139,7 +138,7 @@ class Order {
       requests: [],
     })
 
-    this.swapApp.room.sendMessage(participantPeer, [
+    SwapApp.services.room.sendMessage(participantPeer, [
       {
         event: 'accept swap request',
         data: {
@@ -169,7 +168,7 @@ class Order {
       requests,
     })
 
-    this.swapApp.room.sendMessage(participantPeer, [
+    SwapApp.services.room.sendMessage(participantPeer, [
       {
         event: 'decline swap request',
         data: {

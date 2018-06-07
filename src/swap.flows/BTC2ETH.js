@@ -1,5 +1,5 @@
 import crypto from 'bitcoinjs-lib/src/crypto'
-import SwapCore from '../swap.core'
+import SwapApp from '../swap.app'
 import { Flow } from '../swap.swap'
 
 
@@ -9,8 +9,8 @@ class BTC2ETH extends Flow {
     super()
 
     try {
-      this.ethSwap = SwapCore.swaps.ethSwap
-      this.btcSwap = SwapCore.swaps.btcSwap
+      this.ethSwap = SwapApp.swaps.ethSwap
+      this.btcSwap = SwapApp.swaps.btcSwap
     }
     catch (err) {
       throw new Error(`BTC2ETH: ${err}`)
@@ -62,7 +62,7 @@ class BTC2ETH extends Flow {
       // 1. Signs
 
       () => {
-        this.swap.room.once('swap sign', () => {
+        flow.swap.room.once('swap sign', () => {
           flow.finishStep({
             isParticipantSigned: true,
           })
@@ -84,17 +84,17 @@ class BTC2ETH extends Flow {
       // 4. Create BTC Script, fund, notify participant
 
       async () => {
-        const { sellAmount, participant } = this.swap
+        const { sellAmount, participant } = flow.swap
 
-        const { script: btcScript, ...scriptValues } = this.btcSwap.createScript({
+        const { script: btcScript, ...scriptValues } = flow.btcSwap.createScript({
           secretHash:         flow.state.secretHash,
-          btcOwnerPublicKey:  SwapCore.services.auth.btc.getPublicKey(),
+          btcOwnerPublicKey:  SwapApp.services.auth.btc.getPublicKey(),
           ethOwnerPublicKey:  participant.btc.publicKey,
         })
 
-        await this.btcSwap.fundScript({
-          myAddress:  SwapCore.services.auth.btc.address,
-          myKeyPair:  SwapCore.services.auth.btc,
+        await flow.btcSwap.fundScript({
+          myAddress:  SwapApp.services.auth.btc.address,
+          myKeyPair:  SwapApp.services.auth.btc,
           script:     btcScript,
           amount:     sellAmount,
         })
@@ -112,9 +112,10 @@ class BTC2ETH extends Flow {
       // 5. Wait participant creates ETH Contract
 
       () => {
-        this.swap.room.once('create eth contract', () => {
+        flow.swap.room.once('create eth contract', ({ ethSwapCreationTransactionUrl }) => {
           flow.finishStep({
             isEthContractFunded: true,
+            ethSwapCreationTransactionUrl,
           })
         })
       },
@@ -122,21 +123,21 @@ class BTC2ETH extends Flow {
       // 6. Withdraw
 
       async () => {
-        const { participant } = this.swap
+        const { participant } = flow.swap
       
         const data = {
-          myAddress:      SwapCore.services.auth.eth.address,
+          myAddress:      SwapApp.services.auth.eth.address,
           ownerAddress:   participant.eth.address,
           secret:         flow.state.secret,
         }
 
-        await this.ethSwap.withdraw(data, (transactionHash) => {
+        await flow.ethSwap.withdraw(data, (transactionHash) => {
           flow.setState({
             ethSwapWithdrawTransactionUrl: transactionHash,
           })
         })
 
-        this.swap.room.sendMessage('finish eth withdraw')
+        flow.swap.room.sendMessage('finish eth withdraw')
 
         flow.finishStep({
           isEthWithdrawn: true,
@@ -167,7 +168,7 @@ class BTC2ETH extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await await this.ethSwap.fetchBalance(SwapCore.services.auth.btc.address)
+    const balance = await await this.ethSwap.fetchBalance(SwapApp.services.auth.btc.address)
     const isEnoughMoney = sellAmount <= balance
 
     if (isEnoughMoney) {

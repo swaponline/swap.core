@@ -1,28 +1,28 @@
-import SwapCore, { Collection } from '../swap.core'
-import Order from './Order'
+import SwapApp, { Collection, ServiceInterface, util } from '../../swap.app'
+import aggregation from './aggregation'
 import events from './events'
+import Order from './Order'
 
 
-class SwapOrdersService extends Collection {
+class SwapOrders extends aggregation(ServiceInterface, Collection) {
 
   constructor() {
     super()
 
-    this._name = 'orders'
-    this.swapApp = null
+    this._serviceName = 'orders'
   }
 
-  init() {
-    this.swapApp.room.subscribe('ready', () => {
+  initService() {
+    SwapApp.services.room.subscribe('ready', () => {
       this._persistMyOrders()
     })
 
-    this.swapApp.room.subscribe('user online', (peer) => {
+    SwapApp.services.room.subscribe('user online', (peer) => {
       let myOrders = this.getMyOrders()
 
       if (myOrders.length) {
         // clean orders from other additional props
-        myOrders = myOrders.map((item) => SwapCore.util.pullProps(
+        myOrders = myOrders.map((item) => util.pullProps(
           item,
           'id',
           'owner',
@@ -36,7 +36,7 @@ class SwapOrdersService extends Collection {
 
         console.log(`Send my orders to ${peer}`, myOrders)
 
-        this.swapApp.room.sendMessage(peer, [
+        SwapApp.services.room.sendMessage(peer, [
           {
             event: 'new orders',
             data: {
@@ -47,7 +47,7 @@ class SwapOrdersService extends Collection {
       }
     })
 
-    this.swapApp.room.subscribe('user offline', (peer) => {
+    SwapApp.services.room.subscribe('user offline', (peer) => {
       const peerOrders = this.getPeerOrders(peer)
 
       if (peerOrders.length) {
@@ -57,21 +57,29 @@ class SwapOrdersService extends Collection {
       }
     })
 
-    this.swapApp.room.subscribe('new orders', ({ fromPeer, orders }) => {
+    SwapApp.services.room.subscribe('new orders', ({ fromPeer, orders }) => {
       // ductape to check if such orders already exist
-      const filteredOrders = orders.filter(({ id }) => !this.getByKey(id))
+      const filteredOrders = orders.filter(({ id, owner: { peer } }) => (
+        !this.getByKey(id) && peer === fromPeer
+      ))
 
       console.log(`Receive orders from ${fromPeer}`, filteredOrders)
 
       this._handleMultipleCreate(filteredOrders)
     })
 
-    this.swapApp.room.subscribe('new order', ({ order: data }) => {
-      this._handleCreate(data)
+    SwapApp.services.room.subscribe('new order', ({ fromPeer, order }) => {
+      if (order && order.owner && order.owner.peer === fromPeer) {
+        this._handleCreate(order)
+      }
     })
 
-    this.swapApp.room.subscribe('remove order', ({ orderId }) => {
-      this._handleRemove(orderId)
+    SwapApp.services.room.subscribe('remove order', ({ fromPeer, orderId }) => {
+      const order = this.getByKey(orderId)
+
+      if (order && order.owner && order.owner.peer === fromPeer) {
+        this._handleRemove(orderId)
+      }
     })
   }
 
@@ -84,7 +92,7 @@ class SwapOrdersService extends Collection {
   _getUniqueId = (() => {
     let id = Date.now()
 
-    return () => `${this.swapApp.room.peer}-${++id}`
+    return () => `${SwapApp.services.room.peer}-${++id}`
   })()
 
   _create(data) {
@@ -142,14 +150,14 @@ class SwapOrdersService extends Collection {
   }
 
   _saveMyOrders() {
-    let myOrders = this.items.filter(({ owner: { peer } }) => peer === this.swapApp.room.peer)
+    let myOrders = this.items.filter(({ owner: { peer } }) => peer === SwapApp.services.room.peer)
 
     // clean orders from other additional props
     // TODO need to add functionality to sync `requests` for users who going offline / online
     // problem: when I going online and persisting my orders need to show only online users requests,
     // but then user comes online need to change status. Ofc we can leave this bcs developers can do this themselves
     // with filters - skip requests where user is offline, but it looks like not very good
-    myOrders = myOrders.map((item) => SwapCore.util.pullProps(
+    myOrders = myOrders.map((item) => util.pullProps(
       item,
       'id',
       'owner',
@@ -163,11 +171,11 @@ class SwapOrdersService extends Collection {
       'isProcessing',
     ))
 
-    SwapCore.env.storage.setItem('myOrders', myOrders)
+    SwapApp.env.storage.setItem('myOrders', myOrders)
   }
 
   getMyOrders() {
-    return SwapCore.env.storage.getItem('myOrders') || []
+    return SwapApp.env.storage.getItem('myOrders') || []
   }
 
   getPeerOrders(peer) {
@@ -185,15 +193,15 @@ class SwapOrdersService extends Collection {
   create(data) {
     const order = this._create({
       ...data,
-      owner: this.swapApp.auth.getPublicData(),
+      owner: SwapApp.services.auth.getPublicData(),
     })
     this._saveMyOrders()
 
-    this.swapApp.room.sendMessage([
+    SwapApp.services.room.sendMessage([
       {
         event: 'new order',
         data: {
-          order: SwapCore.util.pullProps(
+          order: util.pullProps(
             order,
             'id',
             'owner',
@@ -215,7 +223,7 @@ class SwapOrdersService extends Collection {
    */
   remove(orderId) {
     this.removeByKey(orderId)
-    this.swapApp.room.sendMessage([
+    SwapApp.services.room.sendMessage([
       {
         event: 'remove order',
         data: {
@@ -236,4 +244,4 @@ class SwapOrdersService extends Collection {
 }
 
 
-export default SwapOrdersService
+export default SwapOrders
