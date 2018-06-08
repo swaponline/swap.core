@@ -1,15 +1,26 @@
 import SwapApp, { Collection, ServiceInterface, util } from '../../swap.app'
+import SwapRoom from '../swap.room'
 import aggregation from './aggregation'
 import events from './events'
 import Order from './Order'
 
 
+const getUniqueId = (() => {
+  let id = Date.now()
+  return () => `${SwapApp.services.room.peer}-${++id}`
+})()
+
 class SwapOrders extends aggregation(ServiceInterface, Collection) {
+
+  static get name() {
+    return 'orders'
+  }
 
   constructor() {
     super()
 
     this._serviceName = 'orders'
+    this._dependsOn   = [ SwapRoom ]
   }
 
   initService() {
@@ -89,16 +100,10 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
     })
   }
 
-  _getUniqueId = (() => {
-    let id = Date.now()
-
-    return () => `${SwapApp.services.room.peer}-${++id}`
-  })()
-
   _create(data) {
     const order = new Order(this, {
       ...data,
-      id: data.id || this._getUniqueId(),
+      id: data.id || getUniqueId(),
     })
 
     this.append(order, order.id)
@@ -236,10 +241,12 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
 
   on(eventName, handler) {
     events.subscribe(eventName, handler)
+    return this
   }
 
   off(eventName, handler) {
     events.unsubscribe(eventName, handler)
+    return this
   }
 }
 

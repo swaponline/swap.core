@@ -4,16 +4,11 @@ import { Flow } from '../swap.swap'
 
 class ETH2BTC extends Flow {
 
-  constructor() {
-    super()
+  constructor(swap) {
+    super(swap)
 
-    try {
-      this.ethSwap = SwapApp.swaps.ethSwap
-      this.btcSwap = SwapApp.swaps.btcSwap
-    }
-    catch (err) {
-      throw new Error(`BTC2ETH: ${err}`)
-    }
+    this.ethSwap = SwapApp.swaps.ethSwap
+    this.btcSwap = SwapApp.swaps.btcSwap
 
     if (!this.ethSwap) {
       throw new Error('BTC2ETH: "ethSwap" of type object required')
@@ -47,10 +42,6 @@ class ETH2BTC extends Flow {
 
     super._persistSteps()
     this._persistState()
-  }
-
-  _persistState() {
-    super._persistState()
   }
 
   _getSteps() {
@@ -93,7 +84,6 @@ class ETH2BTC extends Flow {
         const { participant, sellAmount } = flow.swap
 
         const swapData = {
-          myAddress:            SwapApp.services.auth.eth.address,
           participantAddress:   participant.eth.address,
           secretHash:           flow.state.secretHash,
           amount:               sellAmount,
@@ -130,7 +120,6 @@ class ETH2BTC extends Flow {
         const { participant } = flow.swap
 
         const myAndParticipantData = {
-          myAddress: SwapApp.services.auth.eth.address,
           participantAddress: participant.eth.address,
         }
 
@@ -141,9 +130,6 @@ class ETH2BTC extends Flow {
         const { script } = flow.btcSwap.createScript(flow.state.btcScriptValues)
 
         await flow.btcSwap.withdraw({
-          // TODO here is the problem... now in `btcData` stored bitcoinjs-lib instance with additional functionality
-          // TODO need to rewrite this - check instances/bitcoin.js and core/swaps/btcSwap.js:185
-          btcData: storage.me.btcData,
           script,
           secret,
         }, (transactionUrl) => {
@@ -174,7 +160,6 @@ class ETH2BTC extends Flow {
 
     await this.ethSwap.sign(
       {
-        myAddress: SwapApp.services.auth.eth.address,
         participantAddress: participant.eth.address,
       },
       (signTransactionUrl) => {
@@ -204,7 +189,7 @@ class ETH2BTC extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.ethSwap.fetchBalance(SwapApp.services.auth.eth.address)
+    const balance = await this.ethSwap.fetchBalance(SwapApp.services.auth.accounts.eth.address)
     const isEnoughMoney = sellAmount <= balance
 
     if (isEnoughMoney) {

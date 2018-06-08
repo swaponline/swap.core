@@ -5,16 +5,21 @@ let _privateKeys
 
 class SwapAuth extends ServiceInterface {
 
+  static get name() {
+    return 'auth'
+  }
+
   constructor(privateKeys) {
     super()
 
-    this._serviceName   = 'auth'
-    this.accounts       = {}
+    this._serviceName         = 'auth'
+    this.accounts             = {}
+    this.getPublicDataMethods = {}
 
     _privateKeys = privateKeys
   }
 
-  _initService() {
+  initService() {
     Object.keys(_privateKeys).forEach((name) => {
       if (constants.COINS.indexOf(name) < 0) {
         let error = `SwapAuth._initService(): There is no instance with name "${name}".`
@@ -26,9 +31,10 @@ class SwapAuth extends ServiceInterface {
       try {
         let instance = require(`./${name}`)
         instance = instance.default || instance
-        instance.login(_privateKeys[name])
+        const account = instance.login(_privateKeys[name])
 
-        this.accounts[name] = instance
+        this.accounts[name] = account
+        this.getPublicDataMethods[name] = () => instance.getPublicData(account)
       }
       catch (err) {
         throw new Error(`SwapAuth._initService(): ${err}`)
@@ -41,8 +47,8 @@ class SwapAuth extends ServiceInterface {
       peer: SwapApp.services.room.peer,
     }
 
-    Object.keys(this.accounts).forEach((name) => {
-      data[name] = this.accounts[name].getPublicData()
+    Object.keys(this.getPublicDataMethods).forEach((name) => {
+      data[name] = this.getPublicDataMethods[name].getPublicData()
     })
 
     return data

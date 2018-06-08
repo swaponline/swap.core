@@ -7,8 +7,7 @@ class Collection {
   }
 
   constructor() {
-    this.items = []
-    this.itemIds = {}
+    this._constructor()
   }
 
   /**

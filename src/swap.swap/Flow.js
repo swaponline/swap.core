@@ -4,18 +4,14 @@ import Room from './Room'
 
 class Flow {
 
-  constructor() {
-    this.swap     = null
+  constructor(swap) {
+    this.swap     = swap
     this.steps    = []
 
     this.state = {
       step: 0,
       isWaitingForOwner: false,
     }
-  }
-
-  _linkSwap(swap) {
-    this.swap = swap
   }
 
   _persistState() {
@@ -65,7 +61,7 @@ class Flow {
             isWaitingForOwner: true,
           })
 
-          room.subscribe('new orders', function ({ orders }) {
+          SwapApp.services.room.subscribe('new orders', function ({ orders }) {
             const order = orders.find(({ id }) => id === orderId)
 
             if (order) {

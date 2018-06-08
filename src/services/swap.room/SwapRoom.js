@@ -3,6 +3,10 @@ import SwapApp, { Events, ServiceInterface } from '../../swap.app'
 
 class SwapRoom extends ServiceInterface {
 
+  static get name() {
+    return 'room'
+  }
+
   constructor(config) {
     super()
 
@@ -16,7 +20,7 @@ class SwapRoom extends ServiceInterface {
     this.peer           = null
   }
 
-  _initService() {
+  initService() {
     if (!SwapApp.env.Ipfs) {
       throw new Error('SwapRoomService: Ipfs required')
     }

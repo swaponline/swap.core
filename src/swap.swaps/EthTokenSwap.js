@@ -16,16 +16,16 @@ class EthTokenSwap extends SwapInterface {
   constructor(options) {
     super()
 
-    if (typeof options.address !== 'function') {
+    if (typeof options.address !== 'string') {
       throw new Error('EthTokenSwap: "address" required')
     }
-    if (typeof options.abi !== 'function') {
+    if (!Array.isArray(options.abi)) {
       throw new Error('EthTokenSwap: "abi" required')
     }
-    if (typeof options.address !== 'function') {
+    if (typeof options.tokenAddress !== 'string') {
       throw new Error('EthTokenSwap: "tokenAddress" required')
     }
-    if (typeof options.abi !== 'function') {
+    if (!Array.isArray(options.tokenAbi)) {
       throw new Error('EthTokenSwap: "tokenAbi" required')
     }
 
@@ -48,16 +48,15 @@ class EthTokenSwap extends SwapInterface {
   /**
    *
    * @param {object} data
-   * @param {object} data.myAddress
    * @param {string} data.participantAddress
    * @param {function} handleTransactionHash
    */
   sign(data, handleTransactionHash) {
-    const { myAddress, participantAddress } = data
+    const { participantAddress } = data
 
     return new Promise(async (resolve, reject) => {
       const params = {
-        from: myAddress,
+        from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
       }
 
@@ -80,11 +79,11 @@ class EthTokenSwap extends SwapInterface {
     })
   }
 
-  approve({ myAddress, amount }, handleTransactionHash) {
+  approve({ amount }, handleTransactionHash) {
     return new Promise(async (resolve, reject) => {
       try {
         const result = await this.ERC20.methods.approve(this.address, amount).send({
-          from: myAddress,
+          from: SwapApp.services.auth.accounts.eth.address,
           gas: this.gasLimit,
         })
           .on('transactionHash', (hash) => {
@@ -107,18 +106,17 @@ class EthTokenSwap extends SwapInterface {
   /**
    *
    * @param {object} data
-   * @param {string} data.myAddress
    * @param {string} data.owner
    * @param {string} data.spender
    * @returns {Promise}
    */
   checkAllowance(data) {
-    const { myAddress, owner, spender } = data
+    const { owner, spender } = data
 
     return new Promise(async (resolve, reject) => {
       try {
         const result = await this.ERC20.methods.allowance(owner, spender).call({
-          from: myAddress,
+          from: SwapApp.services.auth.accounts.eth.address,
         })
 
         resolve(result)
@@ -132,19 +130,18 @@ class EthTokenSwap extends SwapInterface {
   /**
    *
    * @param {object} data
-   * @param {object} data.myAddress
    * @param {string} data.secretHash
    * @param {string} data.participantAddress
    * @param {number} data.amount
    * @param {function} handleTransactionHash
    */
   create(data, handleTransactionHash) {
-    const { myAddress, secretHash, participantAddress, amount } = data
+    const { secretHash, participantAddress, amount } = data
 
     return new Promise(async (resolve, reject) => {
       const hash    = `0x${secretHash.replace(/^0x/, '')}`
       const values  = [ hash, participantAddress, amount, this.tokenAddress ]
-      const params  = { from: myAddress, gas: this.gasLimit }
+      const params  = { from: SwapApp.services.auth.accounts.eth.address, gas: this.gasLimit }
 
       try {
         const result = await this.contract.methods.createSwap(...values).send(params)
@@ -168,19 +165,18 @@ class EthTokenSwap extends SwapInterface {
   /**
    *
    * @param {object} data
-   * @param {object} data.myAddress
    * @param {string} data.secret
    * @param {string} data.ownerAddress
    * @param {function} handleTransactionHash
    */
   withdraw(data, handleTransactionHash) {
-    const { myAddress, ownerAddress, secret } = data
+    const { ownerAddress, secret } = data
 
     return new Promise(async (resolve, reject) => {
       const _secret = `0x${secret.replace(/^0x/, '')}`
 
       const params = {
-        from: myAddress,
+        from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
       }
 
@@ -210,17 +206,16 @@ class EthTokenSwap extends SwapInterface {
   /**
    *
    * @param {object} data
-   * @param {string} data.myAddress
    * @param {string} data.participantAddress
    * @returns {Promise}
    */
   getSecret(data) {
-    const { myAddress, participantAddress } = data
+    const { participantAddress } = data
 
     return new Promise(async (resolve, reject) => {
       try {
         const secret = await this.contract.methods.getSecret(participantAddress).call({
-          from: myAddress,
+          from: SwapApp.services.auth.accounts.eth.address,
         })
 
         resolve(secret)
@@ -234,17 +229,16 @@ class EthTokenSwap extends SwapInterface {
   /**
    *
    * @param {object} data
-   * @param {string} data.myAddress
    * @param {string} data.participantAddress
    * @param handleTransactionHash
    * @returns {Promise}
    */
   close(data, handleTransactionHash) {
-    const { myAddress, participantAddress } = data
+    const { participantAddress } = data
 
     return new Promise(async (resolve, reject) => {
       const params = {
-        from: myAddress,
+        from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
       }
 

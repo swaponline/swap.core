@@ -19,9 +19,10 @@ const aggregation = (baseClass, ...mixins) => {
     Object.getOwnPropertyNames(source)
       .concat(Object.getOwnPropertySymbols(source))
       .forEach((prop) => {
-        if (prop.match(/^(?:constructor|prototype|arguments|caller|name|bind|call|apply|toString|length)$/)) {
+        if (prop.match(/^(?:_?constructor|prototype|arguments|caller|name|bind|call|apply|toString|length)$/)) {
           return
         }
+
         Object.defineProperty(target, prop, Object.getOwnPropertyDescriptor(source, prop))
       })
   }

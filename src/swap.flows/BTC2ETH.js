@@ -5,16 +5,11 @@ import { Flow } from '../swap.swap'
 
 class BTC2ETH extends Flow {
 
-  constructor() {
-    super()
+  constructor(swap) {
+    super(swap)
 
-    try {
-      this.ethSwap = SwapApp.swaps.ethSwap
-      this.btcSwap = SwapApp.swaps.btcSwap
-    }
-    catch (err) {
-      throw new Error(`BTC2ETH: ${err}`)
-    }
+    this.ethSwap = SwapApp.swaps.ethSwap
+    this.btcSwap = SwapApp.swaps.btcSwap
 
     if (!this.ethSwap) {
       throw new Error('BTC2ETH: "ethSwap" of type object required')
@@ -88,15 +83,13 @@ class BTC2ETH extends Flow {
 
         const { script: btcScript, ...scriptValues } = flow.btcSwap.createScript({
           secretHash:         flow.state.secretHash,
-          btcOwnerPublicKey:  SwapApp.services.auth.btc.getPublicKey(),
+          btcOwnerPublicKey:  SwapApp.services.auth.accounts.btc.getPublicKey(),
           ethOwnerPublicKey:  participant.btc.publicKey,
         })
 
         await flow.btcSwap.fundScript({
-          myAddress:  SwapApp.services.auth.btc.address,
-          myKeyPair:  SwapApp.services.auth.btc,
-          script:     btcScript,
-          amount:     sellAmount,
+          script: btcScript,
+          amount: sellAmount,
         })
 
         this.swap.room.sendMessage('create btc script', {
@@ -126,7 +119,6 @@ class BTC2ETH extends Flow {
         const { participant } = flow.swap
       
         const data = {
-          myAddress:      SwapApp.services.auth.eth.address,
           ownerAddress:   participant.eth.address,
           secret:         flow.state.secret,
         }
@@ -168,7 +160,7 @@ class BTC2ETH extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await await this.ethSwap.fetchBalance(SwapApp.services.auth.btc.address)
+    const balance = await this.btcSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
     const isEnoughMoney = sellAmount <= balance
 
     if (isEnoughMoney) {
@@ -189,4 +181,4 @@ class BTC2ETH extends Flow {
 }
 
 
-export default new BTC2ETH()
+export default BTC2ETH

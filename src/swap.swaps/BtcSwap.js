@@ -27,7 +27,7 @@ class BtcSwap extends SwapInterface {
     }
 
     this._swapName      = 'btcSwap'
-    this.fetchBalance   = options.fetchUnspents
+    this.fetchBalance   = options.fetchBalance
     this.fetchUnspents  = options.fetchUnspents
     this.broadcastTx    = options.broadcastTx
   }
@@ -66,12 +66,12 @@ class BtcSwap extends SwapInterface {
 
     const hashType      = SwapApp.env.bitcoin.Transaction.SIGHASH_ALL
     const signatureHash = txRaw.hashForSignature(0, script, hashType)
-    const signature     = SwapApp.services.auth.btc.sign(signatureHash).toScriptSignature(hashType)
+    const signature     = SwapApp.services.auth.accounts.btc.sign(signatureHash).toScriptSignature(hashType)
 
     const scriptSig = SwapApp.env.bitcoin.script.scriptHash.input.encode(
       [
         signature,
-        SwapApp.services.auth.btc.getPublicKeyBuffer(),
+        SwapApp.services.auth.accounts.btc.getPublicKeyBuffer(),
         Buffer.from(secret.replace(/^0x/, ''), 'hex'),
       ],
       script,
@@ -143,7 +143,7 @@ class BtcSwap extends SwapInterface {
       try {
         const scriptAddress = this._getScriptAddress(script)
         const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
-        const unspents      = await this.fetchUnspents(SwapApp.services.auth.btc.getAddress())
+        const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.btc.getAddress())
 
         const fundValue     = Math.floor(Number(amount) * 1e8)
         const feeValue      = 15000 // TODO how to get this value
@@ -152,9 +152,9 @@ class BtcSwap extends SwapInterface {
 
         unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout))
         tx.addOutput(scriptAddress, fundValue)
-        tx.addOutput(SwapApp.services.auth.btc.getAddress(), skipValue)
+        tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), skipValue)
         tx.inputs.forEach((input, index) => {
-          tx.sign(index, SwapApp.services.auth.btc)
+          tx.sign(index, SwapApp.services.auth.accounts.btc)
         })
 
         const txRaw = tx.buildIncomplete()
@@ -197,7 +197,7 @@ class BtcSwap extends SwapInterface {
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
 
         unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
-        tx.addOutput(SwapApp.services.auth.btc.getAddress(), totalUnspent - feeValue)
+        tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
 
         const txRaw = tx.buildIncomplete()
 
@@ -245,7 +245,7 @@ class BtcSwap extends SwapInterface {
 
         tx.setLockTime(lockTime)
         unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
-        tx.addOutput(SwapApp.services.auth.btc.getAddress(), totalUnspent - feeValue)
+        tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
 
         const txRaw = tx.buildIncomplete()
 

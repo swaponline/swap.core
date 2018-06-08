@@ -7,7 +7,7 @@ import swapApp from './swap/swap.app'
 import SwapAuth from './swap/services/swap.auth'
 import SwapRoom from './swap/services/swap.room'
 import SwapOrders from './swap/services/swap.orders'
-import { EthSwap, BtcSwap } from './swap/swap.swaps'
+import { EthSwap, EthTokenSwap, BtcSwap } from './swap/swap.swaps'
 
 
 // Private Keys ---------------------------------------------- /
@@ -46,30 +46,24 @@ swapApp.setup({
     storage: window.localStorage,
   },
   services: [
-    /*
-      service ordering is very important, for example SwapOrders depends on SwapRoom,
-      so the last one must be initialized first
-     */
     new SwapAuth({
       eth: localStorage.getItem('ethPrivateKey'),
       btc: localStorage.getItem('btcPrivateKey'),
     }),
     new SwapRoom({
-      ipfs: {
-        EXPERIMENTAL: {
-          pubsub: true,
+      EXPERIMENTAL: {
+        pubsub: true,
+      },
+      config: {
+        Addresses: {
+          Swarm: [
+            // '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
+            '/dns4/star.wpmix.net/tcp/443/wss/p2p-websocket-star',
+          ],
         },
-        config: {
-          Addresses: {
-            Swarm: [
-              // '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
-              '/dns4/star.wpmix.net/tcp/443/wss/p2p-websocket-star',
-            ],
-          },
-        }
       },
     }),
-    new SwapOrders({}),
+    new SwapOrders(),
   ],
   swaps: [
     new EthSwap({

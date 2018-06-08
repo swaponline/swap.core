@@ -52,17 +52,15 @@ class SwapApp {
     }
 
     this.services[service._serviceName] = service
-
-    // TODO add topological sorting
-    if (typeof service._initService === 'function') {
-      service._initService()
-    }
   }
 
   _addServices(services) {
-    services.forEach((service) => {
-      this._addService(service)
-    })
+    // add service to app by _serviceName
+    services.forEach((service) => this._addService(service))
+    // spy expects
+    Object.keys(this.services).forEach((serviceName) => this.services[serviceName]._waitRelationsResolve())
+    // init services
+    Object.keys(this.services).forEach((serviceName) => this.services[serviceName]._tryInitService())
   }
 
   _addSwap(swap) {
@@ -79,7 +77,6 @@ class SwapApp {
 
     this.swaps[swap._swapName] = swap
 
-    // TODO add topological sorting
     if (typeof swap._initSwap === 'function') {
       swap._initSwap()
     }
@@ -103,4 +100,6 @@ class SwapApp {
 }
 
 
-export default new SwapApp()
+window.app = new SwapApp()
+
+export default window.app

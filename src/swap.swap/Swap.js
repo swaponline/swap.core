@@ -4,12 +4,9 @@ import Room from './Room'
 
 class Swap {
 
-  constructor(orderId, flow) {
+  constructor(orderId, Flow) {
     this.events         = new Events()
     this.room           = null
-    this.flow           = flow
-
-    this.state = {}
 
     this.id             = orderId
     this.isMy           = null
@@ -20,8 +17,9 @@ class Swap {
     this.buyAmount      = null // not same as in order - for each user own
     this.sellAmount     = null // not same as in order - for each user own
 
-    this.flow._linkSwap(this)
     this._persistState()
+
+    this.flow = new Flow(this)
   }
 
   _persistState() {
@@ -79,15 +77,6 @@ class Swap {
     console.log('New Swap state:', data)
 
     SwapApp.env.storage.setItem(`swap.${this.id}`, data)
-  }
-
-  setFlow(Flow, options) {
-    this.flow = new Flow({
-      swap: this,
-      options,
-    })
-
-    return this.flow
   }
 
   update(values) {

@@ -13,19 +13,21 @@ export default class Orders extends Component {
   }
 
   componentWillMount() {
-    SwapApp.services.orders.on('new orders', this.updateOrders)
-    SwapApp.services.orders.on('new order', this.updateOrders)
-    SwapApp.services.orders.on('remove order', this.updateOrders)
-    SwapApp.services.orders.on('order update', this.updateOrders)
-    SwapApp.services.orders.on('new order request', this.handleRequest)
+    SwapApp.services.orders
+      .on('new orders', this.updateOrders)
+      .on('new order', this.updateOrders)
+      .on('remove order', this.updateOrders)
+      .on('order update', this.updateOrders)
+      .on('new order request', this.handleRequest)
   }
 
   componentWillUnmount() {
-    SwapApp.services.orders.off('new orders', this.updateOrders)
-    SwapApp.services.orders.off('new order', this.updateOrders)
-    SwapApp.services.orders.off('remove order', this.updateOrders)
-    SwapApp.services.orders.off('order update', this.updateOrders)
-    SwapApp.services.orders.off('new order request', this.handleRequest)
+    SwapApp.services.orders
+      .off('new orders', this.updateOrders)
+      .off('new order', this.updateOrders)
+      .off('remove order', this.updateOrders)
+      .off('order update', this.updateOrders)
+      .off('new order request', this.handleRequest)
   }
 
   updateOrders = () => {
@@ -40,7 +42,7 @@ export default class Orders extends Component {
 
   createOrder = () => {
     const data = {
-      buyCurrency: 'ETHTOKEN',
+      buyCurrency: 'ETH',
       sellCurrency: 'BTC',
       buyAmount: 1,
       sellAmount: 0.001,
@@ -81,10 +83,10 @@ export default class Orders extends Component {
     this.updateOrders()
   }
 
-  handleOrderSelect = (swapId) => {
+  handleOrderSelect = (orderId) => {
     const { onOrderSelect } = this.props
 
-    onOrderSelect(swapId)
+    onOrderSelect(orderId)
   }
 
   render() {
@@ -111,11 +113,11 @@ export default class Orders extends Component {
               </thead>
               <tbody>
                 {
-                  orders.map((swap) => {
+                  orders.map((order) => {
                     const {
                       id, buyAmount, sellAmount, exchangeRate, requests, isRequested, isProcessing,
                       owner: { peer: ownerPeer, reputation },
-                    } = swap
+                    } = order
 
                     return (
                       <tr key={id} style={{ backgroundColor: myPeer === ownerPeer ? '#fff4d5' : '' }}>

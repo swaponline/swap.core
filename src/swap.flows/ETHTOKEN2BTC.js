@@ -1,25 +1,21 @@
+import SwapApp from '../swap.app'
 import { Flow } from '../swap.swap'
-import { storage } from '../Storage'
 
 
 class ETHTOKEN2BTC extends Flow {
 
-  constructor({ swap, data, options: { ethSwap, btcSwap, fetchBalance } }) {
-    super({ swap })
+  constructor(swap) {
+    super(swap)
 
-    if (!ethSwap) {
-      throw new Error('ETHTOKEN2BTC failed. "ethSwap" of type object required.')
-    }
-    if (!btcSwap) {
-      throw new Error('ETHTOKEN2BTC failed. "btcSwap" of type object required.')
-    }
-    if (typeof fetchBalance !== 'function') {
-      throw new Error('ETHTOKEN2BTC failed. "syncBalance" of type function required.')
-    }
+    this.ethTokenSwap = SwapApp.swaps.ethTokenSwap
+    this.btcSwap      = SwapApp.swaps.btcSwap
 
-    this.ethSwap        = ethSwap
-    this.btcSwap        = btcSwap
-    this.fetchBalance   = fetchBalance
+    if (!this.ethTokenSwap) {
+      throw new Error('ETHTOKEN2BTC: "ethTokenSwap" of type object required')
+    }
+    if (!this.btcSwap) {
+      throw new Error('ETHTOKEN2BTC: "btcSwap" of type object required')
+    }
 
     this.state = {
       step: 0,
@@ -92,14 +88,12 @@ class ETHTOKEN2BTC extends Flow {
         const { participant, sellAmount } = this.swap
 
         const swapData = {
-          myAddress:            storage.me.eth.address,
           participantAddress:   participant.eth.address,
           secretHash:           flow.state.secretHash,
           amount:               sellAmount,
         }
 
         await this.ethSwap.approve({
-          myAddress: storage.me.eth.address,
           amount: sellAmount,
         })
 
@@ -132,7 +126,6 @@ class ETHTOKEN2BTC extends Flow {
         const { participant } = this.swap
 
         const myAndParticipantData = {
-          myAddress: storage.me.eth.address,
           participantAddress: participant.eth.address,
         }
 
@@ -145,7 +138,7 @@ class ETHTOKEN2BTC extends Flow {
         await flow.btcSwap.withdraw({
           // TODO here is the problem... now in `btcData` stored bitcoinjs-lib instance with additional functionality
           // TODO need to rewrite this - check instances/bitcoin.js and core/swaps/btcSwap.js:185
-          btcData: storage.me.btcData,
+          btcData: SwapApp.services.auth.accounts.btcData,
           script,
           secret,
         }, (transactionUrl) => {
@@ -176,7 +169,6 @@ class ETHTOKEN2BTC extends Flow {
 
     await this.ethSwap.sign(
       {
-        myAddress: storage.me.eth.address,
         participantAddress: participant.eth.address,
       },
       (signTransactionUrl) => {
@@ -206,7 +198,7 @@ class ETHTOKEN2BTC extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.fetchBalance()
+    const balance = await this.ethTokenSwap.fetchBalance(SwapApp.services.auth.accounts.eth.address)
     const isEnoughMoney = sellAmount <= balance
 
     if (isEnoughMoney) {

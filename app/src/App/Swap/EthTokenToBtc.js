@@ -1,108 +1,65 @@
 import React, { Component, Fragment } from 'react'
-import { btcAccount, ethAccount } from '../../swap'
-import { bitcoinInstance, ethereumInstance } from '../../instances'
-import { EthTokenSwap, BtcSwap } from '../../swap/swaps'
-import { ETHTOKEN2BTC } from '../../swap/flows'
+import { ETHTOKEN2BTC } from '../../swap/swap.flows'
+import Swap from '../../swap/swap.swap'
 import Loader from '../Loader/Loader'
 
 
 export default class EthToBtc extends Component {
 
-  state = {
-    flow: null,
+  constructor({ orderId }) {
+    super()
+
+    this.swap = new Swap(orderId, ETHTOKEN2BTC)
+
+    this.state = {
+      flow: this.swap.flow.state,
+    }
   }
 
   componentWillMount() {
-    // TODO this might be from url query
-    const { swap } = this.props
-
-    const ethSwap = new EthTokenSwap({
-      gasLimit: 3e6,
-    })
-
-    const btcSwap = new BtcSwap({
-      account: btcAccount,
-      fetchUnspents: (scriptAddress) => bitcoinInstance.fetchUnspents(scriptAddress),
-      broadcastTx: (txRaw) => bitcoinInstance.broadcastTx(txRaw),
-    })
-
-    const fetchBalance = () => ethereumInstance.fetchTokenBalance(ethAccount.address)
-
-    const flow = swap.setFlow(ETHTOKEN2BTC, {
-      ethSwap,
-      btcSwap,
-      fetchBalance,
-    })
-
-    this.state.flow = flow.state
-
-    swap.flow.on('state update', this.handleFlowStateUpdate)
-    swap.flow.on('leave step', this.handleLeaveStep)
-    swap.flow.on('enter step', this.handleEnterStep)
+    this.swap.on('state update', this.handleFlowStateUpdate)
   }
 
   componentWillUnmount() {
-    const { swap } = this.props
-
-    swap.flow.off('state update', this.handleFlowStateUpdate)
-    swap.flow.off('leave step', this.handleLeaveStep)
-    swap.flow.off('enter step', this.handleEnterStep)
+    this.swap.off('state update', this.handleFlowStateUpdate)
   }
 
   handleFlowStateUpdate = (values) => {
-    console.log('new flow state values', values)
-
     this.setState({
       flow: values,
     })
   }
 
-  handleLeaveStep = (index) => {
-    console.log('leave step', index)
-  }
-
-  handleEnterStep = (index) => {
-    console.log('\n-----------------------------\n\n')
-    console.log(`enter step ${index}\n\n`)
-  }
-
   signSwap = () => {
-    const { swap } = this.props
-
-    swap.flow.sign()
+    this.swap.flow.sign()
   }
 
   confirmBTCScriptChecked = () => {
-    const { swap } = this.props
-
-    swap.flow.verifyBtcScript()
+    this.swap.flow.verifyBtcScript()
   }
 
   updateBalance = () => {
-    const { swap } = this.props
-
-    swap.flow.syncBalance()
+    this.swap.flow.syncBalance()
   }
 
   render() {
     const { flow } = this.state
-    const { swap } = this.props
 
     return (
       <div>
         {
-          swap.id && (
-            swap.isMy ? (
-              <strong>{swap.sellAmount} {swap.sellCurrency} &#10230; {swap.buyAmount} {swap.buyCurrency}</strong>
+          this.swap.id && (
+            this.swap.isMy ? (
+              <strong>{this.swap.sellAmount} {this.swap.sellCurrency} &#10230; {this.swap.buyAmount} {this.swap.buyCurrency}</strong>
             ) : (
-              <strong>{swap.buyAmount} {swap.buyCurrency} &#10230; {swap.sellAmount} {swap.sellCurrency}</strong>
+              <strong>{this.swap.buyAmount} {this.swap.buyCurrency} &#10230; {this.swap.sellAmount} {this.swap.sellCurrency}</strong>
             )
           )
         }
 
         {
-          !swap.id && (
-            swap.isMy ? (
+          !this.swap.id && (
+            this.swap.isMy ? (
               <h3>This order doesn't have a buyer</h3>
             ) : (
               <Fragment>
@@ -241,8 +198,8 @@ export default class EthToBtc extends Component {
                   <Fragment>
                     <h3>Not enough money for this swap. Please fund the balance</h3>
                     <div>
-                      <div>Your balance: <strong>{flow.balance}</strong> {swap.sellCurrency}</div>
-                      <div>Required balance: <strong>{swap.sellAmount}</strong> {swap.sellCurrency}</div>
+                      <div>Your balance: <strong>{flow.balance}</strong> {this.swap.sellCurrency}</div>
+                      <div>Required balance: <strong>{this.swap.sellAmount}</strong> {this.swap.sellCurrency}</div>
                       <hr />
                       <span>{flow.address}</span>
                     </div>

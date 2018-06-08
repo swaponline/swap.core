@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { app } from '../../swap'
+import SwapApp from '../../swap/swap.app'
 
 import BtcToEth from './BtcToEth'
 import EthToBtc from './EthToBtc'
@@ -16,32 +16,14 @@ const swapComponents = {
 
 export default class Swap extends Component {
 
-  state = {
-    swap: null // app.createSwap({ orderId: 'QmZ1aTi5Jod3iuPB8SwPSLuWUs6TJV5upmzH1h9YnzqpSQ-1525181053520' }),
-  }
-
-  componentWillReceiveProps({ orderId }) {
-    const { swap } = this.state
-    
-    if (!swap && orderId) {
-      const swap = app.createSwap({ orderId })
-      
-      this.setState({
-        swap,
-      })
-    }
-  }
-
   render() {
-    const { swap } = this.state
+    const { orderId } = this.props
 
-    if (!swap) {
+    if (!orderId) {
       return null
     }
 
-    console.log('Swap data:', swap)
-
-    const { isMy: isMyOrder, buyCurrency, sellCurrency } = swap
+    const { isMy: isMyOrder, buyCurrency, sellCurrency } = SwapApp.services.orders.getByKey(orderId)
 
     // TODO dynamically resolve Swap component to use
     const firstPart     = isMyOrder ? sellCurrency : buyCurrency
@@ -50,7 +32,7 @@ export default class Swap extends Component {
 
     return (
       <div style={{ paddingLeft: '30px' }}>
-        <SwapComponent swap={swap} />
+        <SwapComponent orderId={orderId} />
       </div>
     )
   }

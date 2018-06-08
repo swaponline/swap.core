@@ -17,10 +17,10 @@ class EthSwap extends SwapInterface {
     if (typeof options.fetchBalance !== 'function') {
       throw new Error('EthSwap: "fetchBalance" required')
     }
-    if (typeof options.address !== 'function') {
+    if (typeof options.address !== 'string') {
       throw new Error('EthSwap: "address" required')
     }
-    if (typeof options.abi !== 'function') {
+    if (!Array.isArray(options.abi)) {
       throw new Error('EthSwap: "abi" required')
     }
 
@@ -39,16 +39,15 @@ class EthSwap extends SwapInterface {
   /**
    *
    * @param {object} data
-   * @param {object} data.myAddress
    * @param {string} data.participantAddress
    * @param {function} handleTransactionHash
    */
   sign(data, handleTransactionHash) {
-    const { myAddress, participantAddress } = data
+    const { participantAddress } = data
 
     return new Promise(async (resolve, reject) => {
       const params = {
-        from: myAddress,
+        from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
       }
 
@@ -69,20 +68,19 @@ class EthSwap extends SwapInterface {
   /**
    *
    * @param {object} data
-   * @param {object} data.myAddress
    * @param {string} data.secretHash
    * @param {string} data.participantAddress
    * @param {number} data.amount
    * @param {function} handleTransactionHash
    */
   create(data, handleTransactionHash) {
-    const { myAddress, secretHash, participantAddress, amount } = data
+    const { secretHash, participantAddress, amount } = data
 
     return new Promise(async (resolve, reject) => {
       const hash = `0x${secretHash.replace(/^0x/, '')}`
 
       const params = {
-        from: myAddress,
+        from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
         value: Math.floor(SwapApp.env.web3.utils.toWei(String(amount))),
       }
@@ -106,19 +104,18 @@ class EthSwap extends SwapInterface {
   /**
    *
    * @param {object} data
-   * @param {object} data.myAddress
    * @param {string} data.secret
    * @param {string} data.ownerAddress
    * @param {function} handleTransactionHash
    */
   withdraw(data, handleTransactionHash) {
-    const { myAddress, ownerAddress, secret } = data
+    const { ownerAddress, secret } = data
 
     return new Promise(async (resolve, reject) => {
       const _secret = `0x${secret.replace(/^0x/, '')}`
 
       const params = {
-        from: myAddress,
+        from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
       }
 
@@ -140,13 +137,13 @@ class EthSwap extends SwapInterface {
     // TODO write refund functional
   }
 
-  getSecret({ myAddress, participantAddress }) {
+  getSecret({ participantAddress }) {
     return new Promise(async (resolve, reject) => {
       let secret
 
       try {
         secret = await this.contract.methods.getSecret(participantAddress).call({
-          from: myAddress,
+          from: SwapApp.services.auth.accounts.eth.address,
         })
       }
       catch (err) {
@@ -157,10 +154,10 @@ class EthSwap extends SwapInterface {
     })
   }
 
-  close({ myAddress, participantAddress }, handleTransactionHash) {
+  close({ participantAddress }, handleTransactionHash) {
     return new Promise(async (resolve, reject) => {
       const params = {
-        from: myAddress,
+        from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
       }
 
