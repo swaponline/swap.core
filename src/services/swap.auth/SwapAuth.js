@@ -48,7 +48,7 @@ class SwapAuth extends ServiceInterface {
     }
 
     Object.keys(this.getPublicDataMethods).forEach((name) => {
-      data[name] = this.getPublicDataMethods[name].getPublicData()
+      data[name] = this.getPublicDataMethods[name]()
     })
 
     return data
