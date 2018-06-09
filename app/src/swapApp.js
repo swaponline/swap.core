@@ -23,13 +23,17 @@ import { EthSwap, EthTokenSwap, BtcSwap } from './swap/swap.swaps'
 const localClear = localStorage.clear.bind(localStorage)
 
 window.clear = localStorage.clear = () => {
-  const ethPrivateKey = localStorage.getItem('ethPrivateKey')
-  const btcPrivateKey = localStorage.getItem('btcPrivateKey')
+  const testnetEthPrivateKey = localStorage.getItem('testnet:eth:PrivateKey')
+  const testnetBtcPrivateKey = localStorage.getItem('testnet:btc:PrivateKey')
+  const mainnetEthPrivateKey = localStorage.getItem('mainnet:eth:PrivateKey')
+  const mainnetBtcPrivateKey = localStorage.getItem('mainnet:btc:PrivateKey')
 
   localClear()
 
-  localStorage.setItem('ethPrivateKey', ethPrivateKey)
-  localStorage.setItem('btcPrivateKey', btcPrivateKey)
+  localStorage.getItem('testnet:eth:PrivateKey', testnetEthPrivateKey)
+  localStorage.getItem('testnet:btc:PrivateKey', testnetBtcPrivateKey)
+  localStorage.getItem('mainnet:eth:PrivateKey', mainnetEthPrivateKey)
+  localStorage.getItem('mainnet:btc:PrivateKey', mainnetBtcPrivateKey)
 }
 
 
@@ -47,8 +51,8 @@ swapApp.setup({
   },
   services: [
     new SwapAuth({
-      eth: localStorage.getItem('ethPrivateKey'),
-      btc: localStorage.getItem('btcPrivateKey'),
+      eth: null, // or pass private key here
+      btc: null,
     }),
     new SwapRoom({
       EXPERIMENTAL: {

@@ -1,7 +1,10 @@
 import SwapApp from '../../swap.app'
 
 
-const login = (privateKey) => {
+const login = (_privateKey) => {
+  const storageKey = `${SwapApp.network}:btc:privateKey`
+  let privateKey = _privateKey || SwapApp.env.storage.getItem(storageKey)
+
   if (!privateKey) {
     privateKey = SwapApp.env.bitcoin.ECPair.makeRandom({ network: SwapApp.env.bitcoin.networks.testnet }).toWIF()
   }
@@ -10,6 +13,8 @@ const login = (privateKey) => {
 
   this.account.__proto__.getPublicKey = () => this.account.getPublicKeyBuffer().toString('hex')
   this.account.__proto__.getPrivateKey = () => privateKey
+
+  SwapApp.env.storage.setItem(storageKey, privateKey)
 
   return this.account
 }
