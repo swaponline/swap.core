@@ -1,4 +1,4 @@
-import SwapApp, { Events, util } from '../swap.app'
+import SwapApp, { Events, util } from 'swap.app'
 import Room from './Room'
 
 

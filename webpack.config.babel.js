@@ -8,7 +8,7 @@ const globals = {
 
 const webpackConfig = {
   mode: process.env.NODE_ENV,
-  entry: './src2/index',
+  entry: {},
 
   output: {
     path: path.join(__dirname, 'example'),

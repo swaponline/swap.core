@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import SwapApp from '../../swap/swap.app'
+import SwapApp from '../../../swap-core/swap.app'
 
 import BtcToEth from './BtcToEth'
 import EthToBtc from './EthToBtc'

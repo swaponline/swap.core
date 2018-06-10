@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "build:swapcore": "NODE_ENV=production ../../node_modules/webpack-cli/bin/cli.js --config webpack.config.babel.js",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",

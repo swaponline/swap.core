@@ -1,4 +1,4 @@
-import SwapApp from '../swap.app'
+import SwapApp from 'swap.app'
 import Room from './Room'
 
 

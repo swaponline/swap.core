@@ -1,4 +1,4 @@
-import SwapApp, { ServiceInterface, constants } from '../../swap.app'
+import SwapApp, { ServiceInterface, constants } from 'swap.app'
 
 
 let _privateKeys

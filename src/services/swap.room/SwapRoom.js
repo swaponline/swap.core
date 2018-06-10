@@ -1,4 +1,4 @@
-import SwapApp, { Events, ServiceInterface } from '../../swap.app'
+import SwapApp, { Events, ServiceInterface } from 'swap.app'
 
 
 class SwapRoom extends ServiceInterface {

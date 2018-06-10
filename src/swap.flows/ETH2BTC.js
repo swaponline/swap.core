@@ -1,5 +1,5 @@
-import SwapApp from '../swap.app'
-import { Flow } from '../swap.swap'
+import SwapApp from 'swap.app'
+import { Flow } from 'swap.swap'
 
 
 class ETH2BTC extends Flow {

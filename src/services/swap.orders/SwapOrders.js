@@ -1,5 +1,5 @@
-import SwapApp, { Collection, ServiceInterface, util } from '../../swap.app'
-import SwapRoom from '../swap.room'
+import SwapApp, { Collection, ServiceInterface, util } from 'swap.app'
+import SwapRoom from 'swap.room'
 import aggregation from './aggregation'
 import events from './events'
 import Order from './Order'

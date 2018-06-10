@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import SwapApp from './swap/swap.app'
+import SwapApp from '../swap-core/swap.app'
 import App from './App/App'
 import './swapApp'
 
