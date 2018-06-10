@@ -1,5 +1,5 @@
 import React, { Fragment, Component } from 'react'
-import SwapApp from '../../../swap-core/swap.app'
+import SwapApp from 'swap.app'
 
 
 export default class Orders extends Component {

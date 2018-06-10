@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import SwapApp from '../../swap-core/swap.app'
+import SwapApp from 'swap.app'
 
 import Orders from './Orders/Orders'
 import Swap from './Swap/Swap'

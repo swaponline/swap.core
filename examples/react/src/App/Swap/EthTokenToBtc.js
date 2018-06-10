@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react'
-import { ETHTOKEN2BTC } from '../../../swap-core/swap.flows'
-import Swap from '../../../swap-core/swap.swap'
+import { ETHTOKEN2BTC } from 'swap.flows'
+import Swap from 'swap.swap'
 import Loader from '../Loader/Loader'
 
 

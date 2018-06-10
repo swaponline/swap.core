@@ -3,11 +3,11 @@ import bitcoin from 'bitcoinjs-lib'
 import { ethereumInstance, bitcoinInstance } from './instances'
 import { web3 } from './instances/ethereum'
 
-import swapApp from '../swap-core/swap.app'
-import SwapAuth from '../swap-core/swap.auth'
-import SwapRoom from '../swap-core/swap.room'
-import SwapOrders from '../swap-core/swap.orders'
-import { EthSwap, EthTokenSwap, BtcSwap } from '../swap-core/swap.swaps'
+import swapApp from 'swap.app'
+import SwapAuth from 'swap.auth'
+import SwapRoom from 'swap.room'
+import SwapOrders from 'swap.orders'
+import { EthSwap, EthTokenSwap, BtcSwap } from 'swap.swaps'
 
 
 // Private Keys ---------------------------------------------- /
@@ -39,6 +39,8 @@ window.clear = localStorage.clear = () => {
 
 
 // Swap ------------------------------------------------------ /
+
+console.log(111, window.Ipfs)
 
 swapApp.setup({
   network: 'testnet',
