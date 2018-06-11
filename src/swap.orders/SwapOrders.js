@@ -196,6 +196,13 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
    * @param {number} data.sellAmount
    */
   create(data) {
+    // util.validateProps(data, {
+    //   buyCurrency: [],
+    //   sellCurrency: [],
+    //   buyAmount: [],
+    //   sellAmount: [],
+    // })
+
     const order = this._create({
       ...data,
       owner: SwapApp.services.auth.getPublicData(),

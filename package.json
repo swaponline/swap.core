@@ -12,10 +12,6 @@
   "main": "lib/index.js",
   "scripts": {
     "test": "ava",
-    "dev:react": "cpx './src/**/*.js' ./examples/react/src/swap -w",
-    "copy:react": "cpx './src/**/*.js' ./examples/react/src/swap",
-    "dev:vanilla": "cpx './src/**/*.js' ./examples/vanilla/swap",
-    "copy:vanilla": "cpx './src/**/*.js' ./examples/vanilla/swap",
     "dev": "babel -w ./src --out-dir ./lib",
     "build": "npm run clean && babel ./src --out-dir ./lib",
     "dev:umd": "NODE_ENV=development webpack --config webpack.config.babel.js --watch",

@@ -40,8 +40,6 @@ window.clear = localStorage.clear = () => {
 
 // Swap ------------------------------------------------------ /
 
-console.log(111, window.Ipfs)
-
 swapApp.setup({
   network: 'testnet',
   env: {

@@ -3,6 +3,8 @@ import SwapApp from 'swap.app'
 
 class Room {
 
+  // TODO add destroy method with all events unsubscribe (when swap is finished)
+
   constructor({ swapId, participantPeer }) {
     this.swapId = swapId
     this.peer = participantPeer
