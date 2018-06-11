@@ -36,7 +36,7 @@ class Ethereum {
   }
 
   fetchTokenBalance(address) {
-    return request.get(`https://api-rinkeby.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=0x60c205722c6c797c725a996cf9cca11291f90749`)
+    return request.get(`https://api-rinkeby.etherscan.io/api?module=account&action=balance&address=${address}`)
       .then(({ result }) => Number(this.core.utils.fromWei(result)))
   }
 }
