@@ -390,6 +390,19 @@ npm i
 npm start
 ```
 
+## Your app
+
+If you use webpack - to resolve swap packages use [aliases](https://webpack.js.org/configuration/resolve/#resolve-alias)
+
+```
+resolve: {
+  alias: {
+    'swap.app': '<PATH_TO_PACKAGE>',
+    ...
+  }
+}
+```
+
 
 ---
 
