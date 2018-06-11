@@ -50,9 +50,9 @@ export default class EthToBtc extends Component {
         {
           this.swap.id && (
             this.swap.isMy ? (
-              <strong>{this.swap.sellAmount} {this.swap.sellCurrency} &#10230; {this.swap.buyAmount} {this.swap.buyCurrency}</strong>
-            ) : (
               <strong>{this.swap.buyAmount} {this.swap.buyCurrency} &#10230; {this.swap.sellAmount} {this.swap.sellCurrency}</strong>
+            ) : (
+              <strong>{this.swap.sellAmount} {this.swap.sellCurrency} &#10230; {this.swap.buyAmount} {this.swap.buyCurrency}</strong>
             )
           )
         }
