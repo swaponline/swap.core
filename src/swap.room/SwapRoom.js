@@ -1,4 +1,4 @@
-import SwapApp, { Events, ServiceInterface } from '../../swap.app'
+import SwapApp, { Events, ServiceInterface } from 'swap.app'
 
 
 class SwapRoom extends ServiceInterface {
@@ -15,8 +15,8 @@ class SwapRoom extends ServiceInterface {
     }
 
     this._serviceName   = 'room'
-    this.events         = new Events()
-    this.config         = config
+    this._events        = new Events()
+    this._config        = config
     this.peer           = null
   }
 
@@ -28,7 +28,7 @@ class SwapRoom extends ServiceInterface {
       throw new Error('SwapRoomService: IpfsRoom required')
     }
 
-    const ipfs = new SwapApp.env.Ipfs(this.config)
+    const ipfs = new SwapApp.env.Ipfs(this._config)
 
     ipfs.once('error', (err) => {
       console.log('IPFS error!', err)
@@ -51,30 +51,30 @@ class SwapRoom extends ServiceInterface {
   _init({ peer, ipfsConnection }) {
     this.peer = peer
 
-    this.connection = SwapApp.env.IpfsRoom(ipfsConnection, '../swap.online', {
+    this.connection = SwapApp.env.IpfsRoom(ipfsConnection, 'swap.online', {
       pollInterval: 5000,
     })
 
-    this.connection.on('peer joined', this.handleUserOnline)
-    this.connection.on('peer left', this.handleUserOffline)
-    this.connection.on('message', this.handleNewMessage)
+    this.connection.on('peer joined', this._handleUserOnline)
+    this.connection.on('peer left', this._handleUserOffline)
+    this.connection.on('message', this._handleNewMessage)
 
-    this.events.dispatch('ready')
+    this._events.dispatch('ready')
   }
 
-  handleUserOnline = (peer) => {
+  _handleUserOnline = (peer) => {
     if (peer !== this.peer) {
-      this.events.dispatch('user online', peer)
+      this._events.dispatch('user online', peer)
     }
   }
 
-  handleUserOffline = (peer) => {
+  _handleUserOffline = (peer) => {
     if (peer !== this.peer) {
-      this.events.dispatch('user offline', peer)
+      this._events.dispatch('user offline', peer)
     }
   }
 
-  handleNewMessage = (message) => {
+  _handleNewMessage = (message) => {
     if (message.from === this.peer) {
       return
     }
@@ -83,17 +83,21 @@ class SwapRoom extends ServiceInterface {
 
     if (data && data.length) {
       data.forEach(({ event, data }) => {
-        this.events.dispatch(event, { ...(data || {}), fromPeer: message.from })
+        this._events.dispatch(event, { ...(data || {}), fromPeer: message.from })
       })
     }
   }
 
   subscribe(eventName, handler) {
-    this.events.subscribe(eventName, handler)
+    this._events.subscribe(eventName, handler)
+  }
+
+  unsubscribe(eventName, handler) {
+    this._events.unsubscribe(eventName, handler)
   }
 
   once(eventName, handler) {
-    this.events.once(eventName, handler)
+    this._events.once(eventName, handler)
   }
 
   sendMessage(...args) {

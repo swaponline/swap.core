@@ -1,4 +1,4 @@
-import SwapApp, { SwapInterface } from '../swap.app'
+import SwapApp, { SwapInterface } from 'swap.app'
 
 
 class EthTokenSwap extends SwapInterface {

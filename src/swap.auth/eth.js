@@ -1,4 +1,4 @@
-import SwapApp from '../../swap.app'
+import SwapApp from 'swap.app'
 
 
 const login = (_privateKey) => {
@@ -13,8 +13,11 @@ const login = (_privateKey) => {
     account = SwapApp.env.web3.eth.accounts.create()
   }
 
-  SwapApp.env.storage.setItem(storageKey, account.privateKey)
   SwapApp.env.web3.eth.accounts.wallet.add(account.privateKey)
+
+  if (!_privateKey) {
+    SwapApp.env.storage.setItem(storageKey, account.privateKey)
+  }
 
   return account
 }
