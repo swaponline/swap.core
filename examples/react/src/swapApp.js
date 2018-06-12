@@ -3,11 +3,11 @@ import bitcoin from 'bitcoinjs-lib'
 import { ethereumInstance, bitcoinInstance } from './instances'
 import { web3 } from './instances/ethereum'
 
-import swapApp from './swap/swap.app'
-import SwapAuth from './swap/services/swap.auth'
-import SwapRoom from './swap/services/swap.room'
-import SwapOrders from './swap/services/swap.orders'
-import { EthSwap, EthTokenSwap, BtcSwap } from './swap/swap.swaps'
+import swapApp from 'swap.app'
+import SwapAuth from 'swap.auth'
+import SwapRoom from 'swap.room'
+import SwapOrders from 'swap.orders'
+import { EthSwap, EthTokenSwap, BtcSwap } from 'swap.swaps'
 
 
 // Private Keys ---------------------------------------------- /

@@ -1,7 +1,8 @@
-import SwapApp, { ServiceInterface, constants } from '../../swap.app'
+import SwapApp, { ServiceInterface, constants } from 'swap.app'
 
 
 let _privateKeys
+const getPublicDataMethods = {}
 
 class SwapAuth extends ServiceInterface {
 
@@ -14,7 +15,6 @@ class SwapAuth extends ServiceInterface {
 
     this._serviceName         = 'auth'
     this.accounts             = {}
-    this.getPublicDataMethods = {}
 
     _privateKeys = privateKeys
   }
@@ -34,7 +34,7 @@ class SwapAuth extends ServiceInterface {
         const account = instance.login(_privateKeys[name])
 
         this.accounts[name] = account
-        this.getPublicDataMethods[name] = () => instance.getPublicData(account)
+        getPublicDataMethods[name] = () => instance.getPublicData(account)
       }
       catch (err) {
         throw new Error(`SwapAuth._initService(): ${err}`)
@@ -47,8 +47,8 @@ class SwapAuth extends ServiceInterface {
       peer: SwapApp.services.room.peer,
     }
 
-    Object.keys(this.getPublicDataMethods).forEach((name) => {
-      data[name] = this.getPublicDataMethods[name]()
+    Object.keys(getPublicDataMethods).forEach((name) => {
+      data[name] = getPublicDataMethods[name]()
     })
 
     return data

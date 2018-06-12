@@ -1,5 +1,5 @@
-import SwapApp, { Collection, ServiceInterface, util } from '../../swap.app'
-import SwapRoom from '../swap.room'
+import SwapApp, { Collection, ServiceInterface, util } from 'swap.app'
+import SwapRoom from 'swap.room'
 import aggregation from './aggregation'
 import events from './events'
 import Order from './Order'
@@ -196,6 +196,13 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
    * @param {number} data.sellAmount
    */
   create(data) {
+    // util.validateProps(data, {
+    //   buyCurrency: [],
+    //   sellCurrency: [],
+    //   buyAmount: [],
+    //   sellAmount: [],
+    // })
+
     const order = this._create({
       ...data,
       owner: SwapApp.services.auth.getPublicData(),

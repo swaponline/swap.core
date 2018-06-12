@@ -1,6 +1,6 @@
 import crypto from 'bitcoinjs-lib/src/crypto'
-import { Flow } from '../swap.swap'
-import SwapApp from '../swap.app'
+import { Flow } from 'swap.swap'
+import SwapApp from 'swap.app'
 
 
 class BTC2ETHTOKEN extends Flow {

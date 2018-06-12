@@ -1,4 +1,4 @@
-import SwapApp from '../../swap.app'
+import SwapApp from 'swap.app'
 
 
 const login = (_privateKey) => {
@@ -15,7 +15,9 @@ const login = (_privateKey) => {
   account.__proto__.getPublicKey = () => account.getPublicKeyBuffer().toString('hex')
   account.__proto__.getPrivateKey = () => privateKey
 
-  SwapApp.env.storage.setItem(storageKey, privateKey)
+  if (!_privateKey) {
+    SwapApp.env.storage.setItem(storageKey, privateKey)
+  }
 
   return account
 }

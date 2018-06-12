@@ -1,4 +1,4 @@
-import SwapApp, { SwapInterface } from '../swap.app'
+import SwapApp, { SwapInterface } from 'swap.app'
 
 
 const utcNow = () => Math.floor(Date.now() / 1000)
@@ -90,8 +90,8 @@ class BtcSwap extends SwapInterface {
    * @returns {{address: *, script: (*|{ignored}), secretHash: *, btcOwnerPublicKey: *, ethOwnerPublicKey: *, lockTime: *}}
    */
   createScript(data) {
-    const { secretHash, btcOwnerPublicKey, ethOwnerPublicKey, lockTime } = data
-    const _lockTime = lockTime || getLockTime()
+    const { secretHash, btcOwnerPublicKey, ethOwnerPublicKey, lockTime: _lockTime } = data
+    const lockTime = _lockTime || getLockTime()
 
     const script = SwapApp.env.bitcoin.script.compile([
       SwapApp.env.bitcoin.opcodes.OP_RIPEMD160,
@@ -107,7 +107,7 @@ class BtcSwap extends SwapInterface {
 
       SwapApp.env.bitcoin.opcodes.OP_ELSE,
 
-      SwapApp.env.bitcoin.script.number.encode(_lockTime),
+      SwapApp.env.bitcoin.script.number.encode(lockTime),
       SwapApp.env.bitcoin.opcodes.OP_CHECKLOCKTIMEVERIFY,
       SwapApp.env.bitcoin.opcodes.OP_DROP,
       Buffer.from(btcOwnerPublicKey, 'hex'),

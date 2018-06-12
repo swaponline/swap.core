@@ -3,4 +3,6 @@
 
 node_modules
 lib
-app/src/swap
+
+swap-core
+public/_libs
