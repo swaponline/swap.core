@@ -1,9 +1,9 @@
 {
-  "name": "app",
+  "name": "swap-core-react-example",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "rimraf node_modules/swap.* && npx babel ../../src/ --out-dir ./swap-core && mv ./swap-core/* ./node_modules && react-scripts start",
+    "start": "rimraf node_modules/swap.* && npx babel ../../src/ --out-dir ./swap && mv ./swap/* ./node_modules && react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
