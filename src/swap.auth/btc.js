@@ -23,7 +23,7 @@ const login = (_privateKey) => {
 }
 
 const getPublicData = (account) => ({
-  address: account.address,
+  address: account.getAddress(),
   publicKey: account.getPublicKey(),
 })
 

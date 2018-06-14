@@ -37,8 +37,6 @@ class Flow {
 
     // wait events placed
     setTimeout(() => {
-      console.log('GO INITIAL STEP', this.state.step)
-
       this.goStep(this.state.step)
     }, 0)
   }

@@ -95,9 +95,7 @@ class ETH2BTC extends Flow {
           })
         })
 
-        flow.swap.room.sendMessage('create eth contract', {
-          ethSwapCreationTransactionUrl: flow.state.ethSwapCreationTransactionUrl,
-        })
+        flow.swap.room.sendMessage('create eth contract')
 
         flow.finishStep({
           isEthContractFunded: true,
