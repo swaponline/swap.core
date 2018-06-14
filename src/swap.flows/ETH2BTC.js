@@ -127,10 +127,8 @@ class ETH2BTC extends Flow {
 
         await flow.ethSwap.close(myAndParticipantData)
 
-        const { script } = flow.btcSwap.createScript(flow.state.btcScriptValues)
-
         await flow.btcSwap.withdraw({
-          script,
+          scriptValues: flow.state.btcScriptValues,
           secret,
         }, (transactionUrl) => {
           flow.setState({

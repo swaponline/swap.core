@@ -81,14 +81,14 @@ class BTC2ETH extends Flow {
       async () => {
         const { sellAmount, participant } = flow.swap
 
-        const { script: btcScript, ...scriptValues } = flow.btcSwap.createScript({
+        const scriptValues = {
           secretHash:         flow.state.secretHash,
           btcOwnerPublicKey:  SwapApp.services.auth.accounts.btc.getPublicKey(),
           ethOwnerPublicKey:  participant.btc.publicKey,
-        })
+        }
 
         await flow.btcSwap.fundScript({
-          script: btcScript,
+          scriptValues,
           amount: sellAmount,
         })
 
