@@ -119,11 +119,19 @@ class BTC2ETH extends Flow {
       // 6. Withdraw
 
       async () => {
-        const { participant } = flow.swap
+        const { buyAmount, participant } = flow.swap
 
         const data = {
           ownerAddress:   participant.eth.address,
           secret:         flow.state.secret,
+        }
+
+        const balanceCheckResult = await flow.ethSwap.checkBalance(participant.eth.address, buyAmount)
+
+        if (balanceCheckResult) {
+          console.error(`Eth balance check error:`, balanceCheckResult)
+          flow.swap.events.dispatch('eth balance check error', balanceCheckResult)
+          return
         }
 
         await flow.ethSwap.withdraw(data, (transactionHash) => {
