@@ -81,7 +81,23 @@ class ETH2BTC extends Flow {
       // 5. Create ETH Contract
 
       async () => {
-        const { participant, sellAmount } = flow.swap
+        const { participant, buyAmount, sellAmount } = flow.swap
+
+        // TODO move this somewhere!
+        const utcNow = () => Math.floor(Date.now() / 1000)
+        const getLockTime = () => utcNow() + 3600 * 1 // 1 hour from now
+
+        const scriptCheckResult = await flow.btcSwap.checkScript(flow.state.btcScriptValues, {
+          value: buyAmount,
+          recipientPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
+          lockTime: getLockTime(),
+        })
+
+        if (scriptCheckResult) {
+          console.error(`Btc script check error:`, scriptCheckResult)
+          flow.swap.events.dispatch('btc script check error', scriptCheckResult)
+          return
+        }
 
         const swapData = {
           participantAddress:   participant.eth.address,
