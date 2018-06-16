@@ -76,15 +76,32 @@ class SwapRoom extends ServiceInterface {
   }
 
   _handleNewMessage = (message) => {
-    if (message.from === this.peer) {
+    const { from, data } = message
+
+    if (from === this.peer) {
       return
     }
 
-    const data = JSON.parse(message.data.toString())
+    let parsedData
 
-    if (data && data.length) {
-      data.forEach(({ event, data }) => {
-        this._events.dispatch(event, { ...(data || {}), fromPeer: message.from })
+    try {
+      parsedData = JSON.parse(data.toString())
+    }
+    catch (err) {}
+
+    const { fromAddress, messages, sign } = parsedData
+    const recover = this._recoverMessage(messages, sign)
+
+    if (recover !== fromAddress) {
+      return
+    }
+
+    if (messages && messages.length) {
+      messages.forEach(({ event, data }) => {
+        this._events.dispatch(event, {
+          fromPeer: from,
+          ...(data || {}),
+        })
       })
     }
   }
@@ -101,16 +118,40 @@ class SwapRoom extends ServiceInterface {
     this._events.once(eventName, handler)
   }
 
+  _recoverMessage(message, sign) {
+    const hash      = SwapApp.env.web3.utils.soliditySha3(JSON.stringify(message))
+    const recover   = SwapApp.env.web3.eth.accounts.recover(hash, sign.signature)
+
+    return recover
+  }
+
+  _signMessage(message) {
+    const hash  = SwapApp.env.web3.utils.soliditySha3(JSON.stringify(message))
+    const sign  = SwapApp.env.web3.eth.accounts.sign(hash, SwapApp.services.auth.accounts.eth.privateKey)
+
+    return sign
+  }
+
   sendMessage(...args) {
     if (args.length === 1) {
-      const [ message ] = args
+      const [ messages ] = args
+      const sign = this._signMessage(messages)
 
-      this.connection.broadcast(JSON.stringify(message))
+      this.connection.broadcast(JSON.stringify({
+        fromAddress: SwapApp.services.auth.accounts.eth.address,
+        messages,
+        sign,
+      }))
     }
     else {
-      const [ peer, message ] = args
+      const [ peer, messages ] = args
+      const sign = this._signMessage(messages)
 
-      this.connection.sendTo(peer, JSON.stringify(message))
+      this.connection.sendTo(peer, JSON.stringify({
+        fromAddress: SwapApp.services.auth.accounts.eth.address,
+        messages,
+        sign,
+      }))
     }
   }
 }
