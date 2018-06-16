@@ -13,27 +13,23 @@ import { EthSwap, EthTokenSwap, BtcSwap } from 'swap.swaps'
 // Private Keys ---------------------------------------------- /
 
 // Chrome
-// localStorage.setItem('ethPrivateKey', '0xa6316e9e231fa70f2f41ce755f3846b74af10e8c5def8d333ec89af3b9b4193b')
-// localStorage.setItem('btcPrivateKey', 'cUSH65TpCkU5rsMem8WND5itr3SVF192EAKA8E5ipqs15fTJiRbc')
+// localStorage.setItem('swap:testnet:eth:privateKey', '"0xa6316e9e231fa70f2f41ce755f3846b74af10e8c5def8d333ec89af3b9b4193b"')
+// localStorage.setItem('swap:testnet:btc:privateKey', '"cUSH65TpCkU5rsMem8WND5itr3SVF192EAKA8E5ipqs15fTJiRbc"')
 
 // Yandex
-// localStorage.setItem('ethPrivateKey', '0xe32a5cb068a13836b6bc80f54585bbfcc2d5d9089f0c5381b27d039b6d2404ec')
-// localStorage.setItem('btcPrivateKey', 'cRF7Az481ffsuhhZ28x32Xk4ZvPh98zhKv7hCi1pKjifqvv7AcuX')
+// localStorage.setItem('swap:testnet:eth:privateKey', '"0xe32a5cb068a13836b6bc80f54585bbfcc2d5d9089f0c5381b27d039b6d2404ec"')
+// localStorage.setItem('swap:testnet:btc:privateKey', '"cRF7Az481ffsuhhZ28x32Xk4ZvPh98zhKv7hCi1pKjifqvv7AcuX"')
 
 const localClear = localStorage.clear.bind(localStorage)
 
 window.clear = localStorage.clear = () => {
-  const testnetEthPrivateKey = localStorage.getItem('testnet:eth:PrivateKey')
-  const testnetBtcPrivateKey = localStorage.getItem('testnet:btc:PrivateKey')
-  const mainnetEthPrivateKey = localStorage.getItem('mainnet:eth:PrivateKey')
-  const mainnetBtcPrivateKey = localStorage.getItem('mainnet:btc:PrivateKey')
+  const ethPrivateKey = localStorage.getItem('swap:testnet:eth:privateKey')
+  const btcPrivateKey = localStorage.getItem('swap:testnet:btc:privateKey')
 
   localClear()
 
-  localStorage.getItem('testnet:eth:PrivateKey', testnetEthPrivateKey)
-  localStorage.getItem('testnet:btc:PrivateKey', testnetBtcPrivateKey)
-  localStorage.getItem('mainnet:eth:PrivateKey', mainnetEthPrivateKey)
-  localStorage.getItem('mainnet:btc:PrivateKey', mainnetBtcPrivateKey)
+  localStorage.setItem('swap:testnet:eth:privateKey', ethPrivateKey)
+  localStorage.setItem('swap:testnet:btc:privateKey', btcPrivateKey)
 }
 
 
