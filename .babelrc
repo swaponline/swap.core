@@ -4,7 +4,6 @@
 //    ["transform-es2015-modules-commonjs", {
 //      "noInterop": true
 //    }],
-    "swap",
     "transform-class-properties",
     "transform-es2015-destructuring",
     "transform-object-rest-spread"
