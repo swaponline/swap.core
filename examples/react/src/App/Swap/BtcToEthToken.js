@@ -64,7 +64,7 @@ export default class BtcToEthToken extends Component {
             )
           )
         }
-        
+
         {
           flow.isWaitingForOwner && (
             <Fragment>
@@ -73,7 +73,7 @@ export default class BtcToEthToken extends Component {
             </Fragment>
           )
         }
-        
+
         {
           (flow.step === 1 || flow.isMeSigned) && (
             <Fragment>
