@@ -1,10 +1,10 @@
 import pullProps from './pullProps'
 import ignoreProps from './ignoreProps'
-import validateProps from './validateProps'
+import typeforce from './typeforce'
 
 
 export default {
   pullProps,
   ignoreProps,
-  validateProps,
+  typeforce,
 }

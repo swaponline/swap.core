@@ -2,7 +2,10 @@
 .idea
 
 node_modules
-lib
 
-swap-core
-public/_libs
+*-lock.*
+
+examples/react/swap
+examples/vanilla/swap
+umd
+lib

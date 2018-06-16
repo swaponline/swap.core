@@ -14,8 +14,8 @@ class Swap {
     this.participant    = null
     this.buyCurrency    = null
     this.sellCurrency   = null
-    this.buyAmount      = null // not same as in order - for each user own
-    this.sellAmount     = null // not same as in order - for each user own
+    this.buyAmount      = null
+    this.sellAmount     = null
 
     this._persistState()
 
@@ -30,7 +30,7 @@ class Swap {
     // TODO bcs if user offline and I'd like to continue Flow steps I don't need to w8 him
     // TODO so no need to get data from SwapOrders
     if (order) {
-      const { isMy, buyAmount, sellAmount, ...rest } = util.pullProps(
+      const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, ...rest } = util.pullProps(
         order,
         'isMy',
         'owner',
@@ -44,6 +44,8 @@ class Swap {
       const data = {
         ...rest,
         isMy,
+        buyCurrency: isMy ? buyCurrency : sellCurrency,
+        sellCurrency: isMy ? sellCurrency : buyCurrency,
         buyAmount: isMy ? buyAmount : sellAmount,
         sellAmount: isMy ? sellAmount : buyAmount,
       }

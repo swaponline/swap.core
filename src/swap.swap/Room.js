@@ -11,7 +11,7 @@ class Room {
   }
 
   subscribe(eventName, handler) {
-    SwapApp.services.room.events.subscribe(eventName, ({ fromPeer, swapId, ...values }) => {
+    SwapApp.services.room.subscribe(eventName, ({ fromPeer, swapId, ...values }) => {
       if (fromPeer === this.peer && swapId === this.swapId) {
         handler(values)
       }
@@ -21,9 +21,9 @@ class Room {
   once(eventName, handler) {
     const self = this
 
-    SwapApp.services.room.events.subscribe(eventName, function ({ fromPeer, swapId, ...values }) {
+    SwapApp.services.room.subscribe(eventName, function ({ fromPeer, swapId, ...values }) {
       if (fromPeer === self.peer && swapId === self.swapId) {
-        console.error(`INCOME SwapSwapApp.services.room event "${eventName}"`)
+        console.error(`INCOME swap event "${eventName}"`)
 
         this.unsubscribe()
         handler(values)
@@ -37,7 +37,7 @@ class Room {
 
       // value - eventName
       if (typeof value === 'string') {
-        console.error(`OUTCOME SwapSwapApp.services.room event "${value}"`)
+        console.error(`OUTCOME swap event "${value}"`)
 
         SwapApp.services.room.connection.sendTo(this.peer, JSON.stringify([
           {
@@ -49,7 +49,7 @@ class Room {
       // value - messages
       else if (Array.isArray(value)) {
         value.forEach(({ event }) => {
-          console.log(`OUTCOME SwapSwapApp.services.room event "${event}"`)
+          console.log(`OUTCOME swap event "${event}"`)
         })
 
         SwapApp.services.room.connection.sendTo(this.peer, JSON.stringify(value))
@@ -58,7 +58,7 @@ class Room {
     else {
       const [ eventName, message ] = args
 
-      console.log(`OUTCOME SwapSwapApp.services.room event "${eventName}"`)
+      console.log(`OUTCOME swap event "${eventName}"`)
 
       SwapApp.services.room.connection.sendTo(this.peer, JSON.stringify([
         {
