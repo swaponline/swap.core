@@ -1,4 +1,4 @@
-import SwapApp, { Collection, ServiceInterface, util } from 'swap.app'
+import SwapApp, { Collection, ServiceInterface, util, constants } from 'swap.app'
 import SwapRoom from 'swap.room'
 import aggregation from './aggregation'
 import events from './events'
@@ -24,91 +24,119 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
   }
 
   initService() {
-    SwapApp.services.room.subscribe('ready', () => {
-      this._persistMyOrders()
-    })
+    SwapApp.services.room.subscribe('ready', this._handleReady)
+    SwapApp.services.room.subscribe('user online', this._handleUserOnline)
+    SwapApp.services.room.subscribe('user offline', this._handleUserOffline)
+    SwapApp.services.room.subscribe('new orders', this._handleNewOrders)
+    SwapApp.services.room.subscribe('new order', this._handleNewOrder)
+    SwapApp.services.room.subscribe('remove order', this._handleRemoveOrder)
+  }
 
-    SwapApp.services.room.subscribe('user online', (peer) => {
-      let myOrders = this.getMyOrders()
+  _handleReady = () => {
+    this._persistMyOrders()
+  }
 
-      if (myOrders.length) {
-        // clean orders from other additional props
-        myOrders = myOrders.map((item) => util.pullProps(
-          item,
-          'id',
-          'owner',
-          'buyCurrency',
-          'sellCurrency',
-          'buyAmount',
-          'sellAmount',
-          'isRequested',
-          'isProcessing',
-        ))
+  _handleUserOnline = (peer) => {
+    let myOrders = this.getMyOrders()
 
-        console.log(`Send my orders to ${peer}`, myOrders)
-
-        SwapApp.services.room.sendMessage(peer, [
-          {
-            event: 'new orders',
-            data: {
-              orders: myOrders,
-            },
-          },
-        ])
-      }
-    })
-
-    SwapApp.services.room.subscribe('user offline', (peer) => {
-      const peerOrders = this.getPeerOrders(peer)
-
-      if (peerOrders.length) {
-        peerOrders.forEach(({ id }) => {
-          this._handleRemove(id)
-        })
-      }
-    })
-
-    SwapApp.services.room.subscribe('new orders', ({ fromPeer, orders }) => {
-      // ductape to check if such orders already exist
-      const filteredOrders = orders.filter(({ id, owner: { peer } }) => (
-        !this.getByKey(id) && peer === fromPeer
+    if (myOrders.length) {
+      // clean orders from other additional props
+      myOrders = myOrders.map((item) => util.pullProps(
+        item,
+        'id',
+        'owner',
+        'buyCurrency',
+        'sellCurrency',
+        'buyAmount',
+        'sellAmount',
+        'isRequested',
+        'isProcessing',
       ))
 
-      console.log(`Receive orders from ${fromPeer}`, filteredOrders)
+      SwapApp.services.room.sendMessage(peer, [
+        {
+          event: 'new orders',
+          data: {
+            orders: myOrders,
+          },
+        },
+      ])
+    }
+  }
 
-      this._handleMultipleCreate(filteredOrders)
-    })
+  _handleUserOffline = (peer) => {
+    const peerOrders = this.getPeerOrders(peer)
 
-    SwapApp.services.room.subscribe('new order', ({ fromPeer, order }) => {
-      if (order && order.owner && order.owner.peer === fromPeer) {
+    if (peerOrders.length) {
+      peerOrders.forEach(({ id }) => {
+        this._handleRemove(id)
+      })
+    }
+  }
+
+  _handleNewOrders = ({ fromPeer, orders }) => {
+    // ductape to check if such orders already exist
+    const filteredOrders = orders.filter(({ id, owner: { peer } }) => (
+      !this.getByKey(id) && peer === fromPeer
+    ))
+
+    this._handleMultipleCreate(filteredOrders)
+  }
+
+  _handleNewOrder = ({ fromPeer, order }) => {
+    if (order && order.owner && order.owner.peer === fromPeer) {
+      if (this._checkIncomeOrderFormat(order)) {
         this._handleCreate(order)
       }
-    })
+    }
+  }
 
-    SwapApp.services.room.subscribe('remove order', ({ fromPeer, orderId }) => {
-      const order = this.getByKey(orderId)
+  _handleRemoveOrder = ({ fromPeer, orderId }) => {
+    const order = this.getByKey(orderId)
 
-      if (order && order.owner && order.owner.peer === fromPeer) {
-        this._handleRemove(orderId)
-      }
-    })
+    if (order && order.owner && order.owner.peer === fromPeer) {
+      this._handleRemove(orderId)
+    }
+  }
+
+  _checkIncomeOrderFormat(data) {
+    const format = {
+      id: '?String',
+      owner: {
+        peer: 'String',
+        reputation: '?String',
+        ...(() => {
+          const result = {}
+          constants.COINS.forEach((coin) => {
+            result[coin] = util.typeforce.t.maybe({
+              address: 'String', // TODO add check address length
+              publicKey: '?String',
+            })
+          })
+          return result
+        })(),
+      },
+      buyCurrency: 'String',
+      sellCurrency: 'String',
+      buyAmount: util.typeforce.isNumeric,
+      sellAmount: util.typeforce.isNumeric,
+      isProcessing: '?Boolean',
+      isRequested: '?Boolean',
+    }
+
+    const isValid = util.typeforce.check(format, data, true)
+
+    if (!isValid) {
+      console.log('Wrong income order format. Excepted:', format, 'got:', data)
+    }
+
+    return isValid
   }
 
   _persistMyOrders() {
     this.getMyOrders().forEach((orderData) => {
       this._handleCreate(orderData)
     })
-  }
-
-  _create(data) {
-    const order = new Order(this, {
-      ...data,
-      id: data.id || getUniqueId(),
-    })
-
-    this.append(order, order.id)
-
-    return order
   }
 
   /**
@@ -125,22 +153,42 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
    * @param {string} data.sellCurrency
    * @param {number} data.buyAmount
    * @param {number} data.sellAmount
+   * @param {boolean} data.isProcessing
+   * @param {boolean} data.isRequested
    */
+  _create(data) {
+    const order = new Order(this, {
+      ...data,
+      id: data.id || getUniqueId(),
+    })
+
+    this.append(order, order.id)
+
+    return order
+  }
+
   _handleCreate(data) {
     const order = this._create(data)
 
-    events.dispatch('new order', order)
+    if (order) {
+      events.dispatch('new order', order)
+    }
   }
 
   _handleMultipleCreate(ordersData) {
     const orders = []
 
     ordersData.forEach((data) => {
-      const order = this._create(data)
-      orders.push(order)
+      if (this._checkIncomeOrderFormat(data)) {
+        const order = this._create(data)
+
+        orders.push(order)
+      }
     })
 
-    events.dispatch('new orders', orders)
+    if (orders.length) {
+      events.dispatch('new orders', orders)
+    }
   }
 
   /**
@@ -148,10 +196,15 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
    * @param {string} orderId
    */
   _handleRemove(orderId) {
-    const order = this.getByKey(orderId)
+    try {
+      const order = this.getByKey(orderId)
 
-    this.removeByKey(orderId)
-    events.dispatch('remove order', order)
+      if (order) {
+        this.removeByKey(orderId)
+        events.dispatch('remove order', order)
+      }
+    }
+    catch (err) {}
   }
 
   _saveMyOrders() {
@@ -196,12 +249,16 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
    * @param {number} data.sellAmount
    */
   create(data) {
-    // util.validateProps(data, {
-    //   buyCurrency: [],
-    //   sellCurrency: [],
-    //   buyAmount: [],
-    //   sellAmount: [],
-    // })
+    const isValid = util.typeforce.check({
+      buyCurrency: 'String',
+      sellCurrency: 'String',
+      buyAmount: util.typeforce.isNumeric,
+      sellAmount: util.typeforce.isNumeric,
+    }, data, true)
+
+    if (!isValid) {
+      return
+    }
 
     const order = this._create({
       ...data,

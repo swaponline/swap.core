@@ -22,7 +22,8 @@
     "bitcoinjs-lib": "~3.3.2"
   },
   "dependencies": {
-    "bitcoinjs-lib": "^3.3.2"
+    "bitcoinjs-lib": "^3.3.2",
+    "typeforce": "^1.12.0"
   },
   "devDependencies": {
     "ava": "^1.0.0-beta.4",
