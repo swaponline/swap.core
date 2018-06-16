@@ -1,5 +1,16 @@
 # order-core
+
+https://t.me/swapdev :)
+
 Swap Core
+
+In-browser atomic swap protocol based on HTLC
+
+Try demo at testnet.swap.online
+
+Swap.online is a decentralized exchange protocol (DEP) for crosschain atomic swaps, based on HTLC. It is written on JavaScript and can be run in browser or via NodeJS.
+
+tags: HTLC, atomic swap, javascript, browser, crypto, bitcoin, ethereum, erc20
 
 
 ## Run App example
