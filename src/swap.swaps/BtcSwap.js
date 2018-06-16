@@ -68,24 +68,24 @@ class BtcSwap extends SwapInterface {
    *
    * @param {object} data
    * @param {string} data.secretHash
-   * @param {string} data.btcOwnerPublicKey
-   * @param {string} data.ethOwnerPublicKey
+   * @param {string} data.ownerPublicKey
+   * @param {string} data.recipientPublicKey
    * @param {number} data.lockTime
-   * @returns {{address: *, script: (*|{ignored}), secretHash: *, btcOwnerPublicKey: *, ethOwnerPublicKey: *, lockTime: *}}
+   * @returns {{address: *, script: (*|{ignored}), secretHash: *, ownerPublicKey: *, recipientPublicKey: *, lockTime: *}}
    */
   createScript(data) {
-    const { secretHash, btcOwnerPublicKey, ethOwnerPublicKey, lockTime } = data
+    const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
 
     const script = SwapApp.env.bitcoin.script.compile([
       SwapApp.env.bitcoin.opcodes.OP_RIPEMD160,
       Buffer.from(secretHash, 'hex'),
       SwapApp.env.bitcoin.opcodes.OP_EQUALVERIFY,
 
-      Buffer.from(ethOwnerPublicKey, 'hex'),
+      Buffer.from(recipientPublicKey, 'hex'),
       SwapApp.env.bitcoin.opcodes.OP_EQUAL,
       SwapApp.env.bitcoin.opcodes.OP_IF,
 
-      Buffer.from(ethOwnerPublicKey, 'hex'),
+      Buffer.from(recipientPublicKey, 'hex'),
       SwapApp.env.bitcoin.opcodes.OP_CHECKSIG,
 
       SwapApp.env.bitcoin.opcodes.OP_ELSE,
@@ -93,7 +93,7 @@ class BtcSwap extends SwapInterface {
       SwapApp.env.bitcoin.script.number.encode(lockTime),
       SwapApp.env.bitcoin.opcodes.OP_CHECKLOCKTIMEVERIFY,
       SwapApp.env.bitcoin.opcodes.OP_DROP,
-      Buffer.from(btcOwnerPublicKey, 'hex'),
+      Buffer.from(ownerPublicKey, 'hex'),
       SwapApp.env.bitcoin.opcodes.OP_CHECKSIG,
 
       SwapApp.env.bitcoin.opcodes.OP_ENDIF,
@@ -105,6 +105,34 @@ class BtcSwap extends SwapInterface {
     return {
       scriptAddress,
       script,
+    }
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.recipientPublicKey
+   * @param {number} data.lockTime
+   * @param {object} expected
+   * @param {number} expected.value
+   * @param {number} expected.lockTime
+   * @param {string} expected.recipientPublicKey
+   */
+  async checkScript(data, expected) {
+    const { recipientPublicKey, lockTime } = data
+    const { scriptAddress, script } = this.createScript(data)
+
+    const unspents      = await this.fetchUnspents(scriptAddress)
+    const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+
+    if (expected.value * 1e8 > totalUnspent) {
+      return `Expected script value: ${expected.value * 1e8}, got: ${totalUnspent}`
+    }
+    if (expected.lockTime > lockTime) {
+      return `Expected script lockTime: ${expected.lockTime}, got: ${lockTime}`
+    }
+    if (expected.recipientPublicKey !== recipientPublicKey) {
+      return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
     }
   }
 
