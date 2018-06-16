@@ -11,7 +11,7 @@ class Room {
   }
 
   subscribe(eventName, handler) {
-    SwapApp.services.room.events.subscribe(eventName, ({ fromPeer, swapId, ...values }) => {
+    SwapApp.services.room.subscribe(eventName, ({ fromPeer, swapId, ...values }) => {
       if (fromPeer === this.peer && swapId === this.swapId) {
         handler(values)
       }
@@ -21,7 +21,7 @@ class Room {
   once(eventName, handler) {
     const self = this
 
-    SwapApp.services.room.events.subscribe(eventName, function ({ fromPeer, swapId, ...values }) {
+    SwapApp.services.room.subscribe(eventName, function ({ fromPeer, swapId, ...values }) {
       if (fromPeer === self.peer && swapId === self.swapId) {
         console.error(`INCOME swap event "${eventName}"`)
 
