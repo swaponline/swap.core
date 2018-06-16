@@ -109,10 +109,37 @@ class BTC2ETH extends Flow {
       // 5. Wait participant creates ETH Contract
 
       () => {
+        const { participant } = flow.swap
+        let timer
+
+        const checkEthBalance = () => {
+          timer = setTimeout(async () => {
+            const balance = await flow.ethSwap.getBalance({ ownerAddress: participant.eth.address })
+
+            if (balance > 0) {
+              if (!flow.state.isEthContractFunded) { // redundant condition but who cares :D
+                flow.finishStep({
+                  isEthContractFunded: true,
+                })
+              }
+            }
+            else {
+              checkEthBalance()
+            }
+          }, 20 * 1000)
+        }
+
+        checkEthBalance()
+
         flow.swap.room.once('create eth contract', () => {
-          flow.finishStep({
-            isEthContractFunded: true,
-          })
+          if (!flow.state.isEthContractFunded) {
+            clearTimeout(timer)
+            timer = null
+
+            flow.finishStep({
+              isEthContractFunded: true,
+            })
+          }
         })
       },
 
