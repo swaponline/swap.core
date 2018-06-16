@@ -23,42 +23,48 @@ class Swap {
   }
 
   _persistState() {
-    const order = SwapApp.env.storage.getItem(`swap.${this.id}`) || SwapApp.services.orders.getByKey(this.id)
+    let swap = SwapApp.env.storage.getItem(`swap.${this.id}`)
 
     // if no `order` that means that participant is offline
     // TODO it's better to create swapCollection and store all swaps data there
     // TODO bcs if user offline and I'd like to continue Flow steps I don't need to w8 him
     // TODO so no need to get data from SwapOrders
-    if (order) {
-      const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, ...rest } = util.pullProps(
-        order,
-        'isMy',
-        'owner',
-        'participant',
-        'buyCurrency',
-        'sellCurrency',
-        'buyAmount',
-        'sellAmount',
-      )
+    if (!swap) {
+      const order = SwapApp.services.orders.getByKey(this.id)
 
-      const data = {
-        ...rest,
-        isMy,
-        buyCurrency: isMy ? buyCurrency : sellCurrency,
-        sellCurrency: isMy ? sellCurrency : buyCurrency,
-        buyAmount: isMy ? buyAmount : sellAmount,
-        sellAmount: isMy ? sellAmount : buyAmount,
+      if (order) {
+        const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, ...rest } = util.pullProps(
+          order,
+          'isMy',
+          'owner',
+          'participant',
+          'buyCurrency',
+          'sellCurrency',
+          'buyAmount',
+          'sellAmount',
+        )
+
+        swap = {
+          ...rest,
+          isMy,
+          buyCurrency: isMy ? buyCurrency : sellCurrency,
+          sellCurrency: isMy ? sellCurrency : buyCurrency,
+          buyAmount: isMy ? buyAmount : sellAmount,
+          sellAmount: isMy ? sellAmount : buyAmount,
+        }
+
+        if (!swap.participant && !isMy) {
+          swap.participant = swap.owner
+        }
       }
+    }
 
-      if (!data.participant && !isMy) {
-        data.participant = data.owner
-      }
-
+    if (swap) {
       this.room = new Room({
-        participantPeer: data.participant.peer,
+        participantPeer: swap.participant.peer,
       })
 
-      this.update(data)
+      this.update(swap)
       this._saveState()
     }
   }
