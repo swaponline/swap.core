@@ -15,8 +15,8 @@ class SwapRoom extends ServiceInterface {
     }
 
     this._serviceName   = 'room'
-    this._events        = new Events()
     this._config        = config
+    this.events         = new Events()
     this.peer           = null
   }
 
@@ -59,18 +59,18 @@ class SwapRoom extends ServiceInterface {
     this.connection.on('peer left', this._handleUserOffline)
     this.connection.on('message', this._handleNewMessage)
 
-    this._events.dispatch('ready')
+    this.events.dispatch('ready')
   }
 
   _handleUserOnline = (peer) => {
     if (peer !== this.peer) {
-      this._events.dispatch('user online', peer)
+      this.events.dispatch('user online', peer)
     }
   }
 
   _handleUserOffline = (peer) => {
     if (peer !== this.peer) {
-      this._events.dispatch('user offline', peer)
+      this.events.dispatch('user offline', peer)
     }
   }
 
@@ -83,21 +83,21 @@ class SwapRoom extends ServiceInterface {
 
     if (data && data.length) {
       data.forEach(({ event, data }) => {
-        this._events.dispatch(event, { ...(data || {}), fromPeer: message.from })
+        this.events.dispatch(event, { ...(data || {}), fromPeer: message.from })
       })
     }
   }
 
   subscribe(eventName, handler) {
-    this._events.subscribe(eventName, handler)
+    this.events.subscribe(eventName, handler)
   }
 
   unsubscribe(eventName, handler) {
-    this._events.unsubscribe(eventName, handler)
+    this.events.unsubscribe(eventName, handler)
   }
 
   once(eventName, handler) {
-    this._events.once(eventName, handler)
+    this.events.once(eventName, handler)
   }
 
   sendMessage(...args) {
