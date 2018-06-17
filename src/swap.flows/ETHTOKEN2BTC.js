@@ -366,4 +366,4 @@ class ETHTOKEN2BTC extends Flow {
 }
 
 
-export default ETH2BTC
+export default ETHTOKEN2BTC

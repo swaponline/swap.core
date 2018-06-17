@@ -212,11 +212,6 @@ class BtcSwap extends SwapInterface {
         unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
         tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
 
-        console.log('scriptValues', scriptValues)
-        console.log('scriptAddress', scriptAddress)
-        console.log('secret', secret)
-        console.log('totalUnspent', totalUnspent)
-
         const txRaw = tx.buildIncomplete()
 
         this._signTransaction({
