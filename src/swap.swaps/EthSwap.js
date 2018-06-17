@@ -197,41 +197,63 @@ class EthSwap extends SwapInterface {
     })
   }
 
-  getSecret({ participantAddress }) {
-    return new Promise(async (resolve, reject) => {
-      let secret
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.participantAddress
+   * @returns {Promise}
+   */
+  getSecret(data) {
+    const { participantAddress } = data
 
+    return new Promise(async (resolve, reject) => {
       try {
-        secret = await this.contract.methods.getSecret(participantAddress).call({
+        const secret = await this.contract.methods.getSecret(participantAddress).call({
           from: SwapApp.services.auth.accounts.eth.address,
         })
+
+        const secretValue = secret && !/^0x0+/.test(secret) ? secret : null
+
+        resolve(secretValue)
       }
       catch (err) {
         reject(err)
       }
-
-      resolve(secret)
     })
   }
 
-  close({ participantAddress }, handleTransactionHash) {
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.participantAddress
+   * @param handleTransactionHash
+   * @returns {Promise}
+   */
+  close(data, handleTransactionHash) {
+    const { participantAddress } = data
+
     return new Promise(async (resolve, reject) => {
       const params = {
         from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
       }
 
-      const receipt = await this.contract.methods.close(participantAddress).send(params)
-        .on('transactionHash', (hash) => {
-          if (typeof handleTransactionHash === 'function') {
-            handleTransactionHash(hash)
-          }
-        })
-        .on('error', (err) => {
-          reject(err)
-        })
+      try {
+        const result = await this.contract.methods.close(participantAddress).send(params)
+          .on('transactionHash', (hash) => {
+            if (typeof handleTransactionHash === 'function') {
+              handleTransactionHash(hash)
+            }
+          })
+          .on('error', (err) => {
+            reject(err)
+          })
 
-      resolve(receipt)
+        resolve(result)
+      }
+      catch (err) {
+        reject(err)
+      }
     })
   }
 }
