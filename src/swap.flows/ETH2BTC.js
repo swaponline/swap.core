@@ -52,14 +52,14 @@ class ETH2BTC extends Flow {
   _persistState() {
     super._persistState()
 
-    console.log('START GETTING SECRET')
-
-    this.ethSwap.getSecret({
-      participantAddress: this.swap.participant.eth.address,
-    })
-      .then((res) => {
-        console.log('SECRET', res)
-      })
+    // console.log('START GETTING SECRET')
+    //
+    // this.ethSwap.getSecret({
+    //   participantAddress: this.swap.participant.eth.address,
+    // })
+    //   .then((res) => {
+    //     console.log('SECRET', res)
+    //   })
   }
 
   _getSteps() {
@@ -144,14 +144,20 @@ class ETH2BTC extends Flow {
 
         const checkSecretExist = () => {
           timer = setTimeout(async () => {
-            const secret = await flow.ethSwap.getSecret({
-              participantAddress: participant.eth.address,
-            })
+            let secret
+
+            try {
+              secret = await flow.ethSwap.getSecret({
+                participantAddress: participant.eth.address,
+              })
+            }
+            catch (err) {}
 
             if (secret) {
               if (!flow.state.isEthWithdrawn) { // redundant condition but who cares :D
                 flow.finishStep({
                   isEthWithdrawn: true,
+                  secret,
                 })
               }
             }
@@ -185,7 +191,8 @@ class ETH2BTC extends Flow {
           participantAddress: participant.eth.address,
         }
 
-        if (!secret || /^0x0+/.test(secret)) {
+        // if there is no secret in state then request it
+        if (!secret) {
           try {
             secret = await flow.ethSwap.getSecret(data)
 
@@ -200,7 +207,8 @@ class ETH2BTC extends Flow {
           }
         }
 
-        if (!secret || /^0x0+/.test(secret)) {
+        // if there is still no secret stop withdraw
+        if (!secret) {
           console.error(`Secret required! Got ${secret}`)
           return
         }
@@ -249,16 +257,16 @@ class ETH2BTC extends Flow {
       isSignFetching: true,
     })
 
-    // await this.ethSwap.sign(
-    //   {
-    //     participantAddress: participant.eth.address,
-    //   },
-    //   (signTransactionUrl) => {
-    //     this.setState({
-    //       signTransactionUrl,
-    //     })
-    //   }
-    // )
+    await this.ethSwap.sign(
+      {
+        participantAddress: participant.eth.address,
+      },
+      (signTransactionUrl) => {
+        this.setState({
+          signTransactionUrl,
+        })
+      }
+    )
 
     this.swap.room.sendMessage('swap sign')
 

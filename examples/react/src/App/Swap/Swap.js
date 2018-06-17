@@ -31,7 +31,7 @@ export default class Swap extends Component {
     const SwapComponent = swapComponents[`${firstPart.toLowerCase()}${lastPart.toLowerCase()}`]
 
     return (
-      <div style={{ paddingLeft: '30px' }}>
+      <div style={{ paddingLeft: '30px', paddingBottom: '100px' }}>
         <SwapComponent orderId={orderId} />
       </div>
     )

@@ -33,7 +33,7 @@ class ETHTOKEN2BTC extends Flow {
       isBalanceEnough: false,
       balance: null,
 
-      ethSwapCreationTransactionUrl: null,
+      ethTokenSwapCreationTransactionUrl: null,
       isEthContractFunded: false,
 
       isEthWithdrawn: false,
@@ -105,13 +105,13 @@ class ETHTOKEN2BTC extends Flow {
           amount:               sellAmount,
         }
 
-        await flow.ethSwap.approve({
+        await flow.ethTokenSwap.approve({
           amount: sellAmount,
         })
 
-        await flow.ethSwap.create(swapData, (transactionUrl) => {
+        await flow.ethTokenSwap.create(swapData, (transactionUrl) => {
           flow.setState({
-            ethSwapCreationTransactionUrl: transactionUrl,
+            ethTokenSwapCreationTransactionUrl: transactionUrl,
           })
         })
 
@@ -130,14 +130,20 @@ class ETHTOKEN2BTC extends Flow {
 
         const checkSecretExist = () => {
           timer = setTimeout(async () => {
-            const secret = await flow.ethSwap.getSecret({
-              participantAddress: participant.eth.address,
-            })
+            let secret
+
+            try {
+              secret = await flow.ethTokenSwap.getSecret({
+                participantAddress: participant.eth.address,
+              })
+            }
+            catch (err) {}
 
             if (secret) {
               if (!flow.state.isEthWithdrawn) { // redundant condition but who cares :D
                 flow.finishStep({
                   isEthWithdrawn: true,
+                  secret,
                 })
               }
             }
@@ -171,6 +177,7 @@ class ETHTOKEN2BTC extends Flow {
           participantAddress: participant.eth.address,
         }
 
+        // if there is no secret in state then request it
         if (!secret) {
           try {
             secret = await flow.ethSwap.getSecret(data)
@@ -181,13 +188,20 @@ class ETHTOKEN2BTC extends Flow {
           }
           catch (err) {
             // TODO notify user that smth goes wrong
-            throw new Error(err)
+            console.error(err)
+            return
           }
+        }
+
+        // if there is still no secret stop withdraw
+        if (!secret) {
+          console.error(`Secret required! Got ${secret}`)
+          return
         }
 
         if (!isEthClosed) {
           try {
-            await flow.ethSwap.close(data)
+            await flow.ethTokenSwap.close(data)
 
             flow.setState({
               isEthClosed: true,
@@ -228,7 +242,7 @@ class ETHTOKEN2BTC extends Flow {
       isSignFetching: true,
     })
 
-    await this.ethSwap.sign(
+    await this.ethTokenSwap.sign(
       {
         participantAddress: participant.eth.address,
       },
