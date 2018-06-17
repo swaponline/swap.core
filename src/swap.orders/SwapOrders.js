@@ -10,6 +10,51 @@ const getUniqueId = (() => {
   return () => `${SwapApp.services.room.peer}-${++id}`
 })()
 
+const checkIncomeOrderFormat = (order) => {
+  const format = {
+    id: '?String',
+    owner: {
+      peer: 'String',
+      reputation: '?String',
+      ...(() => {
+        const result = {}
+        constants.COINS.forEach((coin) => {
+          result[coin] = util.typeforce.t.maybe({
+            address: 'String', // TODO add check address length
+            publicKey: '?String',
+          })
+        })
+        return result
+      })(),
+    },
+    buyCurrency: 'String',
+    sellCurrency: 'String',
+    buyAmount: util.typeforce.isNumeric,
+    sellAmount: util.typeforce.isNumeric,
+    isProcessing: '?Boolean',
+    isRequested: '?Boolean',
+  }
+
+  const isValid = util.typeforce.check(format, order, true)
+
+  if (!isValid) {
+    console.log('Wrong income order format. Excepted:', format, 'got:', order)
+  }
+
+  return isValid
+}
+
+const checkIncomeOrderOwner = ({ owner: { peer } }, fromPeer) =>
+  peer === fromPeer
+
+const checkIncomeOrder = (order, fromPeer) => {
+  const isFormatValid = checkIncomeOrderFormat(order)
+  const isOwnerValid = checkIncomeOrderOwner(order, fromPeer)
+
+  return isFormatValid && isOwnerValid
+}
+
+
 class SwapOrders extends aggregation(ServiceInterface, Collection) {
 
   static get name() {
@@ -80,12 +125,12 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
       !this.getByKey(id) && peer === fromPeer
     ))
 
-    this._handleMultipleCreate(filteredOrders)
+    this._handleMultipleCreate({ orders: filteredOrders, fromPeer })
   }
 
   _handleNewOrder = ({ fromPeer, order }) => {
     if (order && order.owner && order.owner.peer === fromPeer) {
-      if (this._checkIncomeOrderFormat(order)) {
+      if (checkIncomeOrder(order, fromPeer)) {
         this._handleCreate(order)
       }
     }
@@ -97,40 +142,6 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
     if (order && order.owner && order.owner.peer === fromPeer) {
       this._handleRemove(orderId)
     }
-  }
-
-  _checkIncomeOrderFormat(data) {
-    const format = {
-      id: '?String',
-      owner: {
-        peer: 'String',
-        reputation: '?String',
-        ...(() => {
-          const result = {}
-          constants.COINS.forEach((coin) => {
-            result[coin] = util.typeforce.t.maybe({
-              address: 'String', // TODO add check address length
-              publicKey: '?String',
-            })
-          })
-          return result
-        })(),
-      },
-      buyCurrency: 'String',
-      sellCurrency: 'String',
-      buyAmount: util.typeforce.isNumeric,
-      sellAmount: util.typeforce.isNumeric,
-      isProcessing: '?Boolean',
-      isRequested: '?Boolean',
-    }
-
-    const isValid = util.typeforce.check(format, data, true)
-
-    if (!isValid) {
-      console.log('Wrong income order format. Excepted:', format, 'got:', data)
-    }
-
-    return isValid
   }
 
   _persistMyOrders() {
@@ -175,19 +186,19 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
     }
   }
 
-  _handleMultipleCreate(ordersData) {
-    const orders = []
+  _handleMultipleCreate({ orders, fromPeer }) {
+    const newOrders = []
 
-    ordersData.forEach((data) => {
-      if (this._checkIncomeOrderFormat(data)) {
+    orders.forEach((data) => {
+      if (checkIncomeOrder(data, fromPeer)) {
         const order = this._create(data)
 
-        orders.push(order)
+        newOrders.push(order)
       }
     })
 
-    if (orders.length) {
-      events.dispatch('new orders', orders)
+    if (newOrders.length) {
+      events.dispatch('new orders', newOrders)
     }
   }
 

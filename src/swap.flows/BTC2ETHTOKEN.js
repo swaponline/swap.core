@@ -86,8 +86,8 @@ class BTC2ETHTOKEN extends Flow {
 
         const scriptValues = {
           secretHash:         flow.state.secretHash,
-          btcOwnerPublicKey:  SwapApp.services.auth.accounts.btc.getPublicKey(),
-          ethOwnerPublicKey:  participant.btc.publicKey,
+          ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
+          recipientPublicKey: participant.btc.publicKey,
           lockTime:           getLockTime(),
         }
 

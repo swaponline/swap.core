@@ -87,12 +87,15 @@ class SwapRoom extends ServiceInterface {
     try {
       parsedData = JSON.parse(data.toString())
     }
-    catch (err) {}
+    catch (err) {
+      console.error('parse message data err:', err)
+    }
 
     const { fromAddress, messages, sign } = parsedData
     const recover = this._recoverMessage(messages, sign)
 
     if (recover !== fromAddress) {
+      console.error(`Wrong message sign! Message from: ${fromAddress}, recover: ${recover}`)
       return
     }
 

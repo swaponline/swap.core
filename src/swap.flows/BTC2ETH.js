@@ -82,12 +82,12 @@ class BTC2ETH extends Flow {
 
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
-        const getLockTime = () => utcNow() + 3600 * 3 // 3 days from now
+        const getLockTime = () => utcNow() + 3600 * 3 // 3 hours from now
 
         const scriptValues = {
           secretHash:         flow.state.secretHash,
-          btcOwnerPublicKey:  SwapApp.services.auth.accounts.btc.getPublicKey(),
-          ethOwnerPublicKey:  participant.btc.publicKey,
+          ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
+          recipientPublicKey: participant.btc.publicKey,
           lockTime:           getLockTime(),
         }
 
@@ -109,21 +109,56 @@ class BTC2ETH extends Flow {
       // 5. Wait participant creates ETH Contract
 
       () => {
+        const { participant } = flow.swap
+        let timer
+
+        const checkEthBalance = () => {
+          timer = setTimeout(async () => {
+            const balance = await flow.ethSwap.getBalance({ ownerAddress: participant.eth.address })
+
+            if (balance > 0) {
+              if (!flow.state.isEthContractFunded) { // redundant condition but who cares :D
+                flow.finishStep({
+                  isEthContractFunded: true,
+                })
+              }
+            }
+            else {
+              checkEthBalance()
+            }
+          }, 20 * 1000)
+        }
+
+        checkEthBalance()
+
         flow.swap.room.once('create eth contract', () => {
-          flow.finishStep({
-            isEthContractFunded: true,
-          })
+          if (!flow.state.isEthContractFunded) {
+            clearTimeout(timer)
+            timer = null
+
+            flow.finishStep({
+              isEthContractFunded: true,
+            })
+          }
         })
       },
 
       // 6. Withdraw
 
       async () => {
-        const { participant } = flow.swap
+        const { buyAmount, participant } = flow.swap
 
         const data = {
           ownerAddress:   participant.eth.address,
           secret:         flow.state.secret,
+        }
+
+        const balanceCheckResult = await flow.ethSwap.checkBalance(participant.eth.address, buyAmount)
+
+        if (balanceCheckResult) {
+          console.error(`Eth balance check error:`, balanceCheckResult)
+          flow.swap.events.dispatch('eth balance check error', balanceCheckResult)
+          return
         }
 
         await flow.ethSwap.withdraw(data, (transactionHash) => {

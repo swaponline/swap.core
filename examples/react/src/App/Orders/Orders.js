@@ -44,8 +44,8 @@ export default class Orders extends Component {
     const data = {
       buyCurrency: 'ETH',
       sellCurrency: 'BTC',
-      buyAmount: 1,
-      sellAmount: 0.001,
+      buyAmount: 0.013,
+      sellAmount: 0.0013,
     }
 
     SwapApp.services.orders.create(data)
@@ -92,8 +92,6 @@ export default class Orders extends Component {
   render() {
     const { orders } = this.state
     const { myPeer, activeOrderId } = this.props
-
-    console.log('orders', orders)
 
     return (
       <div>

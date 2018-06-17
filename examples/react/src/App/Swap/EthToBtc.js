@@ -104,7 +104,13 @@ export default class EthToBtc extends Component {
                         <div>
                           Transaction:
                           <strong>
-                            <a href={flow.signTransactionUrl} rel="noopener noreferrer" target="_blank">{flow.signTransactionUrl}</a>
+                            <a
+                              href={`https://rinkeby.etherscan.io/tx/${flow.signTransactionUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {flow.signTransactionUrl}
+                            </a>
                           </strong>
                         </div>
                       )
@@ -147,7 +153,7 @@ export default class EthToBtc extends Component {
                           rel="noopener noreferrer"
                         >
                           {flow.btcScriptValues.address}
-                          </a>
+                        </a>
                       </strong>
                     </div>
                     <br />
@@ -158,11 +164,11 @@ export default class EthToBtc extends Component {
     Buffer.from('${flow.btcScriptValues.secretHash}', 'hex'),
     bitcoin.core.opcodes.OP_EQUALVERIFY,
 
-    Buffer.from('${flow.btcScriptValues.ethOwnerPublicKey}', 'hex'),
+    Buffer.from('${flow.btcScriptValues.recipientPublicKey}', 'hex'),
     bitcoin.core.opcodes.OP_EQUAL,
     bitcoin.core.opcodes.OP_IF,
 
-    Buffer.from('${flow.btcScriptValues.ethOwnerPublicKey}', 'hex'),
+    Buffer.from('${flow.btcScriptValues.recipientPublicKey}', 'hex'),
     bitcoin.core.opcodes.OP_CHECKSIG,
 
     bitcoin.core.opcodes.OP_ELSE,
@@ -170,7 +176,7 @@ export default class EthToBtc extends Component {
     bitcoin.core.script.number.encode(${flow.btcScriptValues.lockTime}),
     bitcoin.core.opcodes.OP_CHECKLOCKTIMEVERIFY,
     bitcoin.core.opcodes.OP_DROP,
-    Buffer.from('${flow.btcScriptValues.btcOwnerPublicKey}', 'hex'),
+    Buffer.from('${flow.btcScriptValues.ownerPublicKey}', 'hex'),
     bitcoin.core.opcodes.OP_CHECKSIG,
 
     bitcoin.core.opcodes.OP_ENDIF,
@@ -224,7 +230,7 @@ export default class EthToBtc extends Component {
                     Transaction:
                     <strong>
                       <a
-                        href={flow.ethSwapCreationTransactionUrl}
+                        href={`https://rinkeby.etherscan.io/tx/${flow.ethSwapCreationTransactionUrl}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -264,7 +270,7 @@ export default class EthToBtc extends Component {
                     Transaction:
                     <strong>
                       <a
-                        href="https://www.blocktrail.com/tBTC/tx/{flow.btcSwapWithdrawTransactionUrl}"
+                        href={`https://www.blocktrail.com/tBTC/tx/${flow.btcSwapWithdrawTransactionUrl}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
