@@ -165,14 +165,39 @@ class ETHTOKEN2BTC extends Flow {
 
       async () => {
         const { participant } = flow.swap
+        let { secret, isEthClosed } = flow.state
 
         const data = {
           participantAddress: participant.eth.address,
         }
 
-        const secret = await flow.ethSwap.getSecret(data)
+        if (!secret) {
+          try {
+            secret = await flow.ethSwap.getSecret(data)
 
-        await flow.ethSwap.close(data)
+            flow.setState({
+              secret,
+            })
+          }
+          catch (err) {
+            // TODO notify user that smth goes wrong
+            throw new Error(err)
+          }
+        }
+
+        if (!isEthClosed) {
+          try {
+            await flow.ethSwap.close(data)
+
+            flow.setState({
+              isEthClosed: true,
+            })
+          }
+          catch (err) {
+            // TODO notify user that smth goes wrong
+            throw new Error(err)
+          }
+        }
 
         await flow.btcSwap.withdraw({
           scriptValues: flow.state.btcScriptValues,

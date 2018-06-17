@@ -36,12 +36,30 @@ class ETH2BTC extends Flow {
       ethSwapCreationTransactionUrl: null,
       isEthContractFunded: false,
 
+      secret: null,
+      isEthClosed: false,
+
       isEthWithdrawn: false,
       isBtcWithdrawn: false,
+
+      refundTransactionUrl: null,
     }
 
     super._persistSteps()
     this._persistState()
+  }
+
+  _persistState() {
+    super._persistState()
+
+    console.log('START GETTING SECRET')
+
+    this.ethSwap.getSecret({
+      participantAddress: this.swap.participant.eth.address,
+    })
+      .then((res) => {
+        console.log('SECRET', res)
+      })
   }
 
   _getSteps() {
@@ -161,14 +179,46 @@ class ETH2BTC extends Flow {
 
       async () => {
         const { participant } = flow.swap
+        let { secret, isEthClosed } = flow.state
 
         const data = {
           participantAddress: participant.eth.address,
         }
 
-        const secret = await flow.ethSwap.getSecret(data)
+        if (!secret || /^0x0+/.test(secret)) {
+          try {
+            secret = await flow.ethSwap.getSecret(data)
 
-        await flow.ethSwap.close(data)
+            flow.setState({
+              secret,
+            })
+          }
+          catch (err) {
+            // TODO notify user that smth goes wrong
+            console.error(err)
+            return
+          }
+        }
+
+        if (!secret || /^0x0+/.test(secret)) {
+          console.error(`Secret required! Got ${secret}`)
+          return
+        }
+
+        if (!isEthClosed) {
+          try {
+            await flow.ethSwap.close(data)
+
+            flow.setState({
+              isEthClosed: true,
+            })
+          }
+          catch (err) {
+            // TODO notify user that smth goes wrong
+            console.error(err)
+            return
+          }
+        }
 
         await flow.btcSwap.withdraw({
           scriptValues: flow.state.btcScriptValues,
@@ -199,16 +249,16 @@ class ETH2BTC extends Flow {
       isSignFetching: true,
     })
 
-    await this.ethSwap.sign(
-      {
-        participantAddress: participant.eth.address,
-      },
-      (signTransactionUrl) => {
-        this.setState({
-          signTransactionUrl,
-        })
-      }
-    )
+    // await this.ethSwap.sign(
+    //   {
+    //     participantAddress: participant.eth.address,
+    //   },
+    //   (signTransactionUrl) => {
+    //     this.setState({
+    //       signTransactionUrl,
+    //     })
+    //   }
+    // )
 
     this.swap.room.sendMessage('swap sign')
 
@@ -246,6 +296,68 @@ class ETH2BTC extends Flow {
         isBalanceFetching: false,
         isBalanceEnough: false,
       })
+    }
+  }
+
+  async tryRefund() {
+    const { participant } = this.swap
+    let { secret, btcScriptValues } = this.state
+
+    secret = 'c0809ce9f484fdcdfb2d5aabd609768ce0374ee97a1a5618ce4cd3f16c00a078'
+
+    try {
+      console.log('TRYING REFUND!')
+
+      try {
+        await this.ethSwap.refund({
+          participantAddress: participant.eth.address,
+        }, (transactionUrl) => {
+          this.setState({
+            refundTransactionUrl: transactionUrl,
+          })
+        })
+
+        console.log('SUCCESS REFUND!')
+        return
+      }
+      catch (err) {
+        console.err('REFUND FAILED!', err)
+      }
+    }
+    catch (err) {
+      console.error(`Mbe it's still under lockTime?! ${err}`)
+    }
+
+    if (!btcScriptValues) {
+      console.error('You can\'t do refund w/o btc script values! Try wait until lockTime expires on eth contract!')
+    }
+
+    if (!secret) {
+      try {
+        secret = await this.ethSwap.getSecret(data)
+      }
+      catch (err) {
+        console.error('Can\'t receive secret from contract')
+        return
+      }
+    }
+
+    console.log('TRYING WITHDRAW!')
+
+    try {
+      await this.btcSwap.withdraw({
+        scriptValues: this.state.btcScriptValues,
+        secret,
+      }, (transactionUrl) => {
+        this.setState({
+          btcSwapWithdrawTransactionUrl: transactionUrl,
+        })
+      })
+
+      console.log('SUCCESS WITHDRAW!')
+    }
+    catch (err) {
+      console.error('WITHDRAW FAILED!', err)
     }
   }
 }
