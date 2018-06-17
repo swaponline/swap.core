@@ -37,8 +37,8 @@ class BTC2ETH extends Flow {
 
       isEthContractFunded: false,
 
+      ethSwapWithdrawTransactionUrl: null,
       isEthWithdrawn: false,
-      isBtcWithdrawn: false,
     }
 
     super._persistSteps()

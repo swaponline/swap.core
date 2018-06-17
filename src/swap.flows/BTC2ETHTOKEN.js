@@ -12,10 +12,10 @@ class BTC2ETHTOKEN extends Flow {
     this.btcSwap      = SwapApp.swaps.btcSwap
 
     if (!this.ethTokenSwap) {
-      throw new Error('BTC2ETH failed. "ethTokenSwap" of type object required')
+      throw new Error('BTC2ETH: "ethTokenSwap" of type object required')
     }
     if (!this.btcSwap) {
-      throw new Error('BTC2ETH failed. "btcSwap" of type object required')
+      throw new Error('BTC2ETH: "btcSwap" of type object required')
     }
 
     this.state = {
@@ -37,8 +37,8 @@ class BTC2ETHTOKEN extends Flow {
 
       isEthContractFunded: false,
 
+      ethSwapWithdrawTransactionUrl: null,
       isEthWithdrawn: false,
-      isBtcWithdrawn: false,
     }
 
     super._persistSteps()
@@ -83,7 +83,7 @@ class BTC2ETHTOKEN extends Flow {
 
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
-        const getLockTime = () => utcNow() + 3600 * 3 // 3 days from now
+        const getLockTime = () => utcNow() + 3600 * 3 // 3 hours from now
 
         const scriptValues = {
           secretHash:         flow.state.secretHash,
@@ -101,7 +101,7 @@ class BTC2ETHTOKEN extends Flow {
           })
         })
 
-        this.swap.room.sendMessage('create btc script', {
+        flow.swap.room.sendMessage('create btc script', {
           scriptValues,
         })
 
@@ -114,24 +114,64 @@ class BTC2ETHTOKEN extends Flow {
       // 5. Wait participant creates ETH Contract
 
       () => {
+        const { participant } = flow.swap
+        let timer
+
+        const checkEthBalance = () => {
+          timer = setTimeout(async () => {
+            const balance = await flow.ethTokenSwap.getBalance({
+              ownerAddress: participant.eth.address,
+            })
+
+            if (balance > 0) {
+              if (!flow.state.isEthContractFunded) { // redundant condition but who cares :D
+                flow.finishStep({
+                  isEthContractFunded: true,
+                })
+              }
+            }
+            else {
+              checkEthBalance()
+            }
+          }, 20 * 1000)
+        }
+
+        checkEthBalance()
+
         flow.swap.room.once('create eth contract', () => {
-          flow.finishStep({
-            isEthContractFunded: true,
-          })
+          if (!flow.state.isEthContractFunded) {
+            clearTimeout(timer)
+            timer = null
+
+            flow.finishStep({
+              isEthContractFunded: true,
+            })
+          }
         })
       },
 
       // 6. Withdraw
 
       async () => {
-        const { participant } = flow.swap
+        const { buyAmount, participant } = flow.swap
 
         const data = {
           ownerAddress:   participant.eth.address,
           secret:         flow.state.secret,
         }
 
-        await flow.ethSwap.withdraw(data, (transactionHash) => {
+        const balanceCheckResult = await flow.ethTokenSwap.checkBalance({
+          ownerAddress: participant.eth.address,
+          expectedValue: buyAmount,
+        })
+
+        if (balanceCheckResult) {
+          console.error(`Eth balance check error:`, balanceCheckResult)
+          flow.swap.events.dispatch('eth balance check error', balanceCheckResult)
+          return
+        }
+
+        await flow.ethTokenSwap.withdraw(data, (transactionHash) => {
           flow.setState({
             ethSwapWithdrawTransactionUrl: transactionHash,
           })
