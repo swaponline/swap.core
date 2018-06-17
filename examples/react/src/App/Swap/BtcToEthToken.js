@@ -182,7 +182,13 @@ export default class BtcToEthToken extends Component {
                   <div>
                     Transaction:
                     <strong>
-                      <a href={flow.ethSwapWithdrawTransactionUrl} target="_blank">{flow.ethSwapWithdrawTransactionUrl}</a>
+                      <a
+                        href={`https://rinkeby.etherscan.io/tx/${flow.ethSwapWithdrawTransactionUrl}`}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
+                        {flow.ethSwapWithdrawTransactionUrl}
+                      </a>
                     </strong>
                   </div>
                 )

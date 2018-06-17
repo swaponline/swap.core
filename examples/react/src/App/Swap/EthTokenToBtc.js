@@ -4,7 +4,7 @@ import Swap from 'swap.swap'
 import Loader from '../Loader/Loader'
 
 
-export default class EthToBtc extends Component {
+export default class EthTokenToBtc extends Component {
 
   constructor({ orderId }) {
     super()
@@ -42,11 +42,35 @@ export default class EthToBtc extends Component {
     this.swap.flow.syncBalance()
   }
 
+  tryRefund = () => {
+    this.swap.flow.tryRefund()
+  }
+
   render() {
     const { flow } = this.state
 
     return (
       <div>
+        <button onClick={this.tryRefund}>TRY REFUND</button>
+        {
+          flow.refundTransactionUrl && (
+            <div>
+              Transaction:
+              <strong>
+                <a
+                  href={`https://rinkeby.etherscan.io/tx/${flow.refundTransactionUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {flow.refundTransactionUrl}
+                </a>
+              </strong>
+            </div>
+          )
+        }
+        <br />
+        <br />
+
         {
           this.swap.id && (
             <strong>{this.swap.sellAmount.toNumber()} {this.swap.sellCurrency} &#10230; {this.swap.buyAmount.toNumber()} {this.swap.buyCurrency}</strong>
@@ -104,7 +128,13 @@ export default class EthToBtc extends Component {
                         <div>
                           Transaction:
                           <strong>
-                            <a href={flow.signTransactionUrl} rel="noopener noreferrer" target="_blank">{flow.signTransactionUrl}</a>
+                            <a
+                              href={`https://rinkeby.etherscan.io/tx/${flow.signTransactionUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {flow.signTransactionUrl}
+                            </a>
                           </strong>
                         </div>
                       )
@@ -224,7 +254,7 @@ export default class EthToBtc extends Component {
                     Transaction:
                     <strong>
                       <a
-                        href={flow.ethSwapCreationTransactionUrl}
+                        href={`https://rinkeby.etherscan.io/tx/${flow.ethSwapCreationTransactionUrl}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -264,7 +294,7 @@ export default class EthToBtc extends Component {
                     Transaction:
                     <strong>
                       <a
-                        href="https://www.blocktrail.com/tBTC/tx/{flow.btcSwapWithdrawTransactionUrl}"
+                        href={`https://www.blocktrail.com/tBTC/tx/${flow.btcSwapWithdrawTransactionUrl}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
