@@ -85,3 +85,6 @@ swapApp.setup({
     }),
   ],
 })
+
+
+window.swapApp = swapApp
