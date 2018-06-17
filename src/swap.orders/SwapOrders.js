@@ -260,17 +260,6 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
    * @param {number} data.sellAmount
    */
   create(data) {
-    const isValid = util.typeforce.check({
-      buyCurrency: 'String',
-      sellCurrency: 'String',
-      buyAmount: util.typeforce.isNumeric,
-      sellAmount: util.typeforce.isNumeric,
-    }, data, true)
-
-    if (!isValid) {
-      return
-    }
-
     const order = this._create({
       ...data,
       owner: SwapApp.services.auth.getPublicData(),
