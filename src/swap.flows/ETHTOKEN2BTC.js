@@ -125,10 +125,39 @@ class ETHTOKEN2BTC extends Flow {
       // 6. Wait participant withdraw
 
       () => {
+        const { participant } = flow.swap
+        let timer
+
+        const checkSecretExist = () => {
+          timer = setTimeout(async () => {
+            const secret = await flow.ethSwap.getSecret({
+              participantAddress: participant.eth.address,
+            })
+
+            if (secret) {
+              if (!flow.state.isEthWithdrawn) { // redundant condition but who cares :D
+                flow.finishStep({
+                  isEthWithdrawn: true,
+                })
+              }
+            }
+            else {
+              checkSecretExist()
+            }
+          }, 20 * 1000)
+        }
+
+        checkSecretExist()
+
         flow.swap.room.once('finish eth withdraw', () => {
-          flow.finishStep({
-            isEthWithdrawn: true,
-          })
+          if (!flow.state.isEthWithdrawn) {
+            clearTimeout(timer)
+            timer = null
+
+            flow.finishStep({
+              isEthWithdrawn: true,
+            })
+          }
         })
       },
 
@@ -137,13 +166,13 @@ class ETHTOKEN2BTC extends Flow {
       async () => {
         const { participant } = flow.swap
 
-        const myAndParticipantData = {
+        const data = {
           participantAddress: participant.eth.address,
         }
 
-        const secret = await flow.ethSwap.getSecret(myAndParticipantData)
+        const secret = await flow.ethSwap.getSecret(data)
 
-        await flow.ethSwap.close(myAndParticipantData)
+        await flow.ethSwap.close(data)
 
         await flow.btcSwap.withdraw({
           scriptValues: flow.state.btcScriptValues,
