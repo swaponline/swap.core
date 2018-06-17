@@ -21,11 +21,11 @@ class BTC2ETHTOKEN extends Flow {
     this.state = {
       step: 0,
 
-      signTransactionUrl: null,
+      signTransactionHash: null,
       isSignFetching: false,
       isParticipantSigned: false,
 
-      btcScriptCreatingTransactionUrl: null,
+      btcScriptCreatingTransactionHash: null,
       secretHash: null,
       btcScriptValues: null,
 
@@ -37,7 +37,7 @@ class BTC2ETHTOKEN extends Flow {
 
       isEthContractFunded: false,
 
-      ethSwapWithdrawTransactionUrl: null,
+      ethSwapWithdrawTransactionHash: null,
       isEthWithdrawn: false,
     }
 
@@ -97,7 +97,7 @@ class BTC2ETHTOKEN extends Flow {
           amount: sellAmount,
         }, (hash) => {
           flow.setState({
-            btcScriptCreatingTransactionUrl: hash,
+            btcScriptCreatingTransactionHash: hash,
           })
         })
 
@@ -171,9 +171,9 @@ class BTC2ETHTOKEN extends Flow {
           return
         }
 
-        await flow.ethTokenSwap.withdraw(data, (transactionHash) => {
+        await flow.ethTokenSwap.withdraw(data, (hash) => {
           flow.setState({
-            ethSwapWithdrawTransactionUrl: transactionHash,
+            ethSwapWithdrawTransactionHash: hash,
           })
         })
 

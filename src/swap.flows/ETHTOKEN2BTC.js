@@ -20,7 +20,7 @@ class ETHTOKEN2BTC extends Flow {
     this.state = {
       step: 0,
 
-      signTransactionUrl: null,
+      signTransactionHash: null,
       isSignFetching: false,
       isMeSigned: false,
 
@@ -33,7 +33,7 @@ class ETHTOKEN2BTC extends Flow {
       isBalanceEnough: false,
       balance: null,
 
-      ethSwapCreationTransactionUrl: null,
+      ethSwapCreationTransactionHash: null,
       isEthContractFunded: false,
 
       secret: null,
@@ -42,7 +42,7 @@ class ETHTOKEN2BTC extends Flow {
       isEthWithdrawn: false,
       isBtcWithdrawn: false,
 
-      refundTransactionUrl: null,
+      refundTransactionHash: null,
     }
 
     super._persistSteps()
@@ -118,9 +118,9 @@ class ETHTOKEN2BTC extends Flow {
           amount: sellAmount,
         })
 
-        await flow.ethTokenSwap.create(swapData, (transactionUrl) => {
+        await flow.ethTokenSwap.create(swapData, (hash) => {
           flow.setState({
-            ethSwapCreationTransactionUrl: transactionUrl,
+            ethSwapCreationTransactionHash: hash,
           })
         })
 
@@ -226,9 +226,9 @@ class ETHTOKEN2BTC extends Flow {
         await flow.btcSwap.withdraw({
           scriptValues: flow.state.btcScriptValues,
           secret,
-        }, (transactionUrl) => {
+        }, (hash) => {
           flow.setState({
-            btcSwapWithdrawTransactionUrl: transactionUrl,
+            btcSwapWithdrawTransactionHash: hash,
           })
         })
 
@@ -256,9 +256,9 @@ class ETHTOKEN2BTC extends Flow {
       {
         participantAddress: participant.eth.address,
       },
-      (signTransactionUrl) => {
+      (hash) => {
         this.setState({
-          signTransactionUrl,
+          hash,
         })
       }
     )
@@ -314,9 +314,9 @@ class ETHTOKEN2BTC extends Flow {
       try {
         await this.ethTokenSwap.refund({
           participantAddress: participant.eth.address,
-        }, (transactionUrl) => {
+        }, (hash) => {
           this.setState({
-            refundTransactionUrl: transactionUrl,
+            refundTransactionHash: hash,
           })
         })
 
@@ -351,9 +351,9 @@ class ETHTOKEN2BTC extends Flow {
       await this.btcSwap.withdraw({
         scriptValues: this.state.btcScriptValues,
         secret,
-      }, (transactionUrl) => {
+      }, (hash) => {
         this.setState({
-          btcSwapWithdrawTransactionUrl: transactionUrl,
+          btcSwapWithdrawTransactionHash: hash,
         })
       })
 

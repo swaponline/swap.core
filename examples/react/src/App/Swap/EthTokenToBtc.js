@@ -53,16 +53,16 @@ export default class EthTokenToBtc extends Component {
       <div>
         <button onClick={this.tryRefund}>TRY REFUND</button>
         {
-          flow.refundTransactionUrl && (
+          flow.refundTransactionHash && (
             <div>
               Transaction:
               <strong>
                 <a
-                  href={`https://rinkeby.etherscan.io/tx/${flow.refundTransactionUrl}`}
+                  href={`https://rinkeby.etherscan.io/tx/${flow.refundTransactionHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  {flow.refundTransactionUrl}
+                  {flow.refundTransactionHash}
                 </a>
               </strong>
             </div>
@@ -120,20 +120,20 @@ export default class EthTokenToBtc extends Component {
                 )
               }
               {
-                (flow.isSignFetching || flow.signTransactionUrl) && (
+                (flow.isSignFetching || flow.signTransactionHash) && (
                   <Fragment>
                     <h4>Please wait. Confirmation processing</h4>
                     {
-                      flow.signTransactionUrl && (
+                      flow.signTransactionHash && (
                         <div>
                           Transaction:
                           <strong>
                             <a
-                              href={`https://rinkeby.etherscan.io/tx/${flow.signTransactionUrl}`}
+                              href={`https://rinkeby.etherscan.io/tx/${flow.signTransactionHash}`}
                               target="_blank"
                               rel="noopener noreferrer"
                             >
-                              {flow.signTransactionUrl}
+                              {flow.signTransactionHash}
                             </a>
                           </strong>
                         </div>
@@ -249,16 +249,16 @@ export default class EthTokenToBtc extends Component {
                 )
               }
               {
-                flow.ethSwapCreationTransactionUrl && (
+                flow.ethSwapCreationTransactionHash && (
                   <div>
                     Transaction:
                     <strong>
                       <a
-                        href={`https://rinkeby.etherscan.io/tx/${flow.ethSwapCreationTransactionUrl}`}
+                        href={`https://rinkeby.etherscan.io/tx/${flow.ethSwapCreationTransactionHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        {flow.ethSwapCreationTransactionUrl}
+                        {flow.ethSwapCreationTransactionHash}
                       </a>
                     </strong>
                   </div>
@@ -289,16 +289,16 @@ export default class EthTokenToBtc extends Component {
                 )
               }
               {
-                flow.btcSwapWithdrawTransactionUrl && (
+                flow.btcSwapWithdrawTransactionHash && (
                   <div>
                     Transaction:
                     <strong>
                       <a
-                        href={`https://www.blocktrail.com/tBTC/tx/${flow.btcSwapWithdrawTransactionUrl}`}
+                        href={`https://www.blocktrail.com/tBTC/tx/${flow.btcSwapWithdrawTransactionHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        {flow.btcSwapWithdrawTransactionUrl}
+                        {flow.btcSwapWithdrawTransactionHash}
                       </a>
                     </strong>
                   </div>
