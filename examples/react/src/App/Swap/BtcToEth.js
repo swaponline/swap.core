@@ -135,6 +135,22 @@ export default class BtcToEth extends Component {
                   <Fragment>
                     <h3>3. Creating Bitcoin Script. Please wait, it will take a while</h3>
                     {
+                      flow.btcScriptCreatingTransactionUrl && (
+                        <div>
+                          Transaction:
+                          <strong>
+                            <a
+                              href={`https://www.blocktrail.com/tBTC/tx/${flow.btcScriptCreatingTransactionUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {flow.btcScriptCreatingTransactionUrl}
+                            </a>
+                          </strong>
+                        </div>
+                      )
+                    }
+                    {
                       !flow.btcScriptValues && (
                         <Loader />
                       )

@@ -25,6 +25,7 @@ class BTC2ETH extends Flow {
       isSignFetching: false,
       isParticipantSigned: false,
 
+      btcScriptCreatingTransactionUrl: null,
       secretHash: null,
       btcScriptValues: null,
 
@@ -103,9 +104,13 @@ class BTC2ETH extends Flow {
         await flow.btcSwap.fundScript({
           scriptValues,
           amount: sellAmount,
+        }, (hash) => {
+          flow.setState({
+            btcScriptCreatingTransactionUrl: hash,
+          })
         })
 
-        this.swap.room.sendMessage('create btc script', {
+        flow.swap.room.sendMessage('create btc script', {
           scriptValues,
         })
 
