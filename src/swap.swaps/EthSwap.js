@@ -82,7 +82,7 @@ class EthSwap extends SwapInterface {
       const params = {
         from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
-        value: Math.floor(SwapApp.env.web3.utils.toWei(String(amount))),
+        value: Math.floor(SwapApp.env.web3.utils.toWei(amount.toString())),
       }
 
       const values = [ hash, participantAddress ]
@@ -122,15 +122,15 @@ class EthSwap extends SwapInterface {
    *
    * @param {object} data
    * @param {string} data.ownerAddress
-   * @param {number} data.expectedValue
+   * @param {BigNumber} data.expectedValue
    * @returns {Promise.<string>}
    */
   async checkBalance(data) {
     const { ownerAddress, expectedValue } = data
     const balance = await this.getBalance({ ownerAddress })
 
-    if (expectedValue > balance) {
-      return `Expected value: ${expectedValue}, got: ${balance}`
+    if (expectedValue.isGreaterThan(balance)) {
+      return `Expected value: ${expectedValue.toNumber()}, got: ${balance}`
     }
   }
 

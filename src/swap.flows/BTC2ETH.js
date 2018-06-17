@@ -213,7 +213,7 @@ class BTC2ETH extends Flow {
     })
 
     const balance = await this.btcSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
-    const isEnoughMoney = sellAmount <= balance
+    const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
     if (isEnoughMoney) {
       this.finishStep({

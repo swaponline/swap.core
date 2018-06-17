@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js'
 import SwapApp, { Events, util } from 'swap.app'
 import Room from './Room'
 
@@ -82,14 +83,17 @@ class Swap {
       'sellAmount',
     )
 
-    console.log('New Swap state:', data)
-
     SwapApp.env.storage.setItem(`swap.${this.id}`, data)
   }
 
   update(values) {
     Object.keys(values).forEach((key) => {
-      this[key] = values[key]
+      if (key === 'buyAmount' || key === 'sellAmount') {
+        this[key] = new BigNumber(values[key])
+      }
+      else {
+        this[key] = values[key]
+      }
     })
     this._saveState()
   }

@@ -281,7 +281,7 @@ class ETH2BTC extends Flow {
     })
 
     const balance = await this.ethSwap.fetchBalance(SwapApp.services.auth.accounts.eth.address)
-    const isEnoughMoney = sellAmount <= balance
+    const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
     if (isEnoughMoney) {
       this.finishStep({

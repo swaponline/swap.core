@@ -22,6 +22,7 @@
     "bitcoinjs-lib": "~3.3.2"
   },
   "dependencies": {
+    "bignumber.js": "^7.2.1",
     "bitcoinjs-lib": "^3.3.2",
     "typeforce": "^1.12.0"
   },

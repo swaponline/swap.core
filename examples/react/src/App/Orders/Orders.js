@@ -121,8 +121,8 @@ export default class Orders extends Component {
                       <tr key={id} style={{ backgroundColor: myPeer === ownerPeer ? '#fff4d5' : '' }}>
                         <td>{exchangeRate}</td>
                         <td>{reputation}</td>
-                        <td>{sellAmount}</td>
-                        <td>{buyAmount}</td>
+                        <td>{sellAmount.toNumber()}</td>
+                        <td>{buyAmount.toNumber()}</td>
                         {
                           isProcessing ? (
                             <td>

@@ -79,10 +79,19 @@ class EthTokenSwap extends SwapInterface {
     })
   }
 
-  approve({ amount }, handleTransactionHash) {
+  /**
+   *
+   * @param {object} data
+   * @param {BigNumber} data.amount
+   * @param {function} handleTransactionHash
+   * @returns {Promise}
+   */
+  approve(data, handleTransactionHash) {
+    const { amount } = data
+
     return new Promise(async (resolve, reject) => {
       try {
-        const result = await this.ERC20.methods.approve(this.address, amount).send({
+        const result = await this.ERC20.methods.approve(this.address, amount.toNumber()).send({
           from: SwapApp.services.auth.accounts.eth.address,
           gas: this.gasLimit,
         })
@@ -132,7 +141,7 @@ class EthTokenSwap extends SwapInterface {
    * @param {object} data
    * @param {string} data.secretHash
    * @param {string} data.participantAddress
-   * @param {number} data.amount
+   * @param {BigNumber} data.amount
    * @param {function} handleTransactionHash
    */
   create(data, handleTransactionHash) {
@@ -140,7 +149,7 @@ class EthTokenSwap extends SwapInterface {
 
     return new Promise(async (resolve, reject) => {
       const hash    = `0x${secretHash.replace(/^0x/, '')}`
-      const values  = [ hash, participantAddress, amount, this.tokenAddress ]
+      const values  = [ hash, participantAddress, amount.toNumber(), this.tokenAddress ]
       const params  = { from: SwapApp.services.auth.accounts.eth.address, gas: this.gasLimit }
 
       try {

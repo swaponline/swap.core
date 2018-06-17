@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js'
 import SwapApp, { Collection, ServiceInterface, util, constants } from 'swap.app'
 import SwapRoom from 'swap.room'
 import aggregation from './aggregation'
@@ -168,9 +169,13 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
    * @param {boolean} data.isRequested
    */
   _create(data) {
+    const { id, buyAmount, sellAmount, ...rest } = data
+
     const order = new Order(this, {
-      ...data,
-      id: data.id || getUniqueId(),
+      id: id || getUniqueId(),
+      buyAmount: new BigNumber(buyAmount),
+      sellAmount: new BigNumber(sellAmount),
+      ...rest,
     })
 
     this.append(order, order.id)

@@ -124,9 +124,10 @@ class BtcSwap extends SwapInterface {
 
     const unspents      = await this.fetchUnspents(scriptAddress)
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+    const expectedValue = expected.value.multipliedBy(1e8)
 
-    if (expected.value * 1e8 > totalUnspent) {
-      return `Expected script value: ${expected.value * 1e8}, got: ${totalUnspent}`
+    if (expectedValue.isGreaterThan(totalUnspent)) {
+      return `Expected script value: ${expectedValue.toNumber()}, got: ${totalUnspent}`
     }
     if (expected.lockTime > lockTime) {
       return `Expected script lockTime: ${expected.lockTime}, got: ${lockTime}`
@@ -140,10 +141,11 @@ class BtcSwap extends SwapInterface {
    *
    * @param {object} data
    * @param {object} data.scriptValues
-   * @param {string} data.amount
+   * @param {BigNumber} data.amount
+   * @param {function} handleTransactionHash
    * @returns {Promise}
    */
-  fundScript(data) {
+  fundScript(data, handleTransactionHash) {
     const { scriptValues, amount } = data
 
     return new Promise(async (resolve, reject) => {
@@ -153,7 +155,7 @@ class BtcSwap extends SwapInterface {
         const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
         const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.btc.getAddress())
 
-        const fundValue     = Math.floor(Number(amount) * 1e8)
+        const fundValue     = amount.multipliedBy(1e8).toNumber() // TODO check for number length (if need slice it)
         const feeValue      = 15000 // TODO how to get this value
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue

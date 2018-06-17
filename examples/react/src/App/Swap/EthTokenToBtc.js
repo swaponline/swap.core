@@ -49,7 +49,7 @@ export default class EthToBtc extends Component {
       <div>
         {
           this.swap.id && (
-            <strong>{this.swap.sellAmount} {this.swap.sellCurrency} &#10230; {this.swap.buyAmount} {this.swap.buyCurrency}</strong>
+            <strong>{this.swap.sellAmount.toNumber()} {this.swap.sellCurrency} &#10230; {this.swap.buyAmount.toNumber()} {this.swap.buyCurrency}</strong>
           )
         }
 
@@ -195,7 +195,7 @@ export default class EthToBtc extends Component {
                     <h3>Not enough money for this swap. Please fund the balance</h3>
                     <div>
                       <div>Your balance: <strong>{flow.balance}</strong> {this.swap.sellCurrency}</div>
-                      <div>Required balance: <strong>{this.swap.sellAmount}</strong> {this.swap.sellCurrency}</div>
+                      <div>Required balance: <strong>{this.swap.sellAmount.toNumber()}</strong> {this.swap.sellCurrency}</div>
                       <hr />
                       <span>{flow.address}</span>
                     </div>
