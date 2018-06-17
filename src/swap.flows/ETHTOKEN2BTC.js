@@ -33,7 +33,7 @@ class ETHTOKEN2BTC extends Flow {
       isBalanceEnough: false,
       balance: null,
 
-      ethTokenSwapCreationTransactionUrl: null,
+      ethSwapCreationTransactionUrl: null,
       isEthContractFunded: false,
 
       isEthWithdrawn: false,
@@ -111,7 +111,7 @@ class ETHTOKEN2BTC extends Flow {
 
         await flow.ethTokenSwap.create(swapData, (transactionUrl) => {
           flow.setState({
-            ethTokenSwapCreationTransactionUrl: transactionUrl,
+            ethSwapCreationTransactionUrl: transactionUrl,
           })
         })
 

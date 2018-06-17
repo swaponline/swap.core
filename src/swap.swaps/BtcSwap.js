@@ -169,20 +169,18 @@ class BtcSwap extends SwapInterface {
 
         const txRaw = tx.buildIncomplete()
 
-        let result
-
         if (typeof handleTransactionHash === 'function') {
           handleTransactionHash(txRaw.getId())
         }
 
         try {
-          result = await this.broadcastTx(txRaw.toHex())
+          const result = await this.broadcastTx(txRaw.toHex())
+
+          resolve(result)
         }
         catch (err) {
           reject(err)
         }
-
-        resolve(result)
       }
       catch (err) {
         reject(err)
