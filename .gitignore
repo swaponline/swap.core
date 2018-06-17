@@ -2,5 +2,10 @@
 .idea
 
 node_modules
+
+*-lock.*
+
+examples/react/swap
+examples/vanilla/swap
+umd
 lib
-app/src/swap
