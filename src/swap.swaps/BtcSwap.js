@@ -171,6 +171,10 @@ class BtcSwap extends SwapInterface {
 
         let result
 
+        if (typeof handleTransactionHash === 'function') {
+          handleTransactionHash(txRaw.getId())
+        }
+
         try {
           result = await this.broadcastTx(txRaw.toHex())
         }
@@ -210,6 +214,11 @@ class BtcSwap extends SwapInterface {
         unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
         tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
 
+        console.log('scriptValues', scriptValues)
+        console.log('scriptAddress', scriptAddress)
+        console.log('secret', secret)
+        console.log('totalUnspent', totalUnspent)
+
         const txRaw = tx.buildIncomplete()
 
         this._signTransaction({
@@ -222,9 +231,14 @@ class BtcSwap extends SwapInterface {
           handleTransactionHash(txRaw.getId())
         }
 
-        const result = await this.broadcastTx(txRaw.toHex())
+        try {
+          const result = await this.broadcastTx(txRaw.toHex())
 
-        resolve(result)
+          resolve(result)
+        }
+        catch (err) {
+          reject(err)
+        }
       }
       catch (err) {
         reject(err)
@@ -269,9 +283,14 @@ class BtcSwap extends SwapInterface {
           handleTransactionHash(txRaw.getId())
         }
 
-        const result = await this.broadcastTx(txRaw.toHex())
+        try {
+          const result = await this.broadcastTx(txRaw.toHex())
 
-        resolve(result)
+          resolve(result)
+        }
+        catch (err) {
+          reject(err)
+        }
       }
       catch (err) {
         reject(err)
