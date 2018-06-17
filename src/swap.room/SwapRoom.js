@@ -36,7 +36,7 @@ class SwapRoom extends ServiceInterface {
     })
 
     ipfs.once('ready', () => ipfs.id((err, info) => {
-      console.info('IPFS ready!', info)
+      console.info('IPFS ready!')
 
       if (err) {
         throw err
