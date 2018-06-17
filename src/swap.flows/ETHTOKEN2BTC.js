@@ -36,12 +36,21 @@ class ETHTOKEN2BTC extends Flow {
       ethSwapCreationTransactionUrl: null,
       isEthContractFunded: false,
 
+      secret: null,
+      isEthClosed: false,
+
       isEthWithdrawn: false,
       isBtcWithdrawn: false,
+
+      refundTransactionUrl: null,
     }
 
     super._persistSteps()
     this._persistState()
+  }
+
+  _persistState() {
+    super._persistState()
   }
 
   _getSteps() {
@@ -209,7 +218,8 @@ class ETHTOKEN2BTC extends Flow {
           }
           catch (err) {
             // TODO notify user that smth goes wrong
-            throw new Error(err)
+            console.error(err)
+            return
           }
         }
 
@@ -291,7 +301,69 @@ class ETHTOKEN2BTC extends Flow {
       })
     }
   }
+
+  async tryRefund() {
+    const { participant } = this.swap
+    let { secret, btcScriptValues } = this.state
+
+    secret = 'c0809ce9f484fdcdfb2d5aabd609768ce0374ee97a1a5618ce4cd3f16c00a078'
+
+    try {
+      console.log('TRYING REFUND!')
+
+      try {
+        await this.ethTokenSwap.refund({
+          participantAddress: participant.eth.address,
+        }, (transactionUrl) => {
+          this.setState({
+            refundTransactionUrl: transactionUrl,
+          })
+        })
+
+        console.log('SUCCESS REFUND!')
+        return
+      }
+      catch (err) {
+        console.err('REFUND FAILED!', err)
+      }
+    }
+    catch (err) {
+      console.error(`Mbe it's still under lockTime?! ${err}`)
+    }
+
+    if (!btcScriptValues) {
+      console.error('You can\'t do refund w/o btc script values! Try wait until lockTime expires on eth contract!')
+    }
+
+    if (!secret) {
+      try {
+        secret = await this.ethTokenSwap.getSecret(data)
+      }
+      catch (err) {
+        console.error('Can\'t receive secret from contract')
+        return
+      }
+    }
+
+    console.log('TRYING WITHDRAW!')
+
+    try {
+      await this.btcSwap.withdraw({
+        scriptValues: this.state.btcScriptValues,
+        secret,
+      }, (transactionUrl) => {
+        this.setState({
+          btcSwapWithdrawTransactionUrl: transactionUrl,
+        })
+      })
+
+      console.log('SUCCESS WITHDRAW!')
+    }
+    catch (err) {
+      console.error('WITHDRAW FAILED!', err)
+    }
+  }
 }
 
 
-export default ETHTOKEN2BTC
+export default ETH2BTC
