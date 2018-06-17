@@ -114,7 +114,9 @@ class BTC2ETH extends Flow {
 
         const checkEthBalance = () => {
           timer = setTimeout(async () => {
-            const balance = await flow.ethSwap.getBalance({ ownerAddress: participant.eth.address })
+            const balance = await flow.ethSwap.getBalance({
+              ownerAddress: participant.eth.address,
+            })
 
             if (balance > 0) {
               if (!flow.state.isEthContractFunded) { // redundant condition but who cares :D
@@ -153,7 +155,10 @@ class BTC2ETH extends Flow {
           secret:         flow.state.secret,
         }
 
-        const balanceCheckResult = await flow.ethSwap.checkBalance(participant.eth.address, buyAmount)
+        const balanceCheckResult = await flow.ethSwap.checkBalance({
+          ownerAddress: participant.eth.address,
+          expectedValue: buyAmount,
+        })
 
         if (balanceCheckResult) {
           console.error(`Eth balance check error:`, balanceCheckResult)
