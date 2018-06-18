@@ -16,7 +16,7 @@ const checkIncomeOrderFormat = (order) => {
     id: '?String',
     owner: {
       peer: 'String',
-      reputation: util.typeforce.isNumeric,
+      reputation: util.typeforce.t.maybe(util.typeforce.isNumeric),
       ...(() => {
         const result = {}
         constants.COINS.forEach((coin) => {
