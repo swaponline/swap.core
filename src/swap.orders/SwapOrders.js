@@ -16,20 +16,20 @@ const checkIncomeOrderFormat = (order) => {
     id: '?String',
     owner: {
       peer: 'String',
-      reputation: '?String',
+      reputation: util.typeforce.isNumeric,
       ...(() => {
         const result = {}
         constants.COINS.forEach((coin) => {
           result[coin] = util.typeforce.t.maybe({
-            address: 'String', // TODO add check address length
-            publicKey: '?String',
+            address: util.typeforce.isCoinAddress[coin],
+            publicKey: util.typeforce.isPublicKey[coin],
           })
         })
         return result
       })(),
     },
-    buyCurrency: 'String',
-    sellCurrency: 'String',
+    buyCurrency: util.typeforce.isCoinName,
+    sellCurrency: util.typeforce.isCoinName,
     buyAmount: util.typeforce.isNumeric,
     sellAmount: util.typeforce.isNumeric,
     isProcessing: '?Boolean',
