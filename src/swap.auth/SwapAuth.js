@@ -21,9 +21,9 @@ class SwapAuth extends ServiceInterface {
 
   initService() {
     Object.keys(_privateKeys).forEach((name) => {
-      if (constants.COINS.indexOf(name) < 0) {
+      if (Object.keys(constants.COINS).indexOf(name) < 0) {
         let error = `SwapAuth._initService(): There is no instance with name "${name}".`
-        error += `Only [${JSON.stringify(constants.COINS).replace(/"/g, '\'')}] available`
+        error += `Only [${JSON.stringify(Object.keys(constants.COINS)).replace(/"/g, '\'')}] available`
 
         throw new Error(error)
       }

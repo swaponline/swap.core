@@ -7,13 +7,14 @@ const check = (...args) => {
     return typeforce(...args)
   }
   catch (err) {
+    console.error(err)
     return false
   }
 }
 
 const isNumeric = (value) => !isNaN(parseFloat(value)) && isFinite(value)
 
-const isCoinName = (value) => constants.COINS.includes(value.toLowerCase())
+const isCoinName = (value) => Object.keys(constants.COINS).includes(value.toLowerCase())
 
 const isCoinAddress = {
   [constants.COINS.eth]: (value) => typeof value === 'string' && /^0x[A-Fa-f0-9]{40}$/.test(value),

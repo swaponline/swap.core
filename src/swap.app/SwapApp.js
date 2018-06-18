@@ -27,8 +27,8 @@ class SwapApp {
 
   _addEnv(env) {
     Object.keys(env).forEach((name) => {
-      if (constants.ENV.indexOf(name) < 0) {
-        const list  = JSON.stringify(constants.ENV).replace(/"/g, '\'')
+      if (Object.keys(constants.ENV).indexOf(name) < 0) {
+        const list  = JSON.stringify(Object.keys(constants.ENV)).replace(/"/g, '\'')
         const error = `SwapApp.addEnv(): Only ${list} available`
 
         throw new Error(error)
@@ -44,8 +44,8 @@ class SwapApp {
       throw new Error('SwapApp service should contain "_serviceName" property')
     }
 
-    if (constants.SERVICES.indexOf(service._serviceName) < 0) {
-      const list  = JSON.stringify(constants.SERVICES).replace(/"/g, '\'')
+    if (Object.keys(constants.SERVICES).indexOf(service._serviceName) < 0) {
+      const list  = JSON.stringify(Object.keys(constants.SERVICES)).replace(/"/g, '\'')
       const error = `SwapApp.addServices(): Only ${list} available`
 
       throw new Error(error)
