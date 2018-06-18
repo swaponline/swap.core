@@ -16,9 +16,9 @@ const isNumeric = (value) => !isNaN(parseFloat(value)) && isFinite(value)
 const isCoinName = (value) => constants.COINS.includes(value.toLowerCase())
 
 const isCoinAddress = {
-  [constants.COINS.eth]: (value) => typeof value === 'string' && /^0x[A-Za-z0-9]{40}$/.test(value),
+  [constants.COINS.eth]: (value) => typeof value === 'string' && /^0x[A-Fa-f0-9]{40}$/.test(value),
   [constants.COINS.btc]: (value) => typeof value === 'string' && /^[A-Za-z0-9]{34}$/.test(value),
-  [constants.COINS.nim]: (value) => typeof value === 'string' && /^0x[A-Za-z0-9]{40}$/.test(value),
+  [constants.COINS.nim]: (value) => typeof value === 'string' && /^0x[A-Fa-f0-9]{40}$/.test(value),
 }
 
 const isPublicKey = {
