@@ -1,6 +1,6 @@
-export default [
-  'auth',
-  'room',
-  'orders',
-  'swaps',
-]
+export default {
+  auth: 'auth',
+  room: 'room',
+  orders: 'orders',
+  swaps: 'swaps',
+}

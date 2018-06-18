@@ -1,7 +1,7 @@
-export default [
-  'web3',
-  'bitcoin',
-  'Ipfs',
-  'IpfsRoom',
-  'storage',
-]
+export default {
+  web3: 'web3',
+  bitcoin: 'bitcoin',
+  Ipfs: 'Ipfs',
+  IpfsRoom: 'IpfsRoom',
+  storage: 'storage',
+}

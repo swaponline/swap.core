@@ -1,5 +1,5 @@
-export default [
-	'eth',
-	'btc',
-	'nim',
-]
+export default {
+  eth: 'eth',
+  btc: 'btc',
+  nim: 'nim',
+}
