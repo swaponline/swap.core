@@ -36,8 +36,8 @@ class Ethereum {
   }
 
   fetchTokenBalance(address) {
-    return request.get(`https://rinkeby.etherscan.io/api?module=account&action=tokenbalance&contractaddress=0x60c205722c6c797c725a996cf9cca11291f90749&address=${address}`)
-      .then(({ result }) => result)
+    return request.get(`https://rinkeby.tokenbalance.com/token/0x60c205722c6c797c725a996cf9cca11291f90749/${address}`)
+      .then(({ balance }) => Number(balance))
   }
 }
 
