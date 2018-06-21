@@ -14,7 +14,7 @@ const check = (...args) => {
 
 const isNumeric = (value) => !isNaN(parseFloat(value)) && isFinite(value)
 
-const isCoinName = (value) => Object.keys(constants.COINS).includes(value.toLowerCase())
+const isCoinName = (value) => Object.keys(constants.COINS).map((v) => v.toLowerCase()).includes(value.toLowerCase())
 
 const isCoinAddress = {
   [constants.COINS.eth]: (value) => typeof value === 'string' && /^0x[A-Fa-f0-9]{40}$/.test(value),

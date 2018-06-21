@@ -171,6 +171,39 @@ class EthTokenSwap extends SwapInterface {
     })
   }
 
+  getBalance({ ownerAddress }) {
+    return new Promise(async (resolve, reject) => {
+      let balance
+
+      try {
+        balance = await this.contract.methods.getBalance(ownerAddress).call({
+          from: SwapApp.services.auth.accounts.eth.address,
+        })
+      }
+      catch (err) {
+        reject(err)
+      }
+
+      resolve(balance)
+    })
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.ownerAddress
+   * @param {BigNumber} data.expectedValue
+   * @returns {Promise.<string>}
+   */
+  async checkBalance(data) {
+    const { ownerAddress, expectedValue } = data
+    const balance = await this.getBalance({ ownerAddress })
+
+    if (expectedValue.isGreaterThan(balance)) {
+      return `Expected value: ${expectedValue.toNumber()}, got: ${balance}`
+    }
+  }
+
   /**
    *
    * @param {object} data
