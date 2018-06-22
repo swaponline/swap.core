@@ -42,10 +42,10 @@ export default class Orders extends Component {
 
   createOrder = () => {
     const data = {
-      buyCurrency: 'ETH',
+      buyCurrency: 'ETHTOKEN',
       sellCurrency: 'BTC',
-      buyAmount: 0.013,
-      sellAmount: 0.0013,
+      buyAmount: 1,
+      sellAmount: 0.0011,
     }
 
     SwapApp.services.orders.create(data)
