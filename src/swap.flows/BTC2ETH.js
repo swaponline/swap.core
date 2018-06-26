@@ -41,7 +41,6 @@ class BTC2ETH extends Flow {
       isEthWithdrawn: false,
     }
 
-    super._persistSteps()
     this._persistState()
   }
 
