@@ -10,6 +10,7 @@ class BTC2ETH extends Flow {
 
     this.ethSwap = SwapApp.swaps.ethSwap
     this.btcSwap = SwapApp.swaps.btcSwap
+    this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
 
     if (!this.ethSwap) {
       throw new Error('BTC2ETH: "ethSwap" of type object required')
@@ -217,7 +218,7 @@ class BTC2ETH extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.btcSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
+    const balance = await this.btcSwap.fetchBalance(this.myBtcAddress)
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
     if (isEnoughMoney) {
