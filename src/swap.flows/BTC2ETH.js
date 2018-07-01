@@ -40,6 +40,9 @@ class BTC2ETH extends Flow {
 
       ethSwapWithdrawTransactionHash: null,
       isEthWithdrawn: false,
+
+      refundTransactionHash: null,
+      isRefunded: false,
     }
 
     super._persistSteps()
@@ -235,6 +238,22 @@ class BTC2ETH extends Flow {
         isBalanceEnough: false,
       })
     }
+  }
+
+  tryRefund() {
+    this.btcSwap.refund({
+      scriptValues: this.state.btcScriptValues,
+      secret: this.state.secret,
+    }, (hash) => {
+      this.setState({
+        refundTransactionHash: hash,
+      })
+    })
+      .then(() => {
+        this.setState({
+          isRefunded: true,
+        })
+      })
   }
 }
 

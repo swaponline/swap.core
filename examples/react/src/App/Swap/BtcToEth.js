@@ -41,11 +41,35 @@ export default class BtcToEth extends Component {
     this.swap.flow.syncBalance()
   }
 
+  tryRefund = () => {
+    this.swap.flow.tryRefund()
+  }
+
   render() {
     const { secret, flow } = this.state
 
     return (
       <div>
+        <button onClick={this.tryRefund}>TRY REFUND</button>
+        {
+          flow.refundTransactionHash && (
+            <div>
+              Transaction:
+              <strong>
+                <a
+                  href={`https://www.blocktrail.com/tBTC/tx/${flow.refundTransactionHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {flow.refundTransactionHash}
+                </a>
+              </strong>
+            </div>
+          )
+        }
+        <br />
+        <br />
+
         {
           this.swap.id && (
             <strong>{this.swap.sellAmount.toNumber()} {this.swap.sellCurrency} &#10230; {this.swap.buyAmount.toNumber()} {this.swap.buyCurrency}</strong>
