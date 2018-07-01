@@ -6,6 +6,7 @@ class EthTokenSwap extends SwapInterface {
   /**
    *
    * @param {object}    options
+   * @param {string}    options.name
    * @param {string}    options.address
    * @param {array}     options.abi
    * @param {string}    options.tokenAddress
@@ -29,7 +30,7 @@ class EthTokenSwap extends SwapInterface {
       throw new Error('EthTokenSwap: "tokenAbi" required')
     }
 
-    this._swapName      = 'ethTokenSwap'
+    this._swapName      = options.name || 'ethTokenSwap'
 
     this.address        = options.address
     this.abi            = options.abi

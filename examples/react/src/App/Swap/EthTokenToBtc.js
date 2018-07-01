@@ -9,7 +9,7 @@ export default class EthTokenToBtc extends Component {
   constructor({ orderId }) {
     super()
 
-    this.swap = new Swap(orderId, ETHTOKEN2BTC)
+    this.swap = new Swap(orderId, ETHTOKEN2BTC('noxon'))
 
     this.state = {
       flow: this.swap.flow.state,

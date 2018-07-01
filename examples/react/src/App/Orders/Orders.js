@@ -42,9 +42,9 @@ export default class Orders extends Component {
 
   createOrder = () => {
     const data = {
-      buyCurrency: 'ETH',
+      buyCurrency: 'NOXON',
       sellCurrency: 'BTC',
-      buyAmount: 0.012,
+      buyAmount: 1,
       sellAmount: 0.0013,
     }
 

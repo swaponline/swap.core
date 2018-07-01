@@ -10,8 +10,8 @@ import BtcToEthToken from './BtcToEthToken'
 const swapComponents = {
   'btceth': BtcToEth,
   'ethbtc': EthToBtc,
-  'ethtokenbtc': EthTokenToBtc,
-  'btcethtoken': BtcToEthToken,
+  'noxonbtc': EthTokenToBtc,
+  'btcnoxon': BtcToEthToken,
 }
 
 export default class Swap extends Component {
