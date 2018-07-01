@@ -47,8 +47,6 @@ export default class EthTokenToBtc extends Component {
   render() {
     const { flow } = this.state
 
-    console.log(444, this.swap)
-
     return (
       <div>
         <button onClick={this.tryRefund}>TRY REFUND</button>
