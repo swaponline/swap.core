@@ -1,15 +1,21 @@
 import crypto from 'bitcoinjs-lib/src/crypto'
-import SwapApp from 'swap.app'
+import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
 
 class BTC2ETH extends Flow {
 
+  static getName() {
+    return `${constants.COINS.btc}2${constants.COINS.eth}`
+  }
+
   constructor(swap) {
     super(swap)
 
-    this.ethSwap = SwapApp.swaps.ethSwap
-    this.btcSwap = SwapApp.swaps.btcSwap
+    this._flowName = BTC2ETH.getName()
+
+    this.ethSwap = SwapApp.swaps[constants.COINS.eth]
+    this.btcSwap = SwapApp.swaps[constants.COINS.btc]
     this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
 
     if (!this.ethSwap) {

@@ -1,14 +1,20 @@
-import SwapApp from 'swap.app'
+import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
 
 class ETH2BTC extends Flow {
 
+  static getName() {
+    return `${constants.COINS.eth}2${constants.COINS.btc}`
+  }
+
   constructor(swap) {
     super(swap)
 
-    this.ethSwap = SwapApp.swaps.ethSwap
-    this.btcSwap = SwapApp.swaps.btcSwap
+    this._flowName = ETH2BTC.getName()
+
+    this.ethSwap = SwapApp.swaps[constants.COINS.eth]
+    this.btcSwap = SwapApp.swaps[constants.COINS.btc]
 
     if (!this.ethSwap) {
       throw new Error('BTC2ETH: "ethSwap" of type object required')

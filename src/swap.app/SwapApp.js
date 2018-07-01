@@ -11,27 +11,27 @@ class SwapApp {
    * @param {object}  options.env
    * @param {array}   options.services
    * @param {array}   options.swaps
+   * @param {array}   options.flows
    */
   setup(options) {
     this.network    = options.network || constants.NETWORKS.TESTNET
     this.env        = {}
-    this.swaps      = {}
     this.services   = {}
+    this.swaps      = {}
+    this.flows      = {}
 
     this._addEnv(options.env || {})
     this._addServices(options.services || {})
     this._addSwaps(options.swaps || {})
+    this._addFlows(options.flows || {})
   }
 
   // Configure -------------------------------------------------------- /
 
   _addEnv(env) {
     Object.keys(env).forEach((name) => {
-      if (Object.keys(constants.ENV).indexOf(name) < 0) {
-        const list  = JSON.stringify(Object.keys(constants.ENV)).replace(/"/g, '\'')
-        const error = `SwapApp.addEnv(): Only ${list} available`
-
-        throw new Error(error)
+      if (Object.values(constants.ENV).indexOf(name) < 0) {
+        throw new Error(`SwapApp.addEnv(): Only ${Object.values(constants.ENV)} available`)
       }
     })
 
@@ -44,11 +44,8 @@ class SwapApp {
       throw new Error('SwapApp service should contain "_serviceName" property')
     }
 
-    if (Object.keys(constants.SERVICES).indexOf(service._serviceName) < 0) {
-      const list  = JSON.stringify(Object.keys(constants.SERVICES)).replace(/"/g, '\'')
-      const error = `SwapApp.addServices(): Only ${list} available`
-
-      throw new Error(error)
+    if (!Object.values(constants.SERVICES).includes(service._serviceName)) {
+      throw new Error(`SwapApp service should contain "_serviceName" property should be one of ${Object.values(constants.SERVICES)}, got "${service._serviceName}"`)
     }
 
     this.services[service._serviceName] = service
@@ -68,11 +65,8 @@ class SwapApp {
       throw new Error('SwapApp swap should contain "_swapName" property')
     }
 
-    if (constants.SWAPS.indexOf(swap._swapName) < 0) {
-      const list  = JSON.stringify(constants.SWAPS).replace(/"/g, '\'')
-      const error = `SwapApp.addSwaps(): Only ${list} available`
-
-      throw new Error(error)
+    if (!Object.values(constants.COINS).includes(swap._swapName.toUpperCase())) {
+      throw new Error(`SwapApp swap should contain "_swapName" property should be one of ${Object.values(constants.COINS)}, got "${swap._swapName.toUpperCase()}"`)
     }
 
     this.swaps[swap._swapName] = swap
@@ -88,7 +82,38 @@ class SwapApp {
     })
   }
 
+  _addFlow(Flow) {
+    const flowName = Flow.getName()
+
+    if (!/^[A-Za-z]+2[A-Za-z]+$/.test(flowName)) {
+      throw new Error('SwapApp flow "_flowName" property should be "^[A-Za-z]+2[A-Za-z]+$" format')
+    }
+
+    const flowNameLeftPart = flowName.match(/^[^\d]+/)
+    const flowNameRightPart = flowName.match(/[^\d]+$/)
+
+    if (
+      !flowNameLeftPart || !flowNameRightPart
+      || !Object.values(constants.COINS).includes(flowNameLeftPart[0].toUpperCase())
+      || !Object.values(constants.COINS).includes(flowNameRightPart[0].toUpperCase())
+    ) {
+      throw new Error(`SwapApp flow "_flowName" property should contain only: ${Object.values(constants.COINS)}. Got: "${flowName.toUpperCase()}"`)
+    }
+
+    this.flows[flowName] = Flow
+  }
+
+  _addFlows(flows) {
+    flows.forEach((flow) => {
+      this._addFlow(flow)
+    })
+  }
+
   // Public methods --------------------------------------------------- /
+
+  getFlow(buyCurrency, sellCurrency) {
+
+  }
 
   isMainNet() {
     return this.network.toLowerCase() === constants.NETWORKS.MAINNET

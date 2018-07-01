@@ -1,4 +1,4 @@
-import SwapApp, { SwapInterface } from 'swap.app'
+import SwapApp, { SwapInterface, constants } from 'swap.app'
 
 
 class BtcSwap extends SwapInterface {
@@ -23,7 +23,7 @@ class BtcSwap extends SwapInterface {
       throw new Error('EthSwap: "broadcastTx" required')
     }
 
-    this._swapName      = 'btcSwap'
+    this._swapName      = constants.COINS.btc
     this.fetchBalance   = options.fetchBalance
     this.fetchUnspents  = options.fetchUnspents
     this.broadcastTx    = options.broadcastTx
@@ -77,6 +77,7 @@ class BtcSwap extends SwapInterface {
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
 
     const script = SwapApp.env.bitcoin.script.compile([
+
       SwapApp.env.bitcoin.opcodes.OP_RIPEMD160,
       Buffer.from(secretHash, 'hex'),
       SwapApp.env.bitcoin.opcodes.OP_EQUALVERIFY,

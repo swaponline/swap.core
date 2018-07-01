@@ -1,4 +1,4 @@
-import SwapApp from 'swap.app'
+import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
 
@@ -6,11 +6,17 @@ export default (tokenName) => {
 
   class ETHTOKEN2BTC extends Flow {
 
+    static getName() {
+      return `${tokenName.toUpperCase()}2${constants.COINS.btc}`
+    }
+
     constructor(swap) {
       super(swap)
 
-      this.ethTokenSwap = SwapApp.swaps[tokenName || 'ethTokenSwap']
-      this.btcSwap      = SwapApp.swaps.btcSwap
+      this._flowName = ETHTOKEN2BTC.getName()
+
+      this.ethTokenSwap = SwapApp.swaps[tokenName.toUpperCase()]
+      this.btcSwap      = SwapApp.swaps[constants.COINS.btc]
 
       if (!this.ethTokenSwap) {
         throw new Error('ETHTOKEN2BTC: "ethTokenSwap" of type object required')
@@ -45,7 +51,6 @@ export default (tokenName) => {
         isBtcWithdrawn: false,
 
         refundTransactionHash: null,
-        isRefunded: false,
       }
 
       super._persistSteps()
@@ -183,26 +188,23 @@ export default (tokenName) => {
 
         async () => {
           const { participant } = flow.swap
-          let { secret, isEthClosed, btcScriptValues } = flow.state
+          let { secret, isEthClosed } = flow.state
 
-          if (!btcScriptValues) {
-            console.error('There is no "btcScriptValues" in state. No way to continue swap...')
-            return
+          const data = {
+            participantAddress: participant.eth.address,
           }
 
           // if there is no secret in state then request it
           if (!secret) {
             try {
-              secret = await flow.ethTokenSwap.getSecret({
-                participantAddress: participant.eth.address,
-              })
+              secret = await flow.ethTokenSwap.getSecret(data)
 
               flow.setState({
                 secret,
               })
             }
             catch (err) {
-              // TODO user can stuck here after page reload...
+              // TODO notify user that smth goes wrong
               console.error(err)
               return
             }
@@ -210,32 +212,13 @@ export default (tokenName) => {
 
           // if there is still no secret stop withdraw
           if (!secret) {
-            // if there is no secret then there is a chance that user have already did withdraw, if balance === 0 it's ok
-            const balance = await flow.btcSwap.getBalance(btcScriptValues)
-
-            console.log('balance', balance)
-
-            if (balance === 0) {
-              console.log('Look like you already did withdraw')
-
-              flow.finishStep({
-                isBtcWithdrawn: true,
-              })
-
-              return
-            }
-
-            console.error(`FAIL! secret: ${secret}, balance: ${balance}`)
+            console.error(`Secret required! Got ${secret}`)
             return
           }
 
           if (!isEthClosed) {
             try {
-              // TODO BE CAREFUL WITH CLOSE()!
-              // TODO if call .close() before secret received then ETH participant will lost it and never withdraw from BTC script...
-              await flow.ethTokenSwap.close({
-                participantAddress: participant.eth.address,
-              })
+              await flow.ethTokenSwap.close(data)
 
               flow.setState({
                 isEthClosed: true,
@@ -327,21 +310,66 @@ export default (tokenName) => {
       }
     }
 
-    tryRefund() {
+    async tryRefund() {
       const { participant } = this.swap
+      let { secret, btcScriptValues } = this.state
 
-      this.ethTokenSwap.refund({
-        participantAddress: participant.eth.address,
-      }, (hash) => {
-        this.setState({
-          refundTransactionHash: hash,
-        })
-      })
-        .then(() => {
+      secret = 'c0809ce9f484fdcdfb2d5aabd609768ce0374ee97a1a5618ce4cd3f16c00a078'
+
+      try {
+        console.log('TRYING REFUND!')
+
+        try {
+          await this.ethTokenSwap.refund({
+            participantAddress: participant.eth.address,
+          }, (hash) => {
+            this.setState({
+              refundTransactionHash: hash,
+            })
+          })
+
+          console.log('SUCCESS REFUND!')
+          return
+        }
+        catch (err) {
+          console.err('REFUND FAILED!', err)
+        }
+      }
+      catch (err) {
+        console.error(`Mbe it's still under lockTime?! ${err}`)
+      }
+
+      if (!btcScriptValues) {
+        console.error('You can\'t do refund w/o btc script values! Try wait until lockTime expires on eth contract!')
+      }
+
+      if (!secret) {
+        try {
+          secret = await this.ethTokenSwap.getSecret(data)
+        }
+        catch (err) {
+          console.error('Can\'t receive secret from contract')
+          return
+        }
+      }
+
+      console.log('TRYING WITHDRAW!')
+
+      try {
+        await this.btcSwap.withdraw({
+          scriptValues: this.state.btcScriptValues,
+          secret,
+        }, (hash) => {
           this.setState({
-            isRefunded: true,
+            btcSwapWithdrawTransactionHash: hash,
           })
         })
+
+        console.log('SUCCESS WITHDRAW!')
+      }
+      catch (err) {
+        console.error('WITHDRAW FAILED!', err)
+      }
     }
   }
 

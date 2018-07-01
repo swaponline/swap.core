@@ -1,4 +1,4 @@
-import SwapApp, { SwapInterface } from 'swap.app'
+import SwapApp, { SwapInterface, constants } from 'swap.app'
 
 
 class EthSwap extends SwapInterface {
@@ -27,7 +27,7 @@ class EthSwap extends SwapInterface {
     this.address        = options.address
     this.abi            = options.abi
 
-    this._swapName      = 'ethSwap'
+    this._swapName      = constants.COINS.eth
     this.gasLimit       = options.gasLimit || 3e6
     this.fetchBalance   = options.fetchBalance
   }

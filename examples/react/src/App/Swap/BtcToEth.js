@@ -1,15 +1,13 @@
 import React, { Component, Fragment } from 'react'
-import { BTC2ETH } from 'swap.flows'
-import Swap from 'swap.swap'
 import Loader from '../Loader/Loader'
 
 
 export default class BtcToEth extends Component {
 
-  constructor({ orderId }) {
+  constructor({ swap }) {
     super()
 
-    this.swap = new Swap(orderId, BTC2ETH)
+    this.swap = swap
 
     this.state = {
       flow: this.swap.flow.state,

@@ -19,10 +19,10 @@ const checkIncomeOrderFormat = (order) => {
       reputation: util.typeforce.t.maybe(util.typeforce.isNumeric),
       ...(() => {
         const result = {}
-        Object.keys(constants.COINS).forEach((coin) => {
-          result[coin] = util.typeforce.t.maybe({
-            address: util.typeforce.isCoinAddress[coin],
-            publicKey: util.typeforce.isPublicKey[coin],
+        Object.keys(constants.COINS).forEach((key) => {
+          result[key] = util.typeforce.t.maybe({
+            address: util.typeforce.isCoinAddress[constants.COINS[key]],
+            publicKey: util.typeforce.isPublicKey[constants.COINS[key]],
           })
         })
         return result

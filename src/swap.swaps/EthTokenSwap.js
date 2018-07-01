@@ -1,4 +1,4 @@
-import SwapApp, { SwapInterface } from 'swap.app'
+import SwapApp, { SwapInterface, constants } from 'swap.app'
 
 
 class EthTokenSwap extends SwapInterface {
@@ -17,6 +17,12 @@ class EthTokenSwap extends SwapInterface {
   constructor(options) {
     super()
 
+    if (!options.name) {
+      throw new Error('EthTokenSwap: "name" required')
+    }
+    if (!Object.values(constants.COINS).includes(options.name.toUpperCase())) {
+      throw new Error('EthTokenSwap: "name" should be correct')
+    }
     if (typeof options.address !== 'string') {
       throw new Error('EthTokenSwap: "address" required')
     }
@@ -30,7 +36,7 @@ class EthTokenSwap extends SwapInterface {
       throw new Error('EthTokenSwap: "tokenAbi" required')
     }
 
-    this._swapName      = options.name || 'ethTokenSwap'
+    this._swapName      = options.name.toUpperCase()
 
     this.address        = options.address
     this.abi            = options.abi

@@ -1,5 +1,5 @@
 import React, { Fragment, Component } from 'react'
-import SwapApp from 'swap.app'
+import SwapApp, { constants } from 'swap.app'
 
 
 export default class Orders extends Component {
@@ -42,9 +42,9 @@ export default class Orders extends Component {
 
   createOrder = () => {
     const data = {
-      buyCurrency: 'NOXON',
-      sellCurrency: 'BTC',
-      buyAmount: 1,
+      buyCurrency: constants.COINS.eth,
+      sellCurrency: constants.COINS.btc,
+      buyAmount: 0.01,
       sellAmount: 0.0013,
     }
 
