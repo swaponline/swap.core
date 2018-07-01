@@ -45,7 +45,6 @@ class ETH2BTC extends Flow {
       refundTransactionHash: null,
     }
 
-    super._persistSteps()
     this._persistState()
   }
 

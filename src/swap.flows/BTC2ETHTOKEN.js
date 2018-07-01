@@ -45,7 +45,6 @@ class BTC2ETHTOKEN extends Flow {
       isRefunded: false,
     }
 
-    super._persistSteps()
     this._persistState()
   }
 
