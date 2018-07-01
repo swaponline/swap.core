@@ -43,6 +43,7 @@ class ETHTOKEN2BTC extends Flow {
       isBtcWithdrawn: false,
 
       refundTransactionHash: null,
+      isRefunded: false,
     }
 
     super._persistSteps()
@@ -302,66 +303,21 @@ class ETHTOKEN2BTC extends Flow {
     }
   }
 
-  async tryRefund() {
+  tryRefund() {
     const { participant } = this.swap
-    let { secret, btcScriptValues } = this.state
 
-    secret = 'c0809ce9f484fdcdfb2d5aabd609768ce0374ee97a1a5618ce4cd3f16c00a078'
-
-    try {
-      console.log('TRYING REFUND!')
-
-      try {
-        await this.ethTokenSwap.refund({
-          participantAddress: participant.eth.address,
-        }, (hash) => {
-          this.setState({
-            refundTransactionHash: hash,
-          })
-        })
-
-        console.log('SUCCESS REFUND!')
-        return
-      }
-      catch (err) {
-        console.err('REFUND FAILED!', err)
-      }
-    }
-    catch (err) {
-      console.error(`Mbe it's still under lockTime?! ${err}`)
-    }
-
-    if (!btcScriptValues) {
-      console.error('You can\'t do refund w/o btc script values! Try wait until lockTime expires on eth contract!')
-    }
-
-    if (!secret) {
-      try {
-        secret = await this.ethTokenSwap.getSecret(data)
-      }
-      catch (err) {
-        console.error('Can\'t receive secret from contract')
-        return
-      }
-    }
-
-    console.log('TRYING WITHDRAW!')
-
-    try {
-      await this.btcSwap.withdraw({
-        scriptValues: this.state.btcScriptValues,
-        secret,
-      }, (hash) => {
+    this.ethTokenSwap.refund({
+      participantAddress: participant.eth.address,
+    }, (hash) => {
+      this.setState({
+        refundTransactionHash: hash,
+      })
+    })
+      .then(() => {
         this.setState({
-          btcSwapWithdrawTransactionHash: hash,
+          isRefunded: true,
         })
       })
-
-      console.log('SUCCESS WITHDRAW!')
-    }
-    catch (err) {
-      console.error('WITHDRAW FAILED!', err)
-    }
   }
 }
 
