@@ -193,49 +193,96 @@ class BtcSwap extends SwapInterface {
    * @param {object} data
    * @param {object} data.scriptValues
    * @param {string} data.secret
+   * @param {boolean} isRefund
+   * @returns {Promise}
+   */
+  async getWithdrawRawTransaction(data, isRefund) {
+    const { scriptValues, secret } = data
+
+    const { script, scriptAddress } = this.createScript(scriptValues)
+
+    const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
+    const unspents      = await this.fetchUnspents(scriptAddress)
+    const feeValue      = 15000 // TODO how to get this value
+    const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+
+    if (isRefund) {
+      tx.setLockTime(scriptValues.lockTime)
+    }
+
+    unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
+    tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
+
+    const txRaw = tx.buildIncomplete()
+
+    this._signTransaction({
+      script,
+      secret,
+      txRaw,
+    })
+
+    return txRaw
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {object} data.scriptValues
+   * @param {string} data.secret
+   * @param {boolean} isRefund
+   * @returns {Promise}
+   */
+  async getWithdrawHexTransaction(data, isRefund) {
+    const txRaw = await this.getWithdrawRawTransaction(data, isRefund)
+
+    return txRaw.toHex()
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {object} data.scriptValues
+   * @param {string} data.secret
+   * @returns {Promise}
+   */
+  getRefundRawTransaction(data) {
+    return this.getWithdrawRawTransaction(data, true)
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {object} data.scriptValues
+   * @param {string} data.secret
+   * @returns {Promise}
+   */
+  async getRefundHexTransaction(data) {
+    const txRaw = await this.getRefundRawTransaction(data)
+
+    return txRaw.toHex()
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {object} data.scriptValues
+   * @param {string} data.secret
    * @param {function} handleTransactionHash
    * @param {boolean} isRefund
    * @returns {Promise}
    */
   withdraw(data, handleTransactionHash, isRefund) {
-    const { scriptValues, secret } = data
-
     return new Promise(async (resolve, reject) => {
       try {
-        const { script, scriptAddress } = this.createScript(scriptValues)
-
-        const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
-        const unspents      = await this.fetchUnspents(scriptAddress)
-        const feeValue      = 15000 // TODO how to get this value
-        const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
-
-        if (isRefund) {
-          tx.setLockTime(scriptValues.lockTime)
-        }
-
-        unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
-        tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
-
-        const txRaw = tx.buildIncomplete()
-
-        this._signTransaction({
-          script,
-          secret,
-          txRaw,
-        })
+        const txRaw = await this.getWithdrawRawTransaction(data, isRefund)
 
         if (typeof handleTransactionHash === 'function') {
           handleTransactionHash(txRaw.getId())
         }
 
-        try {
-          const result = await this.broadcastTx(txRaw.toHex())
+        const result = await this.broadcastTx(txRaw.toHex())
 
-          resolve(result)
-        }
-        catch (err) {
-          reject(err)
-        }
+        resolve(result)
       }
       catch (err) {
         reject(err)

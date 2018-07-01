@@ -14,6 +14,7 @@ export default class BtcToEth extends Component {
     this.state = {
       flow: this.swap.flow.state,
       secret: 'c0809ce9f484fdcdfb2d5aabd609768ce0374ee97a1a5618ce4cd3f16c00a078',
+      refundTxHex: null,
     }
   }
 
@@ -45,8 +46,29 @@ export default class BtcToEth extends Component {
     this.swap.flow.tryRefund()
   }
 
+  getRefundTxHex = () => {
+    const { refundTxHex, flow, secret } = this.state
+
+    if (refundTxHex) {
+      return refundTxHex
+    }
+    else if (flow.btcScriptValues) {
+      this.swap.flow.btcSwap.getRefundHexTransaction({
+        scriptValues: flow.btcScriptValues,
+        secret,
+      })
+        .then((txHex) => {
+          this.setState({
+            refundTxHex: txHex,
+          })
+        })
+    }
+  }
+
   render() {
     const { secret, flow } = this.state
+
+    const refundTxHex = this.getRefundTxHex()
 
     return (
       <div>
@@ -180,6 +202,15 @@ export default class BtcToEth extends Component {
                       )
                     }
                   </Fragment>
+                )
+              }
+
+              {
+                refundTxHex && (
+                  <div>
+                    <h3>Refund hex transaction:</h3>
+                    {refundTxHex}
+                  </div>
                 )
               }
 
