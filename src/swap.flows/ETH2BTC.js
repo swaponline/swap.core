@@ -186,23 +186,26 @@ class ETH2BTC extends Flow {
 
       async () => {
         const { participant } = flow.swap
-        let { secret, isEthClosed } = flow.state
+        let { secret, isEthClosed, btcScriptValues } = flow.state
 
-        const data = {
-          participantAddress: participant.eth.address,
+        if (!btcScriptValues) {
+          console.error('There is no "btcScriptValues" in state. No way to continue swap...')
+          return
         }
 
         // if there is no secret in state then request it
         if (!secret) {
           try {
-            secret = await flow.ethSwap.getSecret(data)
+            secret = await flow.ethSwap.getSecret({
+              participantAddress: participant.eth.address,
+            })
 
             flow.setState({
               secret,
             })
           }
           catch (err) {
-            // TODO notify user that smth goes wrong
+            // TODO user can stuck here after page reload...
             console.error(err)
             return
           }
@@ -210,13 +213,32 @@ class ETH2BTC extends Flow {
 
         // if there is still no secret stop withdraw
         if (!secret) {
-          console.error(`Secret required! Got ${secret}`)
+          // if there is no secret then there is a chance that user have already did withdraw, if balance === 0 it's ok
+          const balance = await flow.btcSwap.getBalance(btcScriptValues)
+
+          console.log('balance', balance)
+
+          if (balance === 0) {
+            console.log('Look like you already did withdraw')
+
+            flow.finishStep({
+              isBtcWithdrawn: true,
+            })
+
+            return
+          }
+
+          console.error(`FAIL! secret: ${secret}, balance: ${balance}`)
           return
         }
 
         if (!isEthClosed) {
           try {
-            await flow.ethSwap.close(data)
+            // TODO BE CAREFUL WITH CLOSE()!
+            // TODO if call .close() before secret received then ETH participant will lost it and never withdraw from BTC script...
+            await flow.ethSwap.close({
+              participantAddress: participant.eth.address,
+            })
 
             flow.setState({
               isEthClosed: true,

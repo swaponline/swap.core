@@ -31,7 +31,11 @@ class Ethereum {
   fetchBalance(address) {
     return this.core.eth.getBalance(address)
       .then((wei) => {
-        return Number(this.core.utils.fromWei(wei))
+        const balance = Number(this.core.utils.fromWei(wei))
+
+        console.log('ETH balance:', balance)
+
+        return balance
       })
   }
 

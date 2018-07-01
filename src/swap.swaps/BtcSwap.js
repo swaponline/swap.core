@@ -190,6 +190,32 @@ class BtcSwap extends SwapInterface {
 
   /**
    *
+   * @param {object|string} data - scriptValues or wallet address
+   * @returns {Promise.<void>}
+   */
+  async getBalance(data) {
+    let address
+
+    if (typeof data === 'string') {
+      address = data
+    }
+    else if (typeof data === 'object') {
+      const { scriptAddress } = this.createScript(data)
+
+      address = scriptAddress
+    }
+    else {
+      throw new Error('Wrong data type')
+    }
+
+    const unspents      = await this.fetchUnspents(address)
+    const totalUnspent  = unspents && unspents.length && unspents.reduce((summ, { satoshis }) => summ + satoshis, 0) || 0
+
+    return totalUnspent
+  }
+
+  /**
+   *
    * @param {object} data
    * @param {object} data.scriptValues
    * @param {string} data.secret

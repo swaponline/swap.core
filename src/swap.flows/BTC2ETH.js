@@ -52,20 +52,11 @@ class BTC2ETH extends Flow {
   _persistState() {
     super._persistState()
 
-    this.ethSwap.getBalance({
-      ownerAddress: this.swap.participant.eth.address,
-    })
-      .then((balance) => {
-        console.log('balance:', balance)
-      })
-
-    // console.log('START GETTING BALANCE')
-    //
     // this.ethSwap.getBalance({
     //   ownerAddress: this.swap.participant.eth.address,
     // })
-    //   .then((res) => {
-    //     console.log('BALANCE', res)
+    //   .then((balance) => {
+    //     console.log('balance:', balance)
     //   })
   }
 
