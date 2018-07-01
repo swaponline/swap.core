@@ -10,6 +10,7 @@ class BTC2ETHTOKEN extends Flow {
 
     this.ethTokenSwap = SwapApp.swaps.ethTokenSwap
     this.btcSwap      = SwapApp.swaps.btcSwap
+    this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
 
     if (!this.ethTokenSwap) {
       throw new Error('BTC2ETH: "ethTokenSwap" of type object required')
@@ -39,6 +40,9 @@ class BTC2ETHTOKEN extends Flow {
 
       ethSwapWithdrawTransactionHash: null,
       isEthWithdrawn: false,
+
+      refundTransactionHash: null,
+      isRefunded: false,
     }
 
     super._persistSteps()
@@ -47,6 +51,15 @@ class BTC2ETHTOKEN extends Flow {
 
   _persistState() {
     super._persistState()
+
+    // console.log('START GETTING BALANCE')
+    //
+    // this.ethSwap.getBalance({
+    //   ownerAddress: this.swap.participant.eth.address,
+    // })
+    //   .then((res) => {
+    //     console.log('BALANCE', res)
+    //   })
   }
 
   _getSteps() {
@@ -208,7 +221,7 @@ class BTC2ETHTOKEN extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.btcSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
+    const balance = await this.btcSwap.fetchBalance(this.myBtcAddress)
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
     if (isEnoughMoney) {
@@ -225,6 +238,22 @@ class BTC2ETHTOKEN extends Flow {
         isBalanceEnough: false,
       })
     }
+  }
+
+  tryRefund() {
+    this.btcSwap.refund({
+      scriptValues: this.state.btcScriptValues,
+      secret: this.state.secret,
+    }, (hash) => {
+      this.setState({
+        refundTransactionHash: hash,
+      })
+    })
+      .then(() => {
+        this.setState({
+          isRefunded: true,
+        })
+      })
   }
 }
 
