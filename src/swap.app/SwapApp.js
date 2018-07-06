@@ -111,10 +111,6 @@ class SwapApp {
 
   // Public methods --------------------------------------------------- /
 
-  getFlow(buyCurrency, sellCurrency) {
-
-  }
-
   isMainNet() {
     return this.network.toLowerCase() === constants.NETWORKS.MAINNET
   }

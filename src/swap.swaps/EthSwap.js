@@ -41,6 +41,7 @@ class EthSwap extends SwapInterface {
    * @param {object} data
    * @param {string} data.participantAddress
    * @param {function} handleTransactionHash
+   * @returns {Promise}
    */
   sign(data, handleTransactionHash) {
     const { participantAddress } = data
@@ -72,6 +73,7 @@ class EthSwap extends SwapInterface {
    * @param {string} data.participantAddress
    * @param {number} data.amount
    * @param {function} handleTransactionHash
+   * @returns {Promise}
    */
   create(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount } = data
@@ -101,7 +103,15 @@ class EthSwap extends SwapInterface {
     })
   }
 
-  getBalance({ ownerAddress }) {
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.ownerAddress
+   * @returns {Promise}
+   */
+  getBalance(data) {
+    const { ownerAddress } = data
+
     return new Promise(async (resolve, reject) => {
       let balance
 

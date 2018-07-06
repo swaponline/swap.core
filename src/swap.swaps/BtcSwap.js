@@ -71,7 +71,7 @@ class BtcSwap extends SwapInterface {
    * @param {string} data.ownerPublicKey
    * @param {string} data.recipientPublicKey
    * @param {number} data.lockTime
-   * @returns {{address: *, script: (*|{ignored}), secretHash: *, ownerPublicKey: *, recipientPublicKey: *, lockTime: *}}
+   * @returns {{scriptAddress: *, script: (*|{ignored})}}
    */
   createScript(data) {
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
@@ -118,6 +118,7 @@ class BtcSwap extends SwapInterface {
    * @param {number} expected.value
    * @param {number} expected.lockTime
    * @param {string} expected.recipientPublicKey
+   * @returns {Promise.<string>}
    */
   async checkScript(data, expected) {
     const { recipientPublicKey, lockTime } = data

@@ -109,11 +109,11 @@ class SwapRoom extends ServiceInterface {
     }
   }
 
-  subscribe(eventName, handler) {
+  on(eventName, handler) {
     this._events.subscribe(eventName, handler)
   }
 
-  unsubscribe(eventName, handler) {
+  off(eventName, handler) {
     this._events.unsubscribe(eventName, handler)
   }
 

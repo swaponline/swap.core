@@ -10,8 +10,8 @@ class Room {
     this.peer = participantPeer
   }
 
-  subscribe(eventName, handler) {
-    SwapApp.services.room.subscribe(eventName, ({ fromPeer, swapId, ...values }) => {
+  on(eventName, handler) {
+    SwapApp.services.room.on(eventName, ({ fromPeer, swapId, ...values }) => {
       if (fromPeer === this.peer && swapId === this.swapId) {
         handler(values)
       }
@@ -21,7 +21,7 @@ class Room {
   once(eventName, handler) {
     const self = this
 
-    SwapApp.services.room.subscribe(eventName, function ({ fromPeer, swapId, ...values }) {
+    SwapApp.services.room.on(eventName, function ({ fromPeer, swapId, ...values }) {
       if (fromPeer === self.peer && swapId === self.swapId) {
         this.unsubscribe()
         handler(values)

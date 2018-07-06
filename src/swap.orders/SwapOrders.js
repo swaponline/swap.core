@@ -70,12 +70,12 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
   }
 
   initService() {
-    SwapApp.services.room.subscribe('ready', this._handleReady)
-    SwapApp.services.room.subscribe('user online', this._handleUserOnline)
-    SwapApp.services.room.subscribe('user offline', this._handleUserOffline)
-    SwapApp.services.room.subscribe('new orders', this._handleNewOrders)
-    SwapApp.services.room.subscribe('new order', this._handleNewOrder)
-    SwapApp.services.room.subscribe('remove order', this._handleRemoveOrder)
+    SwapApp.services.room.on('ready', this._handleReady)
+    SwapApp.services.room.on('user online', this._handleUserOnline)
+    SwapApp.services.room.on('user offline', this._handleUserOffline)
+    SwapApp.services.room.on('new orders', this._handleNewOrders)
+    SwapApp.services.room.on('new order', this._handleNewOrder)
+    SwapApp.services.room.on('remove order', this._handleRemoveOrder)
   }
 
   _handleReady = () => {
