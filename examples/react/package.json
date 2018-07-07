@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "rimraf ./node_modules/swap.* && npx babel ../../src/ --out-dir ./swap && mv ./swap/* ./node_modules && react-scripts start",
+    "lib":"rimraf ./node_modules/swap.* && npx babel ../../src/ --out-dir ./swap && mv ./swap/* ./node_modules",
+    "start": "npm run lib && react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
+    "test": "npm run lib && react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
   "dependencies": {
