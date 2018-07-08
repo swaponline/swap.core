@@ -96,6 +96,29 @@ SwapApp.setup({
 })
 ```
 
+```
+import SwapApp, { constants } from 'swap.app'
+
+
+SwapApp.services.orders.create({
+  buyCurrency: constants.COINS.eth,
+  sellCurrency: constants.COINS.btc,
+  buyAmount: 10,
+  sellAmount: 1,
+})
+```
+
+`SwapApp.services.orders.getMyOrders()` returns
+
+```
+[
+  {
+    id: '',
+
+  }
+]
+```
+
 
 
 ## [swap.app] SwapApp
@@ -363,7 +386,7 @@ Only one argument available - config:
   </tbody>
 </table>
 
-#### Methods
+#### Public methods
 
 <table>
   <thead style="font-weight: bold;">
@@ -410,7 +433,7 @@ sendMessage([
 
 Provides the workflow with orders - create, store, update, remove orders.
 
-#### Methods
+#### Public methods
 
 <table>
   <thead style="font-weight: bold;">
@@ -538,6 +561,7 @@ class SwapInterface {
 
 <details>
 <summary>Public methods</summary>
+
 ```
 /**
  *
@@ -664,6 +688,7 @@ refund(data, handleTransactionHash)
 
 <details>
 <summary>Public methods</summary>
+
 ```
 /**
  *
@@ -759,6 +784,7 @@ close(data, handleTransactionHash)
 
 <details>
 <summary>Public methods</summary>
+
 ```
 /**
  *
