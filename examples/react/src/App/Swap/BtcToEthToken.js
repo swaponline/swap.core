@@ -1,15 +1,13 @@
 import React, { Component, Fragment } from 'react'
-import { BTC2ETHTOKEN } from 'swap.flows'
-import Swap from 'swap.swap'
 import Loader from '../Loader/Loader'
 
 
 export default class BtcToEthToken extends Component {
 
-  constructor({ orderId }) {
+  constructor({ swap }) {
     super()
 
-    this.swap = new Swap(orderId, BTC2ETHTOKEN)
+    this.swap = swap
 
     this.state = {
       flow: this.swap.flow.state,
@@ -49,19 +47,6 @@ export default class BtcToEthToken extends Component {
         {
           this.swap.id && (
             <strong>{this.swap.sellAmount.toNumber()} {this.swap.sellCurrency} &#10230; {this.swap.buyAmount.toNumber()} {this.swap.buyCurrency}</strong>
-          )
-        }
-
-        {
-          !this.swap.id && (
-            this.swap.isMy ? (
-              <h3>This order doesn't have a buyer</h3>
-            ) : (
-              <Fragment>
-                <h3>The order creator is offline. Waiting for him..</h3>
-                <Loader />
-              </Fragment>
-            )
           )
         }
 

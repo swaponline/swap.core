@@ -7,7 +7,7 @@ class ServiceInterface {
   _constructor() {
     // service name, within it will be stored in SwapApp.services
     this._serviceName     = null
-    this._dependsOn       = null
+    this._dependsOn       = []
     this._spyHandlers     = []
   }
 

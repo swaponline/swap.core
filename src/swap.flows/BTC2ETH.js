@@ -1,15 +1,22 @@
 import crypto from 'bitcoinjs-lib/src/crypto'
-import SwapApp from 'swap.app'
+import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
 
 class BTC2ETH extends Flow {
 
+  static getName() {
+    return `${constants.COINS.btc}2${constants.COINS.eth}`
+  }
+
   constructor(swap) {
     super(swap)
 
-    this.ethSwap = SwapApp.swaps.ethSwap
-    this.btcSwap = SwapApp.swaps.btcSwap
+    this._flowName = BTC2ETH.getName()
+
+    this.ethSwap = SwapApp.swaps[constants.COINS.eth]
+    this.btcSwap = SwapApp.swaps[constants.COINS.btc]
+    this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
 
     if (!this.ethSwap) {
       throw new Error('BTC2ETH: "ethSwap" of type object required')
@@ -39,6 +46,9 @@ class BTC2ETH extends Flow {
 
       ethSwapWithdrawTransactionHash: null,
       isEthWithdrawn: false,
+
+      refundTransactionHash: null,
+      isRefunded: false,
     }
 
     super._persistSteps()
@@ -48,13 +58,11 @@ class BTC2ETH extends Flow {
   _persistState() {
     super._persistState()
 
-    // console.log('START GETTING BALANCE')
-    //
     // this.ethSwap.getBalance({
     //   ownerAddress: this.swap.participant.eth.address,
     // })
-    //   .then((res) => {
-    //     console.log('BALANCE', res)
+    //   .then((balance) => {
+    //     console.log('balance:', balance)
     //   })
   }
 
@@ -217,7 +225,7 @@ class BTC2ETH extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.btcSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
+    const balance = await this.btcSwap.fetchBalance(this.myBtcAddress)
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
     if (isEnoughMoney) {
@@ -234,6 +242,22 @@ class BTC2ETH extends Flow {
         isBalanceEnough: false,
       })
     }
+  }
+
+  tryRefund() {
+    this.btcSwap.refund({
+      scriptValues: this.state.btcScriptValues,
+      secret: this.state.secret,
+    }, (hash) => {
+      this.setState({
+        refundTransactionHash: hash,
+      })
+    })
+      .then(() => {
+        this.setState({
+          isRefunded: true,
+        })
+      })
   }
 }
 

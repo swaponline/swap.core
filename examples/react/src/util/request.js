@@ -8,15 +8,6 @@ const createResponseHandler = (req, opts) => {
     let serverError
     let body = res.body
 
-    if (!body) {
-      try {
-        body = JSON.parse(res.text)
-      }
-      catch (err) {
-        throw err
-      }
-    }
-
     // Errors
 
     if (!res && !err) {
@@ -34,6 +25,15 @@ const createResponseHandler = (req, opts) => {
       // TODO write Error notifier
       opts.onComplete()
       return reject({ resData: body, err, res })
+    }
+
+    if (!body) {
+      try {
+        body = JSON.parse(res.text)
+      }
+      catch (err) {
+        return reject(err)
+      }
     }
 
     const resData = opts.modifyResult(body)

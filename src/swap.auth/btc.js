@@ -6,11 +6,17 @@ const login = (_privateKey) => {
   let privateKey = _privateKey || SwapApp.env.storage.getItem(storageKey)
   let account
 
+  const network = (
+    SwapApp.isMainNet()
+      ? SwapApp.env.bitcoin.networks.bitcoin
+      : SwapApp.env.bitcoin.networks.testnet
+  )
+
   if (!privateKey) {
-    privateKey = SwapApp.env.bitcoin.ECPair.makeRandom({ network: SwapApp.env.bitcoin.networks.testnet }).toWIF()
+    privateKey = SwapApp.env.bitcoin.ECPair.makeRandom({ network }).toWIF()
   }
 
-  account = new SwapApp.env.bitcoin.ECPair.fromWIF(privateKey, SwapApp.env.bitcoin.networks.testnet)
+  account = new SwapApp.env.bitcoin.ECPair.fromWIF(privateKey, network)
 
   account.__proto__.getPublicKey = () => account.getPublicKeyBuffer().toString('hex')
   account.__proto__.getPrivateKey = () => privateKey

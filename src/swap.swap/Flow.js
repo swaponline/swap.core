@@ -24,7 +24,7 @@ class Flow {
       }
     }
 
-    this.swap.room.subscribe('persist state', (values) => {
+    this.swap.room.on('persist state', (values) => {
       this.setState(values, true)
     })
   }
@@ -59,7 +59,7 @@ class Flow {
             isWaitingForOwner: true,
           })
 
-          SwapApp.services.room.subscribe('new orders', function ({ orders }) {
+          SwapApp.services.room.on('new orders', function ({ orders }) {
             const order = orders.find(({ id }) => id === orderId)
 
             if (order) {

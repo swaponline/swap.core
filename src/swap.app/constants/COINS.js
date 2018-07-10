@@ -1,6 +1,9 @@
 export default {
-  eth: 'eth',
-  ethToken: 'ethToken',
-  btc: 'btc',
-  nim: 'nim',
+  eth: 'ETH',
+  btc: 'BTC',
+  nim: 'NIM',
+
+  // ETH Tokens
+  noxon: 'NOXON',
+  foo: 'FOO',
 }
