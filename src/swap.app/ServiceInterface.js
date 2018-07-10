@@ -45,7 +45,7 @@ class ServiceInterface {
   }
 
   _tryInitService() {
-    if (!this._dependsOn) {
+    if (!this._dependsOn || !this._dependsOn.length) {
       this.initService()
       this._spyHandlers.forEach((handler) => handler())
       this._spyHandlers = []
