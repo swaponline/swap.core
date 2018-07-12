@@ -80,10 +80,13 @@ class EthSwap extends SwapInterface {
 
     return new Promise(async (resolve, reject) => {
       const hash = `0x${secretHash.replace(/^0x/, '')}`
+      const creator = SwapApp.services.auth.accounts.eth.address
+      const nonce = await SwapApp.env.web3.eth.getTransactionCount(creator)
 
       const params = {
-        from: SwapApp.services.auth.accounts.eth.address,
+        from: creator,
         gas: this.gasLimit,
+        nonce: nonce,
         value: Math.floor(SwapApp.env.web3.utils.toWei(amount.toString())),
       }
 
