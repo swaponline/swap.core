@@ -1,5 +1,5 @@
 {
-  "name": "swap-core",
+  "name": "swap.core",
   "version": "1.0.0",
   "description": "Swap Core",
   "homepage": "https://github.com/pavelivanov/swap",
@@ -9,7 +9,7 @@
     "type": "git",
     "url": "git+https://github.com/pavelivanov/swap.git"
   },
-  "main": "lib/index.js",
+  "main": "index.js",
   "scripts": {
     "test": "ava",
     "dev": "babel -w ./src --out-dir ./lib",
@@ -22,6 +22,8 @@
     "bitcoinjs-lib": "~3.3.2"
   },
   "dependencies": {
+    "app-module-path": "^2.2.0",
+    "babel-runtime": "^6.26.0",
     "bignumber.js": "^7.2.1",
     "bitcoinjs-lib": "^3.3.2",
     "typeforce": "^1.12.0"
