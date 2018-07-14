@@ -1,4 +1,4 @@
-import SwapApp, { Events, ServiceInterface } from 'swap.app'
+import SwapApp, { constants, Events, ServiceInterface } from 'swap.app'
 
 
 class SwapRoom extends ServiceInterface {
@@ -19,6 +19,7 @@ class SwapRoom extends ServiceInterface {
     this._events        = new Events()
     this.peer           = null
     this.connection     = null
+    this.roomName       = null
   }
 
   initService() {
@@ -51,8 +52,13 @@ class SwapRoom extends ServiceInterface {
 
   _init({ peer, ipfsConnection }) {
     this.peer = peer
+    this.roomName = SwapApp.network == constants.NETWORKS.TESTNET
+                  ? 'testnet.swap.online'
+                  : 'swap.online'
 
-    this.connection = SwapApp.env.IpfsRoom(ipfsConnection, 'swap.online', {
+    console.log(`Using room: ${this.roomName}`)
+
+    this.connection = SwapApp.env.IpfsRoom(ipfsConnection, this.roomName, {
       pollInterval: 5000,
     })
 
