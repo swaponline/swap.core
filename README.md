@@ -90,8 +90,6 @@ SwapApp.setup({
     BTC2ETH,
     ETHTOKEN2BTC(constants.COINS.noxon),
     BTC2ETHTOKEN(constants.COINS.noxon),
-    ETHTOKEN2BTC(constants.COINS.foo),
-    BTC2ETHTOKEN(constants.COINS.foo),
   ],
 })
 ```
