@@ -242,9 +242,6 @@ class ETH2BTC extends Flow {
           try {
             // TODO BE CAREFUL WITH CLOSE()!
             // TODO if call .close() before secret received then ETH participant will lost it and never withdraw from BTC script...
-            await flow.ethSwap.close({
-              participantAddress: participant.eth.address,
-            })
 
             flow.setState({
               isEthClosed: true,
@@ -285,17 +282,6 @@ class ETH2BTC extends Flow {
     this.setState({
       isSignFetching: true,
     })
-
-    await this.ethSwap.sign(
-      {
-        participantAddress: participant.eth.address,
-      },
-      (signTransactionHash) => {
-        this.setState({
-          signTransactionHash,
-        })
-      }
-    )
 
     this.swap.room.sendMessage('swap sign')
 
