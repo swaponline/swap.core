@@ -76,10 +76,8 @@ class BTC2ETH extends Flow {
       // 1. Signs
 
       () => {
-        flow.swap.room.once('swap sign', () => {
-          flow.finishStep({
-            isParticipantSigned: true,
-          })
+        flow.finishStep({
+          isParticipantSigned: true,
         })
       },
       // 2. Create secret, secret hash
@@ -120,6 +118,7 @@ class BTC2ETH extends Flow {
             btcScriptCreatingTransactionHash: hash,
           })
         })
+
 
         flow.swap.room.sendMessage('create btc script', {
           scriptValues,
@@ -199,12 +198,14 @@ class BTC2ETH extends Flow {
         }
 
         await flow.ethSwap.withdraw(data, (hash) => {
+          let ethSwapWithdrawTransactionHash = hash
           flow.setState({
-            ethSwapWithdrawTransactionHash: hash,
+            ethSwapWithdrawTransactionHash,
+          })
+          flow.swap.room.sendMessage('finish eth withdraw', {
+            ethSwapWithdrawTransactionHash,
           })
         })
-
-        flow.swap.room.sendMessage('finish eth withdraw')
 
         flow.finishStep({
           isEthWithdrawn: true,
