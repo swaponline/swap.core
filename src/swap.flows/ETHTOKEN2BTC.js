@@ -70,7 +70,7 @@ export default (tokenName) => {
         // 1. Sign swap to start
 
         () => {
-          // this.sign()
+          this.sign()
         },
 
         // 2. Wait participant create, fund BTC Script
@@ -247,6 +247,10 @@ export default (tokenName) => {
     }
 
     async sign() {
+      if (this.state.isMeSigned) return
+
+      const { participant } = this.swap
+
       this.setState({
         isSignFetching: true,
       })
@@ -259,6 +263,8 @@ export default (tokenName) => {
     }
 
     verifyBtcScript() {
+      if (this.state.btcScriptVerified) return
+
       this.finishStep({
         btcScriptVerified: true,
       })

@@ -119,7 +119,6 @@ class BTC2ETH extends Flow {
           })
         })
 
-
         flow.swap.room.sendMessage('create btc script', {
           scriptValues,
           btcScriptCreatingTransactionHash,
@@ -198,14 +197,12 @@ class BTC2ETH extends Flow {
         }
 
         await flow.ethSwap.withdraw(data, (hash) => {
-          let ethSwapWithdrawTransactionHash = hash
           flow.setState({
-            ethSwapWithdrawTransactionHash,
-          })
-          flow.swap.room.sendMessage('finish eth withdraw', {
-            ethSwapWithdrawTransactionHash,
+            ethSwapWithdrawTransactionHash: hash,
           })
         })
+
+        flow.swap.room.sendMessage('finish eth withdraw')
 
         flow.finishStep({
           isEthWithdrawn: true,
@@ -221,6 +218,8 @@ class BTC2ETH extends Flow {
   }
 
   submitSecret(secret) {
+    if (this.state.secret) return
+
     const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
     this.finishStep({
@@ -230,6 +229,8 @@ class BTC2ETH extends Flow {
   }
 
   async sign() {
+    if (this.state.isMeSigned) return
+
     this.setState({
       isSignFetching: true,
     })
@@ -268,7 +269,7 @@ class BTC2ETH extends Flow {
   }
 
   tryRefund() {
-    this.btcSwap.refund({
+    return this.btcSwap.refund({
       scriptValues: this.state.btcScriptValues,
       secret: this.state.secret,
     }, (hash) => {

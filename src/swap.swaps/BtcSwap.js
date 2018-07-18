@@ -76,6 +76,8 @@ class BtcSwap extends SwapInterface {
   createScript(data) {
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
 
+    console.log('DATA', data)
+
     const script = SwapApp.env.bitcoin.script.compile([
 
       SwapApp.env.bitcoin.opcodes.OP_RIPEMD160,

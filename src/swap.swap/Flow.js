@@ -37,7 +37,9 @@ class Flow {
 
     // wait events placed
     setTimeout(() => {
-      this.goStep(this.state.step)
+      if (this.state.step >= this.steps.length)
+        return
+      else this.goStep(this.state.step)
     }, 0)
   }
 

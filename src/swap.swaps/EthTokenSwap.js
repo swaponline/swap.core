@@ -173,7 +173,7 @@ class EthTokenSwap extends SwapInterface {
       catch (err) {
         reject(err)
       }
-
+      console.log('balance', balance)
       resolve(balance)
     })
   }

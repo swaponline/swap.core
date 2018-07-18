@@ -67,10 +67,8 @@ export default (tokenName) => {
         // 1. Signs
 
         () => {
-          flow.swap.room.once('swap sign', () => {
-            flow.finishStep({
-              isParticipantSigned: true,
-            })
+          flow.finishStep({
+            isParticipantSigned: true,
           })
         },
 
@@ -215,6 +213,8 @@ export default (tokenName) => {
     }
 
     submitSecret(secret) {
+      if (this.state.secretHash) return
+
       const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
       this.finishStep({
@@ -247,6 +247,22 @@ export default (tokenName) => {
           isBalanceEnough: false,
         })
       }
+    }
+
+    tryRefund() {
+      return this.btcSwap.refund({
+        scriptValues: this.state.btcScriptValues,
+        secret: this.state.secret,
+      }, (hash) => {
+        this.setState({
+          refundTransactionHash: hash,
+        })
+      })
+      .then(() => {
+        this.setState({
+          isRefunded: true,
+        })
+      })
     }
   }
 

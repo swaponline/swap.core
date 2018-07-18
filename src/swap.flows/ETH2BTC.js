@@ -69,9 +69,7 @@ class ETH2BTC extends Flow {
       // 1. Sign swap to start
 
       () => {
-        this.finishStep({
-          isMeSigned: true,
-        })
+        this.sign()
       },
 
       // 2. Wait participant create, fund BTC Script
@@ -263,6 +261,8 @@ class ETH2BTC extends Flow {
   }
 
   async sign() {
+    if (this.state.isMeSigned) return
+
     this.setState({
       isSignFetching: true,
     })
@@ -276,6 +276,8 @@ class ETH2BTC extends Flow {
 
 
   verifyBtcScript() {
+    if (this.state.btcScriptVerified) return
+
     this.finishStep({
       btcScriptVerified: true,
     })
