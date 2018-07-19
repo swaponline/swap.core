@@ -41,11 +41,11 @@ export default (tokenName) => {
         isBalanceEnough: false,
         balance: null,
 
+        btcScriptCreatingTransactionHash: null,
         ethSwapCreationTransactionHash: null,
         isEthContractFunded: false,
 
         secret: null,
-        isEthClosed: false,
 
         isEthWithdrawn: false,
         isBtcWithdrawn: false,
@@ -63,6 +63,7 @@ export default (tokenName) => {
 
     _getSteps() {
       const flow = this
+      console.log('FLOW', flow)
 
       return [
 
@@ -75,10 +76,11 @@ export default (tokenName) => {
         // 2. Wait participant create, fund BTC Script
 
         () => {
-          flow.swap.room.once('create btc script', ({ scriptValues }) => {
+          flow.swap.room.once('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
             flow.finishStep({
               secretHash: scriptValues.secretHash,
               btcScriptValues: scriptValues,
+              btcScriptCreatingTransactionHash,
             })
           })
         },
@@ -99,6 +101,7 @@ export default (tokenName) => {
 
         async () => {
           const { participant, buyAmount, sellAmount } = flow.swap
+          let ethSwapCreationTransactionHash
 
           // TODO move this somewhere!
           const utcNow = () => Math.floor(Date.now() / 1000)
@@ -127,12 +130,16 @@ export default (tokenName) => {
           })
 
           await flow.ethTokenSwap.create(swapData, (hash) => {
+            ethSwapCreationTransactionHash = hash
+
             flow.setState({
               ethSwapCreationTransactionHash: hash,
             })
           })
 
-          flow.swap.room.sendMessage('create eth contract')
+          flow.swap.room.sendMessage('create eth contract', {
+            ethSwapCreationTransactionHash,
+          })
 
           flow.finishStep({
             isEthContractFunded: true,
@@ -188,7 +195,7 @@ export default (tokenName) => {
 
         async () => {
           const { participant } = flow.swap
-          let { secret, isEthClosed } = flow.state
+          let { secret } = flow.state
 
           const data = {
             participantAddress: participant.eth.address,
@@ -216,20 +223,6 @@ export default (tokenName) => {
             return
           }
 
-          if (!isEthClosed) {
-            try {
-              await flow.ethTokenSwap.close(data)
-
-              flow.setState({
-                isEthClosed: true,
-              })
-            }
-            catch (err) {
-              // TODO notify user that smth goes wrong
-              console.error(err)
-              return
-            }
-          }
 
           await flow.btcSwap.withdraw({
             scriptValues: flow.state.btcScriptValues,
@@ -254,22 +247,9 @@ export default (tokenName) => {
     }
 
     async sign() {
-      const { participant } = this.swap
-
       this.setState({
         isSignFetching: true,
       })
-
-      await this.ethTokenSwap.sign(
-        {
-          participantAddress: participant.eth.address,
-        },
-        (hash) => {
-          this.setState({
-            hash,
-          })
-        }
-      )
 
       this.swap.room.sendMessage('swap sign')
 

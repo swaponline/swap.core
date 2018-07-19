@@ -33,6 +33,8 @@ class BTC2ETH extends Flow {
       isParticipantSigned: false,
 
       btcScriptCreatingTransactionHash: null,
+      ethSwapCreationTransactionHash: null,
+
       secretHash: null,
       btcScriptValues: null,
 
@@ -80,7 +82,6 @@ class BTC2ETH extends Flow {
           })
         })
       },
-
       // 2. Create secret, secret hash
 
       () => {
@@ -97,6 +98,7 @@ class BTC2ETH extends Flow {
 
       async () => {
         const { sellAmount, participant } = flow.swap
+        let btcScriptCreatingTransactionHash
 
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
@@ -113,6 +115,7 @@ class BTC2ETH extends Flow {
           scriptValues,
           amount: sellAmount,
         }, (hash) => {
+          btcScriptCreatingTransactionHash = hash
           flow.setState({
             btcScriptCreatingTransactionHash: hash,
           })
@@ -120,6 +123,7 @@ class BTC2ETH extends Flow {
 
         flow.swap.room.sendMessage('create btc script', {
           scriptValues,
+          btcScriptCreatingTransactionHash,
         })
 
         flow.finishStep({
@@ -133,6 +137,12 @@ class BTC2ETH extends Flow {
       () => {
         const { participant } = flow.swap
         let timer
+
+        flow.swap.room.once('create eth contract', ({ ethSwapCreationTransactionHash }) => {
+          flow.setState({
+            ethSwapCreationTransactionHash,
+          })
+        })
 
         const checkEthBalance = () => {
           timer = setTimeout(async () => {
@@ -215,6 +225,18 @@ class BTC2ETH extends Flow {
     this.finishStep({
       secret,
       secretHash,
+    })
+  }
+
+  async sign() {
+    this.setState({
+      isSignFetching: true,
+    })
+
+    this.swap.room.sendMessage('swap sign')
+
+    this.finishStep({
+      isMeSigned: true,
     })
   }
 

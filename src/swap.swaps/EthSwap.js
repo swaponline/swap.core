@@ -39,36 +39,6 @@ class EthSwap extends SwapInterface {
   /**
    *
    * @param {object} data
-   * @param {string} data.participantAddress
-   * @param {function} handleTransactionHash
-   * @returns {Promise}
-   */
-  sign(data, handleTransactionHash) {
-    const { participantAddress } = data
-
-    return new Promise(async (resolve, reject) => {
-      const params = {
-        from: SwapApp.services.auth.accounts.eth.address,
-        gas: this.gasLimit,
-      }
-
-      const receipt = await this.contract.methods.sign(participantAddress).send(params)
-        .on('transactionHash', (hash) => {
-          if (typeof handleTransactionHash === 'function') {
-            handleTransactionHash(hash)
-          }
-        })
-        .on('error', (err) => {
-          reject(err)
-        })
-
-      resolve(receipt)
-    })
-  }
-
-  /**
-   *
-   * @param {object} data
    * @param {string} data.secretHash
    * @param {string} data.participantAddress
    * @param {number} data.amount
@@ -85,6 +55,7 @@ class EthSwap extends SwapInterface {
         from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
         value: Math.floor(SwapApp.env.web3.utils.toWei(amount.toString())),
+        gasPrice: '20000000000',
       }
 
       const values = [ hash, participantAddress ]
@@ -270,3 +241,33 @@ class EthSwap extends SwapInterface {
 
 
 export default EthSwap
+
+// /**
+//  *
+//  * @param {object} data
+//  * @param {string} data.participantAddress
+//  * @param {function} handleTransactionHash
+//  * @returns {Promise}
+//  */
+// sign(data, handleTransactionHash) {
+//   const { participantAddress } = data
+//
+//   return new Promise(async (resolve, reject) => {
+//     const params = {
+//       from: SwapApp.services.auth.accounts.eth.address,
+//       gas: this.gasLimit,
+//     }
+//
+//     const receipt = await this.contract.methods.sign(participantAddress).send(params)
+//       .on('transactionHash', (hash) => {
+//         if (typeof handleTransactionHash === 'function') {
+//           handleTransactionHash(hash)
+//         }
+//       })
+//       .on('error', (err) => {
+//         reject(err)
+//       })
+//
+//     resolve(receipt)
+//   })
+// }

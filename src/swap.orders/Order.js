@@ -26,6 +26,7 @@ class Order {
     this.owner          = null
     this.participant    = null
     this.buyCurrency    = null
+    this.exchangeRate   = null
     this.sellCurrency   = null
     this.buyAmount      = null
     this.sellAmount     = null
