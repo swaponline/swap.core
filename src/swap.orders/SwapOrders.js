@@ -32,7 +32,7 @@ const checkIncomeOrderFormat = (order) => {
     sellCurrency: util.typeforce.isCoinName,
     buyAmount: util.typeforce.isNumeric,
     sellAmount: util.typeforce.isNumeric,
-    exchangeRate: util.typeforce.isNumeric,
+    exchangeRate: util.typeforce.t.maybe(util.typeforce.isNumeric),
     isProcessing: '?Boolean',
     isRequested: '?Boolean',
   }
