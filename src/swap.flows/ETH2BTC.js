@@ -51,6 +51,8 @@ class ETH2BTC extends Flow {
 
       refundTransactionHash: null,
       isRefunded: false,
+
+      finishSwap: false,
     }
 
     super._persistSteps()
@@ -255,7 +257,11 @@ class ETH2BTC extends Flow {
       // 8. Finish
 
       () => {
-
+        flow.swap.room.once('swap finished', ({ finishSwap }) => {
+          flow.setState({
+            finishSwap,
+          })
+        })
       },
     ]
   }

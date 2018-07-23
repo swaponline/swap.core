@@ -51,6 +51,8 @@ export default (tokenName) => {
         isBtcWithdrawn: false,
 
         refundTransactionHash: null,
+
+        finishSwap: false,
       }
 
       super._persistSteps()
@@ -241,7 +243,11 @@ export default (tokenName) => {
         // 8. Finish
 
         () => {
-
+          flow.swap.room.once('swap finished', ({ finishSwap }) => {
+            flow.setState({
+              finishSwap,
+            })
+          })
         },
       ]
     }
