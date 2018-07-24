@@ -214,7 +214,8 @@ class ETH2BTC extends Flow {
           }
           catch (err) {
             // TODO user can stuck here after page reload...
-            console.error(err)
+            if ( !/known transaction/.test(err.message) )
+              console.error(err)
             return
           }
         }

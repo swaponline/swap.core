@@ -193,11 +193,17 @@ export default (tokenName) => {
             return
           }
 
-          await flow.ethTokenSwap.withdraw(data, (hash) => {
-            flow.setState({
-              ethSwapWithdrawTransactionHash: hash,
+          try {
+            await flow.ethTokenSwap.withdraw(data, (hash) => {
+              flow.setState({
+                ethSwapWithdrawTransactionHash: hash,
+              })
             })
-          })
+          } catch (err) {
+            // TODO user can stuck here after page reload...
+            if ( !/known transaction/.test(err.message) ) console.error(err)
+            return
+          }
 
           flow.swap.room.sendMessage('finish eth withdraw')
 
