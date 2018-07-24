@@ -234,20 +234,6 @@ class BTC2ETH extends Flow {
     })
   }
 
-  async sign() {
-    if (this.state.isMeSigned) return
-
-    this.setState({
-      isSignFetching: true,
-    })
-
-    this.swap.room.sendMessage('swap sign')
-
-    this.finishStep({
-      isMeSigned: true,
-    })
-  }
-
   async syncBalance() {
     const { sellAmount } = this.swap
 
