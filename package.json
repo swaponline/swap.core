@@ -2,12 +2,12 @@
   "name": "swap.core",
   "version": "0.1.1",
   "description": "Swap Core",
-  "homepage": "https://github.com/pavelivanov/swap",
+  "homepage": "https://github.com/swaponline/swap.core",
   "author": "Pavel Ivanov <grammka@gmail.com> (https://github.com/pavelivanov)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pavelivanov/swap.git"
+    "url": "git+https://github.com/swaponline/swap.core.git"
   },
   "main": "index.js",
   "scripts": {
