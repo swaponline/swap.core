@@ -195,7 +195,7 @@ class BTC2ETH extends Flow {
         })
 
         if (balanceCheckResult) {
-          console.error(`Eth balance check error:`, balanceCheckResult)
+          console.error(`Waiting until deposit: ETH balance check error:`, balanceCheckResult)
           flow.swap.events.dispatch('eth balance check error', balanceCheckResult)
           return
         }
