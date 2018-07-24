@@ -1,12 +1,14 @@
+sudo: false
 language: node_js
 node_js:
-  - "node"
-  - "7"
+  - stable
+script:
+  - npm run build
 cache:
   directories:
     - "node_modules"
-install:
-    - npm install
-    - npm run build
-script:
-    - npm run build
+deploy:
+  provider: npm
+  api_key: $NPM_TOKEN
+  on:
+    tags: true
