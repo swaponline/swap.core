@@ -9,6 +9,7 @@ cache:
     - "node_modules"
 deploy:
   provider: npm
+  email: "aleksey.bykhun@phystech.edu"
   api_key: $NPM_TOKEN
   on:
     branch: master
