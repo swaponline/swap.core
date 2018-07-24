@@ -195,16 +195,23 @@ class BTC2ETH extends Flow {
         })
 
         if (balanceCheckResult) {
-          console.error(`Eth balance check error:`, balanceCheckResult)
+          console.error(`Waiting until deposit: ETH balance check error:`, balanceCheckResult)
           flow.swap.events.dispatch('eth balance check error', balanceCheckResult)
           return
         }
 
-        await flow.ethSwap.withdraw(data, (hash) => {
-          flow.setState({
-            ethSwapWithdrawTransactionHash: hash,
+        try {
+          await flow.ethSwap.withdraw(data, (hash) => {
+            flow.setState({
+              ethSwapWithdrawTransactionHash: hash,
+            })
           })
-        })
+        } catch (err) {
+          // TODO user can stuck here after page reload...
+          if ( !/known transaction/.test(err.message) )
+            console.error(err)
+          return
+        }
 
         flow.swap.room.sendMessage('finish eth withdraw')
 
@@ -231,20 +238,6 @@ class BTC2ETH extends Flow {
     this.finishStep({
       secret,
       secretHash,
-    })
-  }
-
-  async sign() {
-    if (this.state.isMeSigned) return
-
-    this.setState({
-      isSignFetching: true,
-    })
-
-    this.swap.room.sendMessage('swap sign')
-
-    this.finishStep({
-      isMeSigned: true,
     })
   }
 

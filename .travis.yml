@@ -1,0 +1,16 @@
+sudo: false
+language: node_js
+node_js:
+  - stable
+script:
+  - npm run build
+cache:
+  directories:
+    - "node_modules"
+deploy:
+  provider: npm
+  email: "aleksey.bykhun@phystech.edu"
+  api_key: $NPM_TOKEN
+  skip_cleanup: true
+  on:
+    branch: master

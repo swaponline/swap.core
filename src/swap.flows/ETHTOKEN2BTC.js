@@ -214,7 +214,8 @@ export default (tokenName) => {
             }
             catch (err) {
               // TODO notify user that smth goes wrong
-              console.error(err)
+              if ( !/known transaction/.test(err.message) )
+                console.error(err)
               return
             }
           }
