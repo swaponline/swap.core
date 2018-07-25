@@ -84,6 +84,8 @@ class ETH2BTC extends Flow {
             btcScriptCreatingTransactionHash,
           })
         })
+
+        flow.swap.room.sendMessage('request btc script')
       },
 
       // 3. Verify BTC Script
@@ -126,13 +128,20 @@ class ETH2BTC extends Flow {
           amount:               sellAmount,
         }
 
-        await this.ethSwap.create(swapData, (hash) => {
-          ethSwapCreationTransactionHash = hash
+        try {
+          await this.ethSwap.create(swapData, (hash) => {
+            ethSwapCreationTransactionHash = hash
 
-          flow.setState({
-            ethSwapCreationTransactionHash: hash,
+            flow.setState({
+              ethSwapCreationTransactionHash: hash,
+            })
           })
-        })
+        } catch (err) {
+          // TODO user can stuck here after page reload...
+          if ( !/known transaction/.test(err.message) )
+            console.error(err)
+          return
+        }
 
         flow.swap.room.sendMessage('create eth contract', {
           ethSwapCreationTransactionHash,

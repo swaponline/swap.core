@@ -123,6 +123,13 @@ class BTC2ETH extends Flow {
           })
         })
 
+        flow.swap.room.on('request btc script', () => {
+          flow.swap.room.sendMessage('create btc script', {
+            scriptValues,
+            btcScriptCreatingTransactionHash,
+          })
+        })
+
         flow.swap.room.sendMessage('create btc script', {
           scriptValues,
           btcScriptCreatingTransactionHash,

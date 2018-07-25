@@ -85,6 +85,8 @@ export default (tokenName) => {
               btcScriptCreatingTransactionHash,
             })
           })
+          
+          flow.swap.room.sendMessage('request btc script')
         },
 
         // 3. Verify BTC Script
