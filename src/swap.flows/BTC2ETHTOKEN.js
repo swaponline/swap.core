@@ -70,8 +70,10 @@ export default (tokenName) => {
         // 1. Signs
 
         () => {
-          flow.finishStep({
-            isParticipantSigned: true,
+          flow.swap.room.once('swap sign', () => {
+            flow.finishStep({
+              isParticipantSigned: true,
+            })
           })
         },
 
