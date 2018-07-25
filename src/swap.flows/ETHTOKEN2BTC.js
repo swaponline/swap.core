@@ -72,7 +72,7 @@ export default (tokenName) => {
         // 1. Sign swap to start
 
         () => {
-          this.sign()
+          // this.sign()
         },
 
         // 2. Wait participant create, fund BTC Script
