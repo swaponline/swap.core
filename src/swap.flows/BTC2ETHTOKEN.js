@@ -49,8 +49,9 @@ export default (tokenName) => {
 
         ethSwapWithdrawTransactionHash: null,
         isEthWithdrawn: false,
+        isBtcWithdrawn: false,
 
-        finishSwap: false,
+        isFinished: false,
       }
 
       super._persistSteps()
@@ -215,10 +216,17 @@ export default (tokenName) => {
         // 7. Finish
 
         () => {
-          flow.swap.room.sendMessage('swap finished',{
-            finishSwap: true,
+          flow.swap.room.once('swap finished', () => {
+            flow.finishStep({
+              isFinished: true,
+            })
           })
         },
+
+        // 8. Finished!
+        () => {
+
+        }
       ]
     }
 
