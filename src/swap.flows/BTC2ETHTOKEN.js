@@ -75,6 +75,10 @@ export default (tokenName) => {
               isParticipantSigned: true,
             })
           })
+
+          flow.swap.room.once('swap exists', () => {
+            console.log(`swap already exists`)
+          })
         },
 
         // 2. Create secret, secret hash
@@ -240,7 +244,9 @@ export default (tokenName) => {
     }
 
     submitSecret(secret) {
-      if (this.state.secretHash) return
+      if (this.state.secretHash) return true
+      if (!this.state.isParticipantSigned)
+        throw new Error(`Cannot proceed: participant not signed. step=${this.state.step}`)
 
       const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
@@ -248,6 +254,8 @@ export default (tokenName) => {
         secret,
         secretHash,
       })
+
+      return true
     }
 
     async syncBalance() {
