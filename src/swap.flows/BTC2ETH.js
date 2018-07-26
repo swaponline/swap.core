@@ -98,6 +98,7 @@ class BTC2ETH extends Flow {
 
       () => {
         this.syncBalance()
+        console.log(`sync balance`)
       },
 
       // 4. Create BTC Script, fund, notify participant
@@ -220,7 +221,7 @@ class BTC2ETH extends Flow {
         } catch (err) {
           // TODO user can stuck here after page reload...
           if ( /known transaction/.test(err.message) )
-            console.error(`known tx: ${err.message}`)
+            return console.error(`known tx: ${err.message}`)
           else if ( /out of gas/.test(err.message) )
             return console.error(`tx failed (wrong secret?): ${err.message}`)
           else
@@ -284,6 +285,7 @@ class BTC2ETH extends Flow {
       })
     }
     else {
+      console.error(`Not enough money: ${balance} < ${sellAmount}`)
       this.setState({
         balance,
         isBalanceFetching: false,

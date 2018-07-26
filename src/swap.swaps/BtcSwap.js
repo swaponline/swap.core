@@ -164,6 +164,10 @@ class BtcSwap extends SwapInterface {
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue
 
+        if (totalUnspent < feeValue + fundValue) {
+          throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue} + ${fundValue}`)
+        }
+
         unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout))
         tx.addOutput(scriptAddress, fundValue)
         tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), skipValue)

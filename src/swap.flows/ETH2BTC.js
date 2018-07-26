@@ -86,11 +86,13 @@ class ETH2BTC extends Flow {
         })
 
         flow.swap.room.sendMessage('request btc script')
+        console.log(`request btc script`)
       },
 
       // 3. Verify BTC Script
 
       () => {
+        console.log(`waiting verify btc script`)
         // this.verifyBtcScript()
       },
 
@@ -138,13 +140,21 @@ class ETH2BTC extends Flow {
           })
         } catch (err) {
           // TODO user can stuck here after page reload...
-          if ( !/known transaction/.test(err.message) )
+          if ( /known transaction/.test(err.message) )
+            return console.error(`known tx: ${err.message}`)
+          else if ( /out of gas/.test(err.message) )
+            return console.error(`tx failed (wrong secret?): ${err.message}`)
+          else
             return console.error(err)
         }
+
+        console.log(`create ETH contract, hash=${ethSwapCreationTransactionHash}`)
 
         flow.swap.room.sendMessage('create eth contract', {
           ethSwapCreationTransactionHash,
         })
+
+        console.log(`finish step`)
 
         flow.finishStep({
           isEthContractFunded: true,
