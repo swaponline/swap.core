@@ -173,7 +173,10 @@ class EthTokenSwap extends SwapInterface {
         reject(err)
       }
 
-      resolve(swap.balance)
+      console.log('swapExists', swap)
+
+      const balance = parseInt(swap.balance)
+      resolve(balance)
     })
   }
 
