@@ -29,6 +29,7 @@ class EthSwap extends SwapInterface {
 
     this._swapName      = constants.COINS.eth
     this.gasLimit       = options.gasLimit || 3e6
+    this.gasPrice       = options.gasPrice || 2e9
     this.fetchBalance   = options.fetchBalance
   }
 
@@ -58,7 +59,7 @@ class EthSwap extends SwapInterface {
         from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
         value: newAmount,
-        gasPrice: '20000000000',
+        gasPrice: this.gasPrice,
       }
 
       const values = [ hash, participantAddress ]
