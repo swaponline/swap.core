@@ -85,6 +85,8 @@ export default (tokenName) => {
               btcScriptCreatingTransactionHash,
             })
           })
+
+          flow.swap.room.sendMessage('request btc script')
         },
 
         // 3. Verify BTC Script
@@ -260,10 +262,31 @@ export default (tokenName) => {
       ]
     }
 
-    async sign() {
-      if (this.state.isMeSigned) return
-
+    _checkSwapAlreadyExists() {
       const { participant } = this.swap
+
+      const swapData = {
+        ownerAddress:       SwapApp.services.auth.accounts.eth.address,
+        participantAddress: participant.eth.address
+      }
+
+      return this.ethTokenSwap.checkSwapExists(swapData)
+    }
+
+    async sign() {
+      const { participant } = this.swap
+      const { isMeSigned } = this.state
+
+      if (isMeSigned) return true
+
+      const swapExists = await this._checkSwapAlreadyExists()
+
+      if (swapExists) {
+        this.swap.room.sendMessage('swap exists')
+        // TODO go to 6 step automatically here
+        throw new Error(`Cannot sign: swap with ${participant.eth.address} already exists! Please refund it or drop ${this.swap.id}`)
+        return false
+      }
 
       this.setState({
         isSignFetching: true,
@@ -274,14 +297,20 @@ export default (tokenName) => {
       this.finishStep({
         isMeSigned: true,
       })
+
+      return true
     }
 
     verifyBtcScript() {
-      if (this.state.btcScriptVerified) return
+      if (this.state.btcScriptVerified) return true
+      if (!this.state.btcScriptValues)
+        throw new Error(`No script, cannot verify`)
 
       this.finishStep({
         btcScriptVerified: true,
       })
+
+      return true
     }
 
     async syncBalance() {

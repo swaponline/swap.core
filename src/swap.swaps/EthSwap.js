@@ -1,5 +1,5 @@
 import SwapApp, { SwapInterface, constants } from 'swap.app'
-
+import BigNumber from 'bignumber.js'
 
 class EthSwap extends SwapInterface {
 
@@ -48,13 +48,16 @@ class EthSwap extends SwapInterface {
   create(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount } = data
 
+    const base = BigNumber(10).pow(18)
+    const newAmount = new BigNumber(amount.toString()).times(base).integerValue().toNumber()
+
     return new Promise(async (resolve, reject) => {
       const hash = `0x${secretHash.replace(/^0x/, '')}`
 
       const params = {
         from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
-        value: Math.floor(SwapApp.env.web3.utils.toWei(amount.toString())),
+        value: newAmount,
         gasPrice: '20000000000',
       }
 
@@ -95,6 +98,33 @@ class EthSwap extends SwapInterface {
         reject(err)
       }
 
+      resolve(balance)
+    })
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.ownerAddress
+   * @param {string} data.participantAddress
+   * @returns {Promise}
+   */
+  checkSwapExists(data) {
+    const { ownerAddress, participantAddress } = data
+
+    return new Promise(async (resolve, reject) => {
+      let swap
+
+      try {
+        swap = await this.contract.methods.swaps(ownerAddress, participantAddress).call()
+      }
+      catch (err) {
+        reject(err)
+      }
+
+      console.log('swapExists', swap)
+
+      const balance = parseInt(swap.balance)
       resolve(balance)
     })
   }

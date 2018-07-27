@@ -157,6 +157,33 @@ class EthTokenSwap extends SwapInterface {
    *
    * @param {object} data
    * @param {string} data.ownerAddress
+   * @param {string} data.participantAddress
+   * @returns {Promise}
+   */
+  checkSwapExists(data) {
+    const { ownerAddress, participantAddress } = data
+
+    return new Promise(async (resolve, reject) => {
+      let swap
+
+      try {
+        swap = await this.contract.methods.swaps(ownerAddress, participantAddress).call()
+      }
+      catch (err) {
+        reject(err)
+      }
+
+      console.log('swapExists', swap)
+
+      const balance = parseInt(swap.balance)
+      resolve(balance)
+    })
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.ownerAddress
    * @returns {Promise}
    */
   getBalance(data) {

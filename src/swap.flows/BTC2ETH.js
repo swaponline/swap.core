@@ -83,6 +83,10 @@ class BTC2ETH extends Flow {
             isParticipantSigned: true,
           })
         })
+
+        flow.swap.room.once('swap exists', () => {
+          console.log(`swap already exists`)
+        })
       },
       // 2. Create secret, secret hash
 
@@ -94,6 +98,7 @@ class BTC2ETH extends Flow {
 
       () => {
         this.syncBalance()
+        console.log(`sync balance`)
       },
 
       // 4. Create BTC Script, fund, notify participant
@@ -120,6 +125,13 @@ class BTC2ETH extends Flow {
           btcScriptCreatingTransactionHash = hash
           flow.setState({
             btcScriptCreatingTransactionHash: hash,
+          })
+        })
+
+        flow.swap.room.on('request btc script', () => {
+          flow.swap.room.sendMessage('create btc script', {
+            scriptValues,
+            btcScriptCreatingTransactionHash,
           })
         })
 
@@ -208,9 +220,12 @@ class BTC2ETH extends Flow {
           })
         } catch (err) {
           // TODO user can stuck here after page reload...
-          if ( !/known transaction/.test(err.message) )
-            console.error(err)
-          return
+          if ( /known transaction/.test(err.message) )
+            return console.error(`known tx: ${err.message}`)
+          else if ( /out of gas/.test(err.message) )
+            return console.error(`tx failed (wrong secret?): ${err.message}`)
+          else
+            return console.error(err)
         }
 
         flow.swap.room.sendMessage('finish eth withdraw')
@@ -238,7 +253,9 @@ class BTC2ETH extends Flow {
   }
 
   submitSecret(secret) {
-    if (this.state.secret) return
+    if (this.state.secret) return true
+    if (!this.state.isParticipantSigned)
+      throw new Error(`Cannot proceed: participant not signed. step=${this.state.step}`)
 
     const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
@@ -246,6 +263,8 @@ class BTC2ETH extends Flow {
       secret,
       secretHash,
     })
+
+    return true
   }
 
   async syncBalance() {
@@ -266,6 +285,7 @@ class BTC2ETH extends Flow {
       })
     }
     else {
+      console.error(`Not enough money: ${balance} < ${sellAmount}`)
       this.setState({
         balance,
         isBalanceFetching: false,

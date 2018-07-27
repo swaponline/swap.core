@@ -84,11 +84,15 @@ class ETH2BTC extends Flow {
             btcScriptCreatingTransactionHash,
           })
         })
+
+        flow.swap.room.sendMessage('request btc script')
+        console.log(`request btc script`)
       },
 
       // 3. Verify BTC Script
 
       () => {
+        console.log(`waiting verify btc script`)
         // this.verifyBtcScript()
       },
 
@@ -126,17 +130,31 @@ class ETH2BTC extends Flow {
           amount:               sellAmount,
         }
 
-        await this.ethSwap.create(swapData, (hash) => {
-          ethSwapCreationTransactionHash = hash
+        try {
+          await this.ethSwap.create(swapData, (hash) => {
+            ethSwapCreationTransactionHash = hash
 
-          flow.setState({
-            ethSwapCreationTransactionHash: hash,
+            flow.setState({
+              ethSwapCreationTransactionHash: hash,
+            })
           })
-        })
+        } catch (err) {
+          // TODO user can stuck here after page reload...
+          if ( /known transaction/.test(err.message) )
+            return console.error(`known tx: ${err.message}`)
+          else if ( /out of gas/.test(err.message) )
+            return console.error(`tx failed (wrong secret?): ${err.message}`)
+          else
+            return console.error(err)
+        }
+
+        console.log(`create ETH contract, hash=${ethSwapCreationTransactionHash}`)
 
         flow.swap.room.sendMessage('create eth contract', {
           ethSwapCreationTransactionHash,
         })
+
+        console.log(`finish step`)
 
         flow.finishStep({
           isEthContractFunded: true,
@@ -215,8 +233,7 @@ class ETH2BTC extends Flow {
           catch (err) {
             // TODO user can stuck here after page reload...
             if ( !/known transaction/.test(err.message) )
-              console.error(err)
-            return
+              return console.error(err)
           }
         }
 
@@ -272,8 +289,31 @@ class ETH2BTC extends Flow {
     ]
   }
 
+  _checkSwapAlreadyExists() {
+    const { participant } = this.swap
+
+    const swapData = {
+      ownerAddress:       SwapApp.services.auth.accounts.eth.address,
+      participantAddress: participant.eth.address
+    }
+
+    return this.ethSwap.checkSwapExists(swapData)
+  }
+
   async sign() {
-    if (this.state.isMeSigned) return
+    const { participant } = this.swap
+    const { isMeSigned } = this.state
+
+    if (isMeSigned) return true
+
+    const swapExists = await this._checkSwapAlreadyExists()
+
+    if (swapExists) {
+      this.swap.room.sendMessage('swap exists')
+      // TODO go to 6 step automatically here
+      throw new Error(`Cannot sign: swap with ${participant.eth.address} already exists! Please refund it or drop ${this.swap.id}`)
+      return false
+    }
 
     this.setState({
       isSignFetching: true,
@@ -284,15 +324,21 @@ class ETH2BTC extends Flow {
     this.finishStep({
       isMeSigned: true,
     })
+
+    return true
   }
 
 
   verifyBtcScript() {
-    if (this.state.btcScriptVerified) return
+    if (this.state.btcScriptVerified) return true
+    if (!this.state.btcScriptValues)
+      throw new Error(`No script, cannot verify`)
 
     this.finishStep({
       btcScriptVerified: true,
     })
+
+    return true
   }
 
   async syncBalance() {
