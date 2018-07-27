@@ -24,7 +24,7 @@ class Flow {
       }
     }
 
-    this.swap.room.subscribe('persist state', (values) => {
+    this.swap.room.on('persist state', (values) => {
       this.setState(values, true)
     })
   }
@@ -37,7 +37,9 @@ class Flow {
 
     // wait events placed
     setTimeout(() => {
-      this.goStep(this.state.step)
+      if (this.state.step >= this.steps.length)
+        return
+      else this.goStep(this.state.step)
     }, 0)
   }
 
@@ -59,7 +61,7 @@ class Flow {
             isWaitingForOwner: true,
           })
 
-          SwapApp.services.room.subscribe('new orders', function ({ orders }) {
+          SwapApp.services.room.on('new orders', function ({ orders }) {
             const order = orders.find(({ id }) => id === orderId)
 
             if (order) {

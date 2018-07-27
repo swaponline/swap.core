@@ -2,7 +2,7 @@ class SwapInterface {
 
   constructor() {
     // service name, within it will be stored in SwapApp.swaps
-    this._serviceName = null
+    this._swapName = null
   }
 
   _initSwap() {

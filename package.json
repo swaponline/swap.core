@@ -1,15 +1,15 @@
 {
-  "name": "swap-core",
-  "version": "1.0.0",
+  "name": "swap.core",
+  "version": "0.1.7",
   "description": "Swap Core",
-  "homepage": "https://github.com/pavelivanov/swap",
+  "homepage": "https://github.com/swaponline/swap.core",
   "author": "Pavel Ivanov <grammka@gmail.com> (https://github.com/pavelivanov)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pavelivanov/swap.git"
+    "url": "git+https://github.com/swaponline/swap.core.git"
   },
-  "main": "lib/index.js",
+  "main": "index.js",
   "scripts": {
     "test": "ava",
     "dev": "babel -w ./src --out-dir ./lib",
@@ -22,6 +22,8 @@
     "bitcoinjs-lib": "~3.3.2"
   },
   "dependencies": {
+    "app-module-path": "^2.2.0",
+    "babel-runtime": "^6.26.0",
     "bignumber.js": "^7.2.1",
     "bitcoinjs-lib": "^3.3.2",
     "typeforce": "^1.12.0"
@@ -31,10 +33,11 @@
     "babel-cli": "^6.26.0",
     "babel-loader": "^7.1.4",
     "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-es2015-destructuring": "^6.23.0",
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
     "babel-polyfill": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-register": "^6.26.0",

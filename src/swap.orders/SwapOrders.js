@@ -19,10 +19,10 @@ const checkIncomeOrderFormat = (order) => {
       reputation: util.typeforce.t.maybe(util.typeforce.isNumeric),
       ...(() => {
         const result = {}
-        Object.keys(constants.COINS).forEach((coin) => {
-          result[coin] = util.typeforce.t.maybe({
-            address: util.typeforce.isCoinAddress[coin],
-            publicKey: util.typeforce.isPublicKey[coin],
+        Object.keys(constants.COINS).forEach((key) => {
+          result[key] = util.typeforce.t.maybe({
+            address: util.typeforce.isCoinAddress[constants.COINS[key]],
+            publicKey: util.typeforce.isPublicKey[constants.COINS[key]],
           })
         })
         return result
@@ -32,6 +32,7 @@ const checkIncomeOrderFormat = (order) => {
     sellCurrency: util.typeforce.isCoinName,
     buyAmount: util.typeforce.isNumeric,
     sellAmount: util.typeforce.isNumeric,
+    exchangeRate: util.typeforce.t.maybe(util.typeforce.isNumeric),
     isProcessing: '?Boolean',
     isRequested: '?Boolean',
   }
@@ -70,12 +71,12 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
   }
 
   initService() {
-    SwapApp.services.room.subscribe('ready', this._handleReady)
-    SwapApp.services.room.subscribe('user online', this._handleUserOnline)
-    SwapApp.services.room.subscribe('user offline', this._handleUserOffline)
-    SwapApp.services.room.subscribe('new orders', this._handleNewOrders)
-    SwapApp.services.room.subscribe('new order', this._handleNewOrder)
-    SwapApp.services.room.subscribe('remove order', this._handleRemoveOrder)
+    SwapApp.services.room.on('ready', this._handleReady)
+    SwapApp.services.room.on('user online', this._handleUserOnline)
+    SwapApp.services.room.on('user offline', this._handleUserOffline)
+    SwapApp.services.room.on('new orders', this._handleNewOrders)
+    SwapApp.services.room.on('new order', this._handleNewOrder)
+    SwapApp.services.room.on('remove order', this._handleRemoveOrder)
   }
 
   _handleReady = () => {
@@ -94,6 +95,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
         'buyCurrency',
         'sellCurrency',
         'buyAmount',
+        'exchangeRate',
         'sellAmount',
         'isRequested',
         'isProcessing',
@@ -169,12 +171,14 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
    * @param {boolean} data.isRequested
    */
   _create(data) {
-    const { id, buyAmount, sellAmount, ...rest } = data
+    const { id, buyAmount, sellAmount, buyCurrency, sellCurrency, ...rest } = data
 
     const order = new Order(this, {
       id: id || getUniqueId(),
       buyAmount: new BigNumber(String(buyAmount)),
       sellAmount: new BigNumber(String(sellAmount)),
+      buyCurrency: buyCurrency.toUpperCase(),
+      sellCurrency: sellCurrency.toUpperCase(),
       ...rest,
     })
 
@@ -239,6 +243,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
       'sellCurrency',
       'buyAmount',
       'sellAmount',
+      'exchangeRate',
       'participant',
       'requests',
       'isRequested',
@@ -280,6 +285,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
             'id',
             'owner',
             'buyCurrency',
+            'exchangeRate',
             'sellCurrency',
             'buyAmount',
             'sellAmount',

@@ -26,6 +26,7 @@ class Order {
     this.owner          = null
     this.participant    = null
     this.buyCurrency    = null
+    this.exchangeRate   = null
     this.sellCurrency   = null
     this.buyAmount      = null
     this.sellAmount     = null
@@ -44,7 +45,7 @@ class Order {
   }
 
   _onMount() {
-    SwapApp.services.room.subscribe('request swap', ({ orderId, participant }) => {
+    SwapApp.services.room.on('request swap', ({ orderId, participant }) => {
       if (orderId === this.id && !this.requests.find(({ peer }) => peer === participant.peer)) {
         this.requests.push(participant)
 
@@ -101,7 +102,7 @@ class Order {
       },
     ])
 
-    SwapApp.services.room.subscribe('accept swap request', function ({ orderId }) {
+    SwapApp.services.room.on('accept swap request', function ({ orderId }) {
       if (orderId === self.id) {
         this.unsubscribe()
 
@@ -114,7 +115,7 @@ class Order {
       }
     })
 
-    SwapApp.services.room.subscribe('decline swap request', function ({ orderId }) {
+    SwapApp.services.room.on('decline swap request', function ({ orderId }) {
       if (orderId === self.id) {
         this.unsubscribe()
 

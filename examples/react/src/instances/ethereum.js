@@ -31,12 +31,16 @@ class Ethereum {
   fetchBalance(address) {
     return this.core.eth.getBalance(address)
       .then((wei) => {
-        return Number(this.core.utils.fromWei(wei))
+        const balance = Number(this.core.utils.fromWei(wei))
+
+        console.log('ETH balance:', balance)
+
+        return balance
       })
   }
 
-  fetchTokenBalance(address) {
-    return request.get(`https://rinkeby.etherscan.io/api?module=account&action=tokenbalance&contractaddress=0x60c205722c6c797c725a996cf9cca11291f90749&address=${address}`)
+  fetchTokenBalance(tokenAddress, address) {
+    return request.get(`https://rinkeby.etherscan.io/api?module=account&action=tokenbalance&contractaddress=${tokenAddress}&address=${address}`)
       .then(({ result }) => result)
   }
 }

@@ -23,11 +23,12 @@ class ServiceInterface {
         dependsOnMap[Service.name] = {
           initialized: false,
         }
-        SwapApp.services[Service.name]._addWaitRelationHandler(() => {
-          this._dependsOn[Service.name].initialized = true
 
-          const areAllExpectsInitialized = Object.keys(this._dependsOn).every((serviceName) => (
-            this._dependsOn[serviceName].initialized
+        SwapApp.services[Service.name]._addWaitRelationHandler(() => {
+          dependsOnMap[Service.name].initialized = true
+
+          const areAllExpectsInitialized = Object.keys(dependsOnMap).every((serviceName) => (
+            dependsOnMap[serviceName].initialized
           ))
 
           if (areAllExpectsInitialized) {
@@ -35,8 +36,6 @@ class ServiceInterface {
           }
         })
       })
-
-      this._dependsOn = dependsOnMap
     }
   }
 
@@ -45,7 +44,7 @@ class ServiceInterface {
   }
 
   _tryInitService() {
-    if (!this._dependsOn) {
+    if (!this._dependsOn || !this._dependsOn.length) {
       this.initService()
       this._spyHandlers.forEach((handler) => handler())
       this._spyHandlers = []

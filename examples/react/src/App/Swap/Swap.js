@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import SwapApp from 'swap.app'
+import Swap from 'swap.swap'
 
 import BtcToEth from './BtcToEth'
 import EthToBtc from './EthToBtc'
@@ -8,13 +8,15 @@ import BtcToEthToken from './BtcToEthToken'
 
 
 const swapComponents = {
-  'btceth': BtcToEth,
-  'ethbtc': EthToBtc,
-  'ethtokenbtc': EthTokenToBtc,
-  'btcethtoken': BtcToEthToken,
+  'BTC2ETH': BtcToEth,
+  'ETH2BTC': EthToBtc,
+  'NOXON2BTC': EthTokenToBtc,
+  'BTC2NOXON': BtcToEthToken,
+  'FOO2BTC': EthTokenToBtc,
+  'BTC2FOO': BtcToEthToken,
 }
 
-export default class Swap extends Component {
+export default class SwapComponent extends Component {
 
   render() {
     const { orderId } = this.props
@@ -23,16 +25,12 @@ export default class Swap extends Component {
       return null
     }
 
-    const { isMy: isMyOrder, buyCurrency, sellCurrency } = SwapApp.services.orders.getByKey(orderId)
-
-    // TODO dynamically resolve Swap component to use
-    const firstPart     = isMyOrder ? sellCurrency : buyCurrency
-    const lastPart      = isMyOrder ? buyCurrency : sellCurrency
-    const SwapComponent = swapComponents[`${firstPart.toLowerCase()}${lastPart.toLowerCase()}`]
+    const swap = new Swap(orderId)
+    const SwapComponent = swapComponents[swap.flow._flowName.toUpperCase()]
 
     return (
       <div style={{ paddingLeft: '30px', paddingBottom: '100px' }}>
-        <SwapComponent orderId={orderId} />
+        <SwapComponent swap={swap} />
       </div>
     )
   }
