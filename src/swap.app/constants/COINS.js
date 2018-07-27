@@ -6,4 +6,5 @@ export default {
   // ETH Tokens
   noxon: 'NOXON',
   swap: 'SWAP',
+  btrm: 'BTRM',
 }
