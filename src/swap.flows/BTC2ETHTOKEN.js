@@ -54,6 +54,7 @@ export default (tokenName) => {
         isEthWithdrawn: false,
         isBtcWithdrawn: false,
 
+        refundTxHex: null,
         isFinished: false,
       }
 
@@ -285,6 +286,18 @@ export default (tokenName) => {
           isBalanceEnough: false,
         })
       }
+    }
+
+    getRefundTxHex = () => {
+      this.btcSwap.getRefundHexTransaction({
+        scriptValues: this.state.btcScriptValues,
+        secret: this.state.secret,
+      })
+        .then((txHex) => {
+          this.setState({
+            refundTxHex: txHex,
+          })
+        })
     }
 
     tryRefund() {
