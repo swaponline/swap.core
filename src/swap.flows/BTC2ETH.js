@@ -52,6 +52,7 @@ class BTC2ETH extends Flow {
       refundTransactionHash: null,
       isRefunded: false,
 
+      refundTxHex: null,
       isFinished: false,
     }
 
@@ -292,6 +293,18 @@ class BTC2ETH extends Flow {
         isBalanceEnough: false,
       })
     }
+  }
+
+  getRefundTxHex = () => {
+    this.btcSwap.getRefundHexTransaction({
+      scriptValues: this.state.btcScriptValues,
+      secret: this.state.secret,
+    })
+      .then((txHex) => {
+        this.setState({
+          refundTxHex: txHex,
+        })
+      })
   }
 
   tryRefund() {
