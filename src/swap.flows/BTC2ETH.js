@@ -112,7 +112,7 @@ class BTC2ETH extends Flow {
 
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
-        const getLockTime = () => utcNow() + 3600 * 3 // 3 hours from now
+        const getLockTime = () => utcNow() + 60 // 3 hours from now
 
         const scriptValues = {
           secretHash:         flow.state.secretHash,

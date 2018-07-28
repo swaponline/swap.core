@@ -78,6 +78,17 @@ class EthSwap extends SwapInterface {
     })
   }
 
+
+  /**
+   *
+   * @param {string} value
+   */
+  addGasPrice = (value) => {
+    console.log(value)
+    this.gasPrice = `${value}000000000`
+    console.log(this.gasPrice)
+  }
+
   /**
    *
    * @param {object} data
