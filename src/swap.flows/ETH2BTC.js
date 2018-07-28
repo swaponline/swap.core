@@ -16,6 +16,9 @@ class ETH2BTC extends Flow {
     this.ethSwap = SwapApp.swaps[constants.COINS.eth]
     this.btcSwap = SwapApp.swaps[constants.COINS.btc]
 
+    this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
+    this.myEthAddress = SwapApp.services.auth.accounts.eth.address
+
     if (!this.ethSwap) {
       throw new Error('BTC2ETH: "ethSwap" of type object required')
     }
