@@ -19,6 +19,9 @@ export default (tokenName) => {
       this.ethTokenSwap = SwapApp.swaps[tokenName.toUpperCase()]
       this.btcSwap      = SwapApp.swaps[constants.COINS.btc]
 
+      this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
+      this.myEthAddress = SwapApp.services.auth.accounts.eth.address
+
       if (!this.ethTokenSwap) {
         throw new Error('BTC2ETH: "ethTokenSwap" of type object required')
       }
