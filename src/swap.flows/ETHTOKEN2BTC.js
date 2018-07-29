@@ -1,3 +1,4 @@
+import crypto from 'bitcoinjs-lib/src/crypto' // move to BtcSwap
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
@@ -20,6 +21,18 @@ export default (tokenName) => {
 
       this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
       this.myEthAddress = SwapApp.services.auth.accounts.eth.address
+
+      this.stepNumbers = {
+        'sign': 1,
+        'wait-lock-btc': 2,
+        'verify-script': 3,
+        'sync-balance': 4,
+        'lock-eth': 5,
+        'wait-withdraw-eth': 6, // aka getSecret
+        'withdraw-btc': 7,
+        'finish': 8,
+        'end': 9
+      }
 
       if (!this.ethTokenSwap) {
         throw new Error('ETHTOKEN2BTC: "ethTokenSwap" of type object required')
@@ -86,7 +99,7 @@ export default (tokenName) => {
               secretHash: scriptValues.secretHash,
               btcScriptValues: scriptValues,
               btcScriptCreatingTransactionHash,
-            })
+            }, { step: 'wait-lock-btc', silentError: true })
           })
 
           flow.swap.room.sendMessage('request btc script')
@@ -175,7 +188,7 @@ export default (tokenName) => {
                   flow.finishStep({
                     isEthWithdrawn: true,
                     secret,
-                  })
+                  }, { step: 'wait-withdraw-eth' })
                 }
               }
               else {
@@ -193,7 +206,7 @@ export default (tokenName) => {
 
               flow.finishStep({
                 isEthWithdrawn: true,
-              })
+              }, { step: 'wait-withdraw-eth' })
             }
           })
         },
@@ -303,7 +316,7 @@ export default (tokenName) => {
 
       this.finishStep({
         isMeSigned: true,
-      })
+      }, { step: 'sign' })
 
       return true
     }
@@ -315,7 +328,7 @@ export default (tokenName) => {
 
       this.finishStep({
         btcScriptVerified: true,
-      })
+      }, { step: 'verify-script' })
 
       return true
     }
@@ -335,7 +348,7 @@ export default (tokenName) => {
           balance,
           isBalanceFetching: false,
           isBalanceEnough: true,
-        })
+        }, { step: 'sync-balance' })
       }
       else {
         this.setState({
@@ -344,6 +357,59 @@ export default (tokenName) => {
           isBalanceEnough: false,
         })
       }
+    }
+
+    async tryWithdraw(_secret) {
+      const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, btcScriptValues } = this.state
+
+      if (!_secret)
+        throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
+
+      if (!btcScriptValues)
+        throw new Error(`Cannot withdraw without script values`)
+
+      if (secret && secret != _secret)
+        console.warn(`Secret already known and is different. Are you sure?`)
+
+      if (isBtcWithdrawn)
+        console.warn(`Looks like money were already withdrawn, are you sure?`)
+
+      console.log(`WITHDRAW using secret = ${_secret}`)
+
+      const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
+
+      if (secretHash != _secretHash)
+        console.warn(`Hash does not match!`)
+
+      const { scriptAddress } = this.btcSwap.createScript(btcScriptValues)
+
+      const balance = await this.btcSwap.getBalance(scriptAddress)
+
+      console.log(`address=${scriptAddress}, balance=${balance}`)
+
+      if (balance === 0) {
+        flow.finishStep({
+          isBtcWithdrawn: true,
+        }, { step: 'withdraw-btc' })
+
+        throw new Error(`Already withdrawn: address=${scriptAddress},balance=${balance}`)
+      }
+
+      await this.btcSwap.withdraw({
+        scriptValues: btcScriptValues,
+        secret: _secret,
+      }, (hash) => {
+        console.log(`TX hash=${hash}`)
+        this.setState({
+          btcSwapWithdrawTransactionHash: hash,
+        })
+      })
+
+      console.log(`TX withdraw sent: ${this.state.btcSwapWithdrawTransactionHash}`)
+
+      this.finishStep({
+        isBtcWithdrawn: true,
+      }, { step: 'withdraw-btc' })
     }
 
     async tryRefund() {

@@ -8,6 +8,8 @@ class Flow {
     this.swap     = swap
     this.steps    = []
 
+    this.stepNumbers = {}
+
     this.state = {
       step: 0,
       isWaitingForOwner: false,
@@ -106,12 +108,14 @@ class Flow {
     if (constraints) {
       const { step, silentError } = constraints
 
-      if (step && this.state.step > step) {
+      const n_step = this.stepNumbers[step]
+
+      if (step && this.state.step < n_step) {
         if (silentError) {
-          console.error(`Cant finish step ${step} when on step ${this.state.step}`)
+          console.error(`Cant finish step ${step} = ${n_step} when on step ${this.state.step}`)
           return
         } else {
-          throw new Error(`Cant finish step ${step} when on step ${this.state.step}`)
+          throw new Error(`Cant finish step ${step} = ${n_step} when on step ${this.state.step}`)
           return
         }
       }
@@ -128,7 +132,6 @@ class Flow {
 
     this.setState({
       step: newStep,
-      // ...(data || {}),
     }, true)
 
     this.goStep(newStep)
