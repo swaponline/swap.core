@@ -83,6 +83,9 @@ export default (tokenName) => {
           flow.swap.room.once('swap exists', () => {
             console.log(`swap already exists`)
           })
+
+          // if I came late and he ALREADY send this, I request AGAIN
+          flow.swap.room.sendMessage('request sign')
         },
 
         // 2. Create secret, secret hash

@@ -307,7 +307,7 @@ class ETH2BTC extends Flow {
     const { participant } = this.swap
     const { isMeSigned } = this.state
 
-    if (isMeSigned) return true
+    if (isMeSigned) return this.swap.room.sendMessage('swap sign')
 
     const swapExists = await this._checkSwapAlreadyExists()
 
@@ -320,6 +320,10 @@ class ETH2BTC extends Flow {
 
     this.setState({
       isSignFetching: true,
+    })
+
+    this.swap.room.once('request sign', () => {
+      this.swap.room.sendMessage('swap sign')
     })
 
     this.swap.room.sendMessage('swap sign')
