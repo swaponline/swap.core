@@ -8,6 +8,8 @@ class Flow {
     this.swap     = swap
     this.steps    = []
 
+    this.stepNumbers = {}
+
     this.state = {
       step: 0,
       isWaitingForOwner: false,
@@ -98,11 +100,31 @@ class Flow {
     SwapApp.env.storage.setItem(`flow.${this.swap.id}`, this.state)
   }
 
-  finishStep(data) {
-    this.goNextStep(data)
+  finishStep(data, constraints) {
+    this.setState({
+      ...(data || {}),
+    }, true)
+
+    if (constraints) {
+      const { step, silentError } = constraints
+
+      const n_step = this.stepNumbers[step]
+
+      if (step && this.state.step < n_step) {
+        if (silentError) {
+          console.error(`Cant finish step ${step} = ${n_step} when on step ${this.state.step}`)
+          return
+        } else {
+          throw new Error(`Cant finish step ${step} = ${n_step} when on step ${this.state.step}`)
+          return
+        }
+      }
+    }
+
+    this.goNextStep()
   }
 
-  goNextStep(data) {
+  goNextStep() {
     const { step } = this.state
     const newStep = step + 1
 
@@ -110,7 +132,6 @@ class Flow {
 
     this.setState({
       step: newStep,
-      ...(data || {}),
     }, true)
 
     this.goStep(newStep)

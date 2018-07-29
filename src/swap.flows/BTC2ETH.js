@@ -20,6 +20,17 @@ class BTC2ETH extends Flow {
     this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
     this.myEthAddress = SwapApp.services.auth.accounts.eth.address
 
+    this.stepNumbers = {
+      'sign': 1,
+      'submit-secret': 2,
+      'sync-balance': 3,
+      'lock-btc': 4,
+      'wait-lock-eth': 5,
+      'withdraw-eth': 6,
+      'finish': 7,
+      'end': 8
+    }
+
     if (!this.ethSwap) {
       throw new Error('BTC2ETH: "ethSwap" of type object required')
     }
@@ -84,12 +95,15 @@ class BTC2ETH extends Flow {
         flow.swap.room.once('swap sign', () => {
           flow.finishStep({
             isParticipantSigned: true,
-          })
+          }, { step: 'sign', silentError: true })
         })
 
         flow.swap.room.once('swap exists', () => {
           console.log(`swap already exists`)
         })
+
+        // if I came late and he ALREADY send this, I request AGAIN
+        flow.swap.room.sendMessage('request sign')
       },
       // 2. Create secret, secret hash
 
@@ -171,7 +185,7 @@ class BTC2ETH extends Flow {
               if (!flow.state.isEthContractFunded) { // redundant condition but who cares :D
                 flow.finishStep({
                   isEthContractFunded: true,
-                })
+                }, { step: 'wait-lock-eth' })
               }
             }
             else {
@@ -189,7 +203,7 @@ class BTC2ETH extends Flow {
 
             flow.finishStep({
               isEthContractFunded: true,
-            })
+            }, { step: 'wait-lock-eth' })
           }
         })
       },
@@ -265,7 +279,7 @@ class BTC2ETH extends Flow {
     this.finishStep({
       secret,
       secretHash,
-    })
+    }, { step: 'submit-secret' })
 
     return true
   }
@@ -285,7 +299,7 @@ class BTC2ETH extends Flow {
         balance,
         isBalanceFetching: false,
         isBalanceEnough: true,
-      })
+      }, { step: 'sync-balance' })
     }
     else {
       console.error(`Not enough money: ${balance} < ${sellAmount}`)

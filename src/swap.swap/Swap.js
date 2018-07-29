@@ -28,6 +28,7 @@ class Swap {
     this.events = new Events()
 
     this.room = new Room({
+      swapId: id,
       participantPeer: this.participant.peer,
     })
 

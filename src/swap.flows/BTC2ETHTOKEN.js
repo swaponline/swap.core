@@ -22,6 +22,17 @@ export default (tokenName) => {
       this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
       this.myEthAddress = SwapApp.services.auth.accounts.eth.address
 
+      this.stepNumbers = {
+        'sign': 1,
+        'submit-secret': 2,
+        'sync-balance': 3,
+        'lock-btc': 4,
+        'wait-lock-eth': 5,
+        'withdraw-eth': 6,
+        'finish': 7,
+        'end': 8
+      }
+
       if (!this.ethTokenSwap) {
         throw new Error('BTC2ETH: "ethTokenSwap" of type object required')
       }
@@ -77,12 +88,15 @@ export default (tokenName) => {
           flow.swap.room.once('swap sign', () => {
             flow.finishStep({
               isParticipantSigned: true,
-            })
+            }, { step: 'sign', silentError: true })
           })
 
           flow.swap.room.once('swap exists', () => {
             console.log(`swap already exists`)
           })
+
+          // if I came late and he ALREADY send this, I request AGAIN
+          flow.swap.room.sendMessage('request sign')
         },
 
         // 2. Create secret, secret hash
@@ -101,17 +115,28 @@ export default (tokenName) => {
 
         async () => {
           const { sellAmount, participant } = flow.swap
+          const { btcScriptValues } = flow.state
           let btcScriptCreatingTransactionHash
 
           // TODO move this somewhere!
           const utcNow = () => Math.floor(Date.now() / 1000)
           const getLockTime = () => utcNow() + 3600 * 3 // 3 hours from now
 
-          const scriptValues = {
-            secretHash:         flow.state.secretHash,
-            ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
-            recipientPublicKey: participant.btc.publicKey,
-            lockTime:           getLockTime(),
+          let scriptValues
+
+          if (!btcScriptValues) {
+            scriptValues = {
+              secretHash:         flow.state.secretHash,
+              ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
+              recipientPublicKey: participant.btc.publicKey,
+              lockTime:           getLockTime(),
+            }
+
+            flow.setState({
+              btcScriptValues: scriptValues,
+            })
+          } else {
+            scriptValues = btcScriptValues
           }
 
           console.log('sellAmount', sellAmount)
@@ -167,7 +192,7 @@ export default (tokenName) => {
                 if (!flow.state.isEthContractFunded) { // redundant condition but who cares :D
                   flow.finishStep({
                     isEthContractFunded: true,
-                  })
+                  }, { step: 'wait-lock-eth' })
                 }
               }
               else {
@@ -185,7 +210,7 @@ export default (tokenName) => {
 
               flow.finishStep({
                 isEthContractFunded: true,
-              })
+              }, { step: 'wait-lock-eth' })
             }
           })
         },
@@ -257,7 +282,7 @@ export default (tokenName) => {
       this.finishStep({
         secret,
         secretHash,
-      })
+      }, { step: 'submit-secret' })
 
       return true
     }
@@ -277,7 +302,7 @@ export default (tokenName) => {
           balance,
           isBalanceFetching: false,
           isBalanceEnough: true,
-        })
+        }, { step: 'sync-balance' })
       }
       else {
         this.setState({
