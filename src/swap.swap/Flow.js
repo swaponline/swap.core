@@ -101,13 +101,13 @@ class Flow {
   }
 
   finishStep(data, constraints) {
-    console.error(`on step ${this.state.step}, constraints =`, constraints)
+    console.log(`on step ${this.state.step}, constraints =`, constraints)
 
     if (constraints) {
       const { step, silentError } = constraints
 
       const n_step = this.stepNumbers[step]
-      console.error(`Cant finish step ${step} = ${n_step} when on step ${this.state.step}`)
+      console.log(`trying to finish step ${step} = ${n_step} when on step ${this.state.step}`)
 
       if (step && this.state.step < n_step) {
         if (silentError) {
