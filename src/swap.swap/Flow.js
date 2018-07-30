@@ -101,14 +101,13 @@ class Flow {
   }
 
   finishStep(data, constraints) {
-    this.setState({
-      ...(data || {}),
-    }, true)
+    console.error(`on step ${this.state.step}, constraints =`, constraints)
 
     if (constraints) {
       const { step, silentError } = constraints
 
       const n_step = this.stepNumbers[step]
+      console.error(`Cant finish step ${step} = ${n_step} when on step ${this.state.step}`)
 
       if (step && this.state.step < n_step) {
         if (silentError) {
@@ -121,10 +120,12 @@ class Flow {
       }
     }
 
-    this.goNextStep()
+    console.log(`proceed to step ${this.state.step+1}, data=`, data)
+
+    this.goNextStep(data)
   }
 
-  goNextStep() {
+  goNextStep(data) {
     const { step } = this.state
     const newStep = step + 1
 
@@ -132,6 +133,7 @@ class Flow {
 
     this.setState({
       step: newStep,
+      ...(data || {}),
     }, true)
 
     this.goStep(newStep)
