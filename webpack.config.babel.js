@@ -13,15 +13,18 @@ const webpackConfig = {
   mode: 'production',
 
   entry: {
-    'auth': resolveSrcPath('swap.auth/umd.js'),
-    'orders': resolveSrcPath('swap.orders/umd.js'),
-    'room': resolveSrcPath('swap.room/umd.js'),
-    'app': resolveSrcPath('swap.app/umd.js'),
-    'flows': resolveSrcPath('swap.flows/umd.js'),
-    'swap': resolveSrcPath('swap.swap/umd.js'),
-    'swaps': resolveSrcPath('swap.swaps/umd.js'),
+	
+    'auth': resolveSrcPath('swap.auth/index.js'),
+    'orders': resolveSrcPath('swap.orders/index.js'),
+    'room': resolveSrcPath('swap.room/index.js'),
+    'app': resolveSrcPath('swap.app/index.js'),
+    'flows': resolveSrcPath('swap.flows/index.js'),
+    'swap': resolveSrcPath('swap.swap/index.js'),
+    'swaps': resolveSrcPath('swap.swaps/index.js'),
+	
+	
+	'core': resolveSrcPath('index.js'),
   },
-
   output: {
     path: path.join(__dirname, 'umd'),
     filename: 'swap.[name].js',
@@ -39,17 +42,17 @@ const webpackConfig = {
     ]
   },
 
-  // resolve: {
-  //   alias: {
-  //     'swap.auth': resolveSrcPath('swap.auth'),
-  //     'swap.orders': resolveSrcPath('swap.orders'),
-  //     'swap.room': resolveSrcPath('swap.room'),
-  //     'swap.app': resolveSrcPath('swap.app'),
-  //     'swap.flows': resolveSrcPath('swap.flows'),
-  //     'swap.swap': resolveSrcPath('swap.swap'),
-  //     'swap.swaps': resolveSrcPath('swap.swaps'),
-  //   },
-  // },
+   resolve: {
+     alias: {
+       'swap.auth': resolveSrcPath('swap.auth'),
+       'swap.orders': resolveSrcPath('swap.orders'),
+       'swap.room': resolveSrcPath('swap.room'),
+       'swap.app': resolveSrcPath('swap.app'),
+       'swap.flows': resolveSrcPath('swap.flows'),
+       'swap.swap': resolveSrcPath('swap.swap'),
+       'swap.swaps': resolveSrcPath('swap.swaps'),
+     },
+   },
 
   plugins: [
     new webpack.DefinePlugin(globals),
