@@ -11,7 +11,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "test": "ava",
+    "test": "jest",
     "dev": "babel -w ./src --out-dir ./lib",
     "clean": "rimraf ./lib",
     "build": "npm run clean && babel ./src --out-dir ./lib",
@@ -44,6 +44,7 @@
     "colors": "^1.2.1",
     "copy-and-watch": "^0.1.2",
     "cpx": "^1.5.0",
+    "jest": "^23.4.2",
     "rimraf": "^2.6.2",
     "webpack": "^4.6.0",
     "webpack-cli": "^3.0.3",
