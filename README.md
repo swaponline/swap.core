@@ -2,6 +2,8 @@
 
 In-browser atomic swap protocol based on HTLC
 
+<img src="https://api.travis-ci.org/caffeinum/swap.core.svg?branch=master" />
+
 Try demo at https://testnet.swap.online
 
 **THIS IS ALPHA VERSION AND CAN BE CHANGED SIGNIFICANTLY**
