@@ -1,5 +1,5 @@
-require('app-module-path').addPath(__dirname + '/lib')
+require('babel-core/register')
 
-const swap = require('./lib')
+require('app-module-path').addPath(__dirname + '/src')
 
-module.exports = swap
+exports = module.exports = require('./src')
