@@ -1,6 +1,6 @@
 {
   "name": "swap.core",
-  "version": "0.1.11rc2",
+  "version": "0.1.11rc3",
   "description": "Swap Core",
   "homepage": "https://github.com/swaponline/swap.core",
   "author": "Pavel Ivanov <grammka@gmail.com> (https://github.com/pavelivanov)",
@@ -22,6 +22,7 @@
     "bitcoinjs-lib": "~3.3.2"
   },
   "dependencies": {
+    "ajv": "^6.5.2",
     "app-module-path": "^2.2.0",
     "babel-runtime": "^6.26.0",
     "bignumber.js": "^7.2.1",
