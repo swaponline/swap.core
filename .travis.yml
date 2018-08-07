@@ -3,8 +3,8 @@ language: node_js
 node_js:
   - stable
 script:
-  - npm test
   - npm run build
+  - npm test
 deploy:
   provider: npm
   email: "aleksey.bykhun@phystech.edu"
