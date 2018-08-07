@@ -11,15 +11,15 @@ const SwapOrders = swap.orders
 const { EthSwap, EthTokenSwap, BtcSwap } = swap.swaps
 const { ETH2BTC, BTC2ETH, ETHTOKEN2BTC, BTC2ETHTOKEN } = swap.flows
 
-const Web3 = require('../../swap.bot/node_modules/web3')
+const Web3 = require('web3')
 
 const web3 = new Web3(new Web3.providers.HttpProvider('https://rinkeby.infura.io/<YOUR_KEY>'))
 const bitcoin = require('bitcoinjs-lib')
 
-const Ipfs = require('../../swap.bot/node_modules/ipfs')
-const IpfsRoom = require('../../swap.bot/node_modules/ipfs-pubsub-room')
+const Ipfs = require('ipfs')
+const IpfsRoom = require('ipfs-pubsub-room')
 
-const { LocalStorage } = require('../../swap.bot/node_modules/node-localstorage')
+const { LocalStorage } = require('node-localstorage')
 
 const config = require('./config')
 
