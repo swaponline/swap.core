@@ -1,5 +1,5 @@
-require('babel-core/register')
+// require('babel-core/register')
 
-require('app-module-path').addPath(__dirname + '/src')
+require('app-module-path').addPath(__dirname + '/lib')
 
-exports = module.exports = require('./src')
+exports = module.exports = require('./lib')
