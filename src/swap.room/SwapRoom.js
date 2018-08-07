@@ -10,7 +10,7 @@ class SwapRoom extends ServiceInterface {
   constructor(config) {
     super()
 
-    if (!config || typeof config !== 'object' || typeof config.ipfs !== 'object') {
+    if (!config || typeof config !== 'object' || typeof config.config !== 'object') {
       throw new Error('SwapRoomService: "config" of type object required')
     }
 
@@ -30,11 +30,13 @@ class SwapRoom extends ServiceInterface {
       throw new Error('SwapRoomService: IpfsRoom required')
     }
 
+    const { roomName, EXPERIMENTAL, ...config } = this._config
+
     const ipfs = new SwapApp.env.Ipfs({
       EXPERIMENTAL: {
         pubsub: true,
       },
-      config: this._config.ipfs
+      ...config,
     })
 
     ipfs.once('error', (err) => {
