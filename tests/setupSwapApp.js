@@ -1,6 +1,6 @@
 import SwapApp, { SwapInterface } from '../src/swap.app'
 
-const swap = require('../')
+const swap = require('../src')
 
 const constants = swap.constants
 
