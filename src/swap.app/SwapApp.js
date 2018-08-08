@@ -118,6 +118,10 @@ class SwapApp {
   isTestNet() {
     return this.network.toLowerCase() === constants.NETWORKS.TESTNET
   }
+
+  isLocalNet() {
+    return this.network.toLowerCase() === constants.NETWORKS.LOCALNET
+  }
 }
 
 
