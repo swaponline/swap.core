@@ -8,7 +8,9 @@ const login = (_privateKey) => {
 
   if (privateKey) {
     if (privateKey.isAccount) {
-      account = { address: privateKey.account }
+      const _address = privateKey.account
+      const address = SwapApp.env.web3.utils.toChecksumAddress(_address)
+      account = { address }
       SwapApp.env.storage.setItem(storageKey, privateKey)
     } else {
       account = SwapApp.env.web3.eth.accounts.privateKeyToAccount(privateKey)
