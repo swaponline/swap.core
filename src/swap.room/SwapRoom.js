@@ -10,7 +10,7 @@ class SwapRoom extends ServiceInterface {
   constructor(config) {
     super()
 
-    if (!config || typeof config !== 'object') {
+    if (!config || typeof config !== 'object' || typeof config.config !== 'object') {
       throw new Error('SwapRoomService: "config" of type object required')
     }
 
@@ -30,7 +30,14 @@ class SwapRoom extends ServiceInterface {
       throw new Error('SwapRoomService: IpfsRoom required')
     }
 
-    const ipfs = new SwapApp.env.Ipfs(this._config)
+    const { roomName, EXPERIMENTAL, ...config } = this._config
+
+    const ipfs = new SwapApp.env.Ipfs({
+      EXPERIMENTAL: {
+        pubsub: true,
+      },
+      ...config,
+    })
 
     ipfs.once('error', (err) => {
       console.log('IPFS error!', err)
@@ -52,9 +59,11 @@ class SwapRoom extends ServiceInterface {
 
   _init({ peer, ipfsConnection }) {
     this.peer = peer
-    this.roomName = SwapApp.isMainNet()
+    const defaultRoomName = SwapApp.isMainNet()
                   ? 'swap.online'
                   : 'testnet.swap.online'
+
+    this.roomName = this._config.roomName || defaultRoomName
 
     console.log(`Using room: ${this.roomName}`)
 
@@ -100,7 +109,7 @@ class SwapRoom extends ServiceInterface {
     const { fromAddress, messages, sign } = parsedData
     const recover = this._recoverMessage(messages, sign)
 
-    if (recover !== fromAddress) {
+    if (recover !== fromAddress || !fromAddress) {
       console.error(`Wrong message sign! Message from: ${fromAddress}, recover: ${recover}`)
       return
     }
@@ -128,23 +137,38 @@ class SwapRoom extends ServiceInterface {
   }
 
   _recoverMessage(message, sign) {
-    const hash      = SwapApp.env.web3.utils.soliditySha3(JSON.stringify(message))
-    const recover   = SwapApp.env.web3.eth.accounts.recover(hash, sign.signature)
+    const hash = JSON.stringify(message)
+    const recover = SwapApp.env.web3.eth.accounts.recover(hash, sign.signature)
 
     return recover
   }
 
-  _signMessage(message) {
-    const hash  = SwapApp.env.web3.utils.soliditySha3(JSON.stringify(message))
-    const sign  = SwapApp.env.web3.eth.accounts.sign(hash, SwapApp.services.auth.accounts.eth.privateKey)
+  async _signMessage(message) {
+    const eth = SwapApp.services.auth.accounts.eth
 
-    return sign
+    const msg  = JSON.stringify(message)
+
+    // if no privateKey, then its metamask or truffle
+    const account = eth.privateKey || eth.address
+
+    if (eth.privateKey) {
+      const hash = msg
+      const sign = SwapApp.env.web3.eth.accounts.sign(hash, eth.privateKey)
+
+      return sign
+    } else {
+      const hash = msg
+      // const sign = SwapApp.env.web3.eth.accounts.sign(hash, eth.address)
+      const signature = await SwapApp.env.web3.eth.sign(hash, eth.address)
+
+      return { signature }
+    }
   }
 
-  sendMessage(...args) {
+  async sendMessage(...args) {
     if (args.length === 1) {
       const [ messages ] = args
-      const sign = this._signMessage(messages)
+      const sign = await this._signMessage(messages)
 
       this.connection.broadcast(JSON.stringify({
         fromAddress: SwapApp.services.auth.accounts.eth.address,
@@ -154,7 +178,7 @@ class SwapRoom extends ServiceInterface {
     }
     else {
       const [ peer, messages ] = args
-      const sign = this._signMessage(messages)
+      const sign = await this._signMessage(messages)
 
       this.connection.sendTo(peer, JSON.stringify({
         fromAddress: SwapApp.services.auth.accounts.eth.address,

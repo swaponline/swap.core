@@ -7,13 +7,20 @@ const login = (_privateKey) => {
   let account
 
   if (privateKey) {
-    account = SwapApp.env.web3.eth.accounts.privateKeyToAccount(privateKey)
+    if (privateKey.isAccount) {
+      const _address = privateKey.account
+      const address = SwapApp.env.web3.utils.toChecksumAddress(_address)
+      account = { address }
+      SwapApp.env.storage.setItem(storageKey, privateKey)
+    } else {
+      account = SwapApp.env.web3.eth.accounts.privateKeyToAccount(privateKey)
+      SwapApp.env.web3.eth.accounts.wallet.add(account.privateKey)
+    }
   }
   else {
     account = SwapApp.env.web3.eth.accounts.create()
+    SwapApp.env.web3.eth.accounts.wallet.add(account.privateKey)
   }
-
-  SwapApp.env.web3.eth.accounts.wallet.add(account.privateKey)
 
   if (!_privateKey) {
     SwapApp.env.storage.setItem(storageKey, account.privateKey)
