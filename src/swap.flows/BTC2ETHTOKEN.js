@@ -351,6 +351,7 @@ export default (tokenName) => {
       })
       .then(() => {
         this.setState({
+          isSwapExists: false,
           isRefunded: true,
         })
         this.swap.room.sendMessage('user2 refund')

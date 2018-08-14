@@ -167,7 +167,7 @@ class ETH2BTC extends Flow {
         }
         
         console.log(`create ETH contract, hash=${ethSwapCreationTransactionHash}`)
-
+        return
         flow.swap.room.sendMessage('create eth contract', {
           ethSwapCreationTransactionHash,
         })
@@ -339,7 +339,6 @@ class ETH2BTC extends Flow {
         lastSwapTime: swapExists.createdTime
       })
       this.swap.room.once('user2 refund', () => {
-        this.sign();
       })
       // TODO go to 6 step automatically here
       throw new Error(`Cannot sign: swap with ${participant.eth.address} already exists! Please refund it or drop ${this.swap.id}`)
@@ -467,6 +466,7 @@ class ETH2BTC extends Flow {
     })
     .then(() => {
       this.setState({
+        isSwapExists: false,
         isRefunded: true,
       })
       this.swap.room.sendMessage('user1 refund')
