@@ -46,6 +46,7 @@ class ETH2BTC extends Flow {
       isSwapExists: false,
       isSignFetching: false,
       isMeSigned: false,
+      lastSwapTime: null,
 
       secretHash: null,
       btcScriptValues: null,
@@ -164,7 +165,7 @@ class ETH2BTC extends Flow {
           else
             return console.error(err)
         }
-
+        
         console.log(`create ETH contract, hash=${ethSwapCreationTransactionHash}`)
 
         flow.swap.room.sendMessage('create eth contract', {
@@ -327,13 +328,15 @@ class ETH2BTC extends Flow {
 
     this.setState({
       isSwapExists: false,
-      isRefunded: false
+      isRefunded: false,
+      lastSwapTime: null
     })
 
-    if (swapExists) {
+    if (swapExists.balance) {
       this.swap.room.sendMessage('swap exists')
       this.setState({
-        isSwapExists: true
+        isSwapExists: true,
+        lastSwapTime: swapExists.createdTime
       })
       this.swap.room.once('user2 refund', () => {
         this.sign();

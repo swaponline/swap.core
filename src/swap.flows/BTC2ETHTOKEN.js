@@ -47,6 +47,7 @@ export default (tokenName) => {
         isSwapExists: false,
         isSignFetching: false,
         isParticipantSigned: false,
+        lastSwapTime: null,
 
         btcScriptCreatingTransactionHash: null,
         ethSwapCreationTransactionHash: null,
@@ -95,13 +96,15 @@ export default (tokenName) => {
 
           this.setState({
             isSwapExists: false,
-            isRefunded: false
+            isRefunded: false,
+            lastSwapTime: null
           })
-
+  
           flow.swap.room.once('swap exists', () => {
             this.swap.room.once('user1 refund', () => {
               this.setState({
-                isSwapExists: true
+                isSwapExists: true,
+                lastSwapTime: swapExists.createdTime
               })
             })
             console.log(`swap already exists`)

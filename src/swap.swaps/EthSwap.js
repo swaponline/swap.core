@@ -136,7 +136,8 @@ class EthSwap extends SwapInterface {
       console.log('swapExists', swap)
 
       const balance = parseInt(swap.balance)
-      resolve(balance)
+      const createdTime = swap.createdAt
+      resolve({balance, createdTime})
     })
   }
 

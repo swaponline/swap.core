@@ -48,6 +48,7 @@ export default (tokenName) => {
         isSwapExists: false,
         isSignFetching: false,
         isMeSigned: false,
+        lastSwapTime: null,
 
         secretHash: null,
         btcScriptValues: null,
@@ -300,13 +301,15 @@ export default (tokenName) => {
 
       this.setState({
         isSwapExists: false,
-        isRefunded: false
+        isRefunded: false,
+        lastSwapTime: null
       })
 
-      if (swapExists) {
+      if (swapExists.balance) {
         this.swap.room.sendMessage('swap exists')
         this.setState({
-          isSwapExists: true
+          isSwapExists: true,
+          lastSwapTime: swapExists.createdTime
         })
         this.swap.room.once('user2 refund', () => {
           this.sign();
