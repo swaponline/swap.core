@@ -43,6 +43,7 @@ class ETH2BTC extends Flow {
       step: 0,
 
       signTransactionHash: null,
+      isSwapExists: false,
       isSignFetching: false,
       isMeSigned: false,
 
@@ -324,10 +325,18 @@ class ETH2BTC extends Flow {
 
     const swapExists = await this._checkSwapAlreadyExists()
 
+    this.setState({
+      isSwapExists: false,
+      isRefunded: false
+    })
+
     if (swapExists) {
       this.swap.room.sendMessage('swap exists')
       this.setState({
         isSwapExists: true
+      })
+      this.swap.room.once('user2 refund', () => {
+        this.sign();
       })
       // TODO go to 6 step automatically here
       throw new Error(`Cannot sign: swap with ${participant.eth.address} already exists! Please refund it or drop ${this.swap.id}`)
@@ -453,11 +462,12 @@ class ETH2BTC extends Flow {
         refundTransactionHash: hash,
       })
     })
-      .then(() => {
-        this.setState({
-          isRefunded: true,
-        })
+    .then(() => {
+      this.setState({
+        isRefunded: true,
       })
+      this.swap.room.sendMessage('user1 refund')
+    })
   }
 }
 

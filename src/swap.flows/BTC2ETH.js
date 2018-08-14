@@ -42,6 +42,7 @@ class BTC2ETH extends Flow {
       step: 0,
 
       signTransactionHash: null,
+      isSwapExists: false,
       isSignFetching: false,
       isParticipantSigned: false,
 
@@ -98,7 +99,18 @@ class BTC2ETH extends Flow {
           }, { step: 'sign', silentError: true })
         })
 
+
+        this.setState({
+          isSwapExists: false,
+          isRefunded: false
+        })
+
         flow.swap.room.once('swap exists', () => {
+          this.swap.room.once('user1 refund', () => {
+            this.setState({
+              isSwapExists: true
+            })
+          })
           console.log(`swap already exists`)
         })
 
@@ -336,6 +348,7 @@ class BTC2ETH extends Flow {
         this.setState({
           isRefunded: true,
         })
+        this.swap.room.sendMessage('user2 refund')
       })
   }
 }
