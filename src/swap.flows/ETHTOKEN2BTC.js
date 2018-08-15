@@ -312,6 +312,7 @@ export default (tokenName) => {
           lastSwapTime: swapExists.createdTime
         })
         this.swap.room.once('user2 refund', () => {
+          this.sign();
         })
         // TODO go to 6 step automatically here
         throw new Error(`Cannot sign: swap with ${participant.eth.address} already exists! Please refund it or drop ${this.swap.id}`)
