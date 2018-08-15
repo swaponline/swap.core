@@ -44,8 +44,10 @@ export default (tokenName) => {
         step: 0,
 
         signTransactionHash: null,
+        isSwapExists: false,
         isSignFetching: false,
         isParticipantSigned: false,
+        lastSwapTime: null,
 
         btcScriptCreatingTransactionHash: null,
         ethSwapCreationTransactionHash: null,
@@ -91,7 +93,20 @@ export default (tokenName) => {
             }, { step: 'sign', silentError: true })
           })
 
+
+          this.setState({
+            isSwapExists: false,
+            isRefunded: false,
+            lastSwapTime: null
+          })
+  
           flow.swap.room.once('swap exists', () => {
+            this.swap.room.once('user1 refund', () => {
+              this.setState({
+                isSwapExists: true,
+                lastSwapTime: swapExists.createdTime
+              })
+            })
             console.log(`swap already exists`)
           })
 
@@ -336,8 +351,10 @@ export default (tokenName) => {
       })
       .then(() => {
         this.setState({
+          isSwapExists: false,
           isRefunded: true,
         })
+        this.swap.room.sendMessage('user2 refund')
       })
     }
   }

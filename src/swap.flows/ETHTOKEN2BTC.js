@@ -45,8 +45,10 @@ export default (tokenName) => {
         step: 0,
 
         signTransactionHash: null,
+        isSwapExists: false,
         isSignFetching: false,
         isMeSigned: false,
+        lastSwapTime: null,
 
         secretHash: null,
         btcScriptValues: null,
@@ -293,12 +295,25 @@ export default (tokenName) => {
       const { participant } = this.swap
       const { isMeSigned } = this.state
 
-      if (isMeSigned) return this.swap.room.sendMessage('swap sign')
+      if (isMeSigned) return this.swap.room.sendMessage('1swap sign')
 
       const swapExists = await this._checkSwapAlreadyExists()
 
-      if (swapExists) {
+      this.setState({
+        isSwapExists: false,
+        isRefunded: false,
+        lastSwapTime: null
+      })
+
+      if (swapExists.balance) {
         this.swap.room.sendMessage('swap exists')
+        this.setState({
+          isSwapExists: true,
+          lastSwapTime: swapExists.createdTime
+        })
+        this.swap.room.once('user2 refund', () => {
+          this.sign();
+        })
         // TODO go to 6 step automatically here
         throw new Error(`Cannot sign: swap with ${participant.eth.address} already exists! Please refund it or drop ${this.swap.id}`)
         return false
@@ -429,7 +444,7 @@ export default (tokenName) => {
               refundTransactionHash: hash,
             })
           })
-
+          
           console.log('SUCCESS REFUND!')
           return
         }
@@ -463,9 +478,11 @@ export default (tokenName) => {
           secret,
         }, (hash) => {
           this.setState({
+            isSwapExists: false,
             btcSwapWithdrawTransactionHash: hash,
           })
         })
+        this.swap.room.sendMessage('user1 refund')
 
         console.log('SUCCESS WITHDRAW!')
       }
