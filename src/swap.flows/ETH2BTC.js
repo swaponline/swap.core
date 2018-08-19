@@ -170,7 +170,9 @@ class ETH2BTC extends Flow {
 
         flow.swap.room.sendMessage({
           event: 'create eth contract',
-          data: ethSwapCreationTransactionHash,
+          data: {
+            ethSwapCreationTransactionHash,
+          },
         })
 
         console.log(`finish step`)

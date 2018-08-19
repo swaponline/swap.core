@@ -161,7 +161,9 @@ export default (tokenName) => {
 
           flow.swap.room.sendMessage({
             event: 'create eth contract',
-            data: ethSwapCreationTransactionHash,
+            data: {
+              ethSwapCreationTransactionHash,
+            },
           })
 
           flow.finishStep({
