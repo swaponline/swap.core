@@ -52,14 +52,12 @@ class SwapRoom extends ServiceInterface {
 
   _init({ peer, ipfsConnection }) {
     this.peer = peer
-    this.roomName = SwapApp.isMainNet()
-                  ? 'swap.online'
-                  : 'testnet.swap.online'
+    this.roomName = 'nikita.room'
 
     console.log(`Using room: ${this.roomName}`)
 
     this.connection = SwapApp.env.IpfsRoom(ipfsConnection, this.roomName, {
-      pollInterval: 5000,
+      pollInterval: 1000,
     })
 
     this.connection.on('peer joined', this._handleUserOnline)
@@ -82,7 +80,8 @@ class SwapRoom extends ServiceInterface {
   }
 
   _handleNewMessage = (message) => {
-    const { from, data } = message
+    console.log('_handleNewMessage', message)
+    const { from, data: rawData } = message
 
     if (from === this.peer) {
       return
@@ -91,28 +90,32 @@ class SwapRoom extends ServiceInterface {
     let parsedData
 
     try {
-      parsedData = JSON.parse(data.toString())
+      parsedData = JSON.parse(rawData.toString())
     }
     catch (err) {
       console.error('parse message data err:', err)
     }
 
-    const { fromAddress, messages, sign } = parsedData
-    const recover = this._recoverMessage(messages, sign)
+    console.log('_handleNewMessage parsed data', parsedData)
+
+    const { fromAddress, data, sign, event, action } = parsedData
+    const recover = this._recoverMessage(data, sign)
 
     if (recover !== fromAddress) {
       console.error(`Wrong message sign! Message from: ${fromAddress}, recover: ${recover}`)
       return
     }
 
-    if (messages && messages.length) {
-      messages.forEach(({ event, data }) => {
-        this._events.dispatch(event, {
-          fromPeer: from,
-          ...(data || {}),
-        })
-      })
+    if (action === 'active') {
+      this.acknowledgeReceipt(parsedData)
     }
+
+    console.log('data', data)
+
+    this._events.dispatch(event, {
+      fromPeer: from,
+      ...data,
+    })
   }
 
   on(eventName, handler) {
@@ -127,6 +130,14 @@ class SwapRoom extends ServiceInterface {
     this._events.once(eventName, handler)
   }
 
+  subscribe (eventName, handler) {
+    this._events.subscribe(eventName, handler)
+  }
+
+  unsubscribe (eventName, handler) {
+    this._events.unsubscribe(eventName, handler)
+  }
+
   _recoverMessage(message, sign) {
     const hash      = SwapApp.env.web3.utils.soliditySha3(JSON.stringify(message))
     const recover   = SwapApp.env.web3.eth.accounts.recover(hash, sign.signature)
@@ -135,33 +146,123 @@ class SwapRoom extends ServiceInterface {
   }
 
   _signMessage(message) {
+    console.log('message sign', message)
+
     const hash  = SwapApp.env.web3.utils.soliditySha3(JSON.stringify(message))
     const sign  = SwapApp.env.web3.eth.accounts.sign(hash, SwapApp.services.auth.accounts.eth.privateKey)
 
     return sign
   }
 
-  sendMessage(...args) {
-    if (args.length === 1) {
-      const [ messages ] = args
-      const sign = this._signMessage(messages)
+  checkReceiving(message, callback) {
+    let address = message.fromAddress
 
-      this.connection.broadcast(JSON.stringify({
-        fromAddress: SwapApp.services.auth.accounts.eth.address,
-        messages,
-        sign,
-      }))
-    }
-    else {
-      const [ peer, messages ] = args
-      const sign = this._signMessage(messages)
+    const waitReceipt = (data) => {
+      if (!data.action || data.action !== 'confirmation') {
+        return
+      }
 
-      this.connection.sendTo(peer, JSON.stringify({
-        fromAddress: SwapApp.services.auth.accounts.eth.address,
-        messages,
-        sign,
-      }))
+      if (JSON.stringify(message.data) === JSON.stringify(data.message)) {
+        this.unsubscribe(address, waitReceipt)
+
+        if (this.CheckReceiptsT[message.peer]) {
+          clearTimeout(this.CheckReceiptsT[message.peer])
+        }
+
+        callback(true)
+      }
     }
+
+    this.subscribe(address, waitReceipt)
+
+    if (!this.CheckReceiptsT) {
+      this.CheckReceiptsT = {}
+    }
+
+    this.CheckReceiptsT[message.peer] = setTimeout(() => {
+      this.unsubscribe(address, waitReceipt)
+
+      callback(false)
+    }, 15000)
+  }
+
+  sendConfirmation(peer, message, callback = false, repeat = 9) {
+
+    if (!this.connection) {
+      setTimeout(() => { this.sendConfirmation(message, callback) }, 1000)
+      return
+    }
+
+    if (message.action === 'confirmation' && peer !== this.peer) {
+      return
+    }
+
+    message = this.sendMessagePeer(peer, message)
+
+    this.checkReceiving(message, delivered => {
+      if (!delivered && repeat > 0) {
+        repeat--
+        setTimeout(() => {
+          this.sendConfirmation(peer, message, callback, repeat)
+        }, 1000 )
+        return
+      }
+
+      if (callback) callback(delivered)
+    })
+  }
+
+  acknowledgeReceipt (message) {
+    if (!message.peer || !message.action
+      || message.action  === 'confirmation'
+      || message.action  === 'active') {
+      return
+    }
+
+    console.log('acknowledgeReceipt', message)
+    const { fromAddress, data } = message
+
+    this.sendMessagePeer(fromAddress, {
+      action  : 'confirmation',
+      data,
+    })
+  }
+
+  sendMessagePeer(peer, message) {
+    if (!this.connection) {
+      if (message.action !== 'active') {
+        setTimeout(() => {
+          this.sendMessagePeer(peer, message)
+        }, 999)
+      }
+      return
+    }
+
+    console.log('sendMessagePeer', message)
+
+    const { data, event }  = message
+    const sign = this._signMessage(data)
+
+    this.connection.sendTo(peer, JSON.stringify({
+      fromAddress: SwapApp.services.auth.accounts.eth.address,
+      data,
+      event,
+      sign,
+    }))
+
+    return message
+  }
+
+  sendMessageRoom(message) {
+    const { data, event } = message
+    const sign = this._signMessage(data)
+
+    this.connection.broadcast(JSON.stringify({
+      fromAddress: SwapApp.services.auth.accounts.eth.address,
+      data,
+      event,
+      sign,
+    }))
   }
 }
 

@@ -91,16 +91,14 @@ class Order {
       isRequested: true,
     })
 
-    SwapApp.services.room.sendMessage(this.owner.peer, [
-      {
-        event: 'request swap',
-        data: {
-          orderId: this.id,
-          // TODO why do we send this info?
-          participant: SwapApp.services.auth.getPublicData(),
-        },
+    SwapApp.services.room.sendMessagePeer(this.owner.peer, {
+      event: 'request swap',
+      data: {
+        orderId: this.id,
+        // TODO why do we send this info?
+        participant: SwapApp.services.auth.getPublicData(),
       },
-    ])
+    })
 
     SwapApp.services.room.on('accept swap request', function ({ orderId }) {
       if (orderId === self.id) {
@@ -139,14 +137,12 @@ class Order {
       requests: [],
     })
 
-    SwapApp.services.room.sendMessage(participantPeer, [
-      {
-        event: 'accept swap request',
-        data: {
-          orderId: this.id,
-        },
+    SwapApp.services.room.sendMessagePeer(participantPeer, {
+      event: 'accept swap request',
+      data: {
+        orderId: this.id,
       },
-    ])
+    })
   }
 
   declineRequest(participantPeer) {
@@ -169,14 +165,12 @@ class Order {
       requests,
     })
 
-    SwapApp.services.room.sendMessage(participantPeer, [
-      {
-        event: 'decline swap request',
-        data: {
-          orderId: this.id,
-        },
+    SwapApp.services.room.sendMessagePeer(participantPeer, {
+      event: 'decline swap request',
+      data: {
+        orderId: this.id,
       },
-    ])
+    })
   }
 }
 
