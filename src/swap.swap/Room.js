@@ -37,6 +37,7 @@ class Room {
 
     SwapApp.services.room.sendConfirmation(this.peer, {
       event,
+      action: 'active',
       data: {
         swapId: this.swapId,
         ...data,
