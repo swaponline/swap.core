@@ -31,23 +31,21 @@ class SwapRoom extends ServiceInterface {
     }
 
     const ipfs = new SwapApp.env.Ipfs(this._config)
+      .on('ready', () => ipfs.id((err, info) => {
+        console.info('IPFS ready!')
 
-    ipfs.once('error', (err) => {
-      console.log('IPFS error!', err)
-    })
+        if (err) {
+          throw err
+        }
 
-    ipfs.once('ready', () => ipfs.id((err, info) => {
-      console.info('IPFS ready!')
-
-      if (err) {
-        throw err
-      }
-
-      this._init({
-        peer: info.id,
-        ipfsConnection: ipfs,
+        this._init({
+          peer: info.id,
+          ipfsConnection: ipfs,
+        })
+      }))
+      .on('error', (err) => {
+        console.log('IPFS error!', err)
       })
-    }))
   }
 
   _init({ peer, ipfsConnection }) {
