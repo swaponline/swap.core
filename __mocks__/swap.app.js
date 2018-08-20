@@ -19,8 +19,9 @@ const mockSwapApp = {
       eth: {
         getBalance: jest.fn(address => 3e18),
         Contract: function () {
-          const view = (value) => () => ({
-            call: jest.fn(() => value)
+          const view = (getValue, state = {}) => () => ({
+            call: jest.fn(() => getValue(state)),
+            state,
           })
 
           const action = (emitter) => () => ({
@@ -28,12 +29,26 @@ const mockSwapApp = {
             emitter,
           })
 
+          this.state = { swapExists: false, secret: null }
+
           this.methods = {
-            swaps:      jest.fn(view({ balance: '2' })),
-            getBalance: jest.fn(view('2')),
+            swaps:      jest.fn(view(
+              () => ({ balance: this.state.swapExists ? '2' : '0' }),
+              { swapExists: false }
+            )),
+            getBalance: jest.fn(view(
+              () => this.state.swapExists ? '2' : '0',
+              { swapExists: false }
+            )),
+            getSecret:  jest.fn(view(
+              async () => this.state.secret
+            )),
+
             createSwap: jest.fn(action(new EventEmitter)),
             withdraw:   jest.fn(action(new EventEmitter)),
             refund:     jest.fn(action(new EventEmitter)),
+
+            approve:    jest.fn(action(new EventEmitter)),
           }
         },
       },

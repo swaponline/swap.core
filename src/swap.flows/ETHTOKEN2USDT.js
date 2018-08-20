@@ -49,9 +49,9 @@ export default (tokenName) => {
         isMeSigned: false,
 
         secretHash: null,
-        btcScriptValues: null,
+        usdtScriptValues: null,
 
-        btcScriptVerified: false,
+        usdtScriptVerified: false,
 
         isBalanceFetching: false,
         isBalanceEnough: false,
@@ -101,7 +101,7 @@ export default (tokenName) => {
           flow.swap.room.once('create btc script', ({ scriptValues, usdtFundingTransactionHash, usdtRawRedeemTransactionHex }) => {
             flow.finishStep({
               secretHash: scriptValues.secretHash,
-              btcScriptValues: scriptValues,
+              usdtScriptValues: scriptValues,
               usdtFundingTransactionHash,
               usdtRawRedeemTransactionHex,
             }, { step: 'wait-lock-usdt', silentError: true })
@@ -132,14 +132,21 @@ export default (tokenName) => {
           const utcNow = () => Math.floor(Date.now() / 1000)
           const getLockTime = () => utcNow() + 3600 * 1 // 1 hour from now
 
-          const scriptCheckResult = await flow.usdtSwap.checkScript(flow.state.usdtScriptValues, {
-            value: buyAmount,
+          const scriptValues = {
+            redeemHex: flow.state.usdtRawRedeemTransactionHex,
+            scriptValues: flow.state.usdtScriptValues,
+            fundingTxHash: flow.state.usdtFundingTransactionHash,
+          }
+
+          const scriptCheckResult = await flow.usdtSwap.checkScript(scriptValues, {
+            amount: buyAmount,
             recipientPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
             lockTime: getLockTime(),
           })
 
           if (scriptCheckResult) {
             console.error(`Btc script check error:`, scriptCheckResult)
+            throw new Error(`Btc script check error:` + scriptCheckResult)
             flow.swap.events.dispatch('usdt script check error', scriptCheckResult)
             return
           }
@@ -253,6 +260,7 @@ export default (tokenName) => {
           await flow.usdtSwap.withdraw({
             scriptValues: flow.state.usdtScriptValues,
             secret,
+            redeemHex: flow.state.usdtRawRedeemTransactionHex,
           }, (hash) => {
             flow.setState({
               usdtSwapWithdrawTransactionHash: hash,
