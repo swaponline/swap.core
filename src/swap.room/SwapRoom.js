@@ -51,6 +51,13 @@ class SwapRoom extends ServiceInterface {
   }
 
   _init({ peer, ipfsConnection }) {
+    if (!ipfsConnection) {
+      setTimeout(() => {
+        this._init({ peer, ipfsConnection })
+      }, 999)
+      return
+    }
+
     this.peer = peer
     this.roomName = SwapApp.isMainNet()
       ? 'swap.online'
@@ -103,6 +110,11 @@ class SwapRoom extends ServiceInterface {
     console.log('_handleNewMessage parsed data', parsedData)
 
     const { fromAddress, data, sign, event, action } = parsedData
+
+    if (!data) {
+      return
+    }
+
     const recover = this._recoverMessage(data, sign)
 
     if (recover !== fromAddress) {

@@ -111,7 +111,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
             orders: myOrders,
           },
         }
-        )
+      )
     }
   }
 
