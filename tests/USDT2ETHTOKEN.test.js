@@ -155,12 +155,41 @@ describe('full flow', () => {
     // console.dir('alice', bitcoin.crypto.hash160(_ORDER.owner.btc.publicKey).toString('hex'))
     // console.dir('bob', bitcoin.crypto.hash160(_ORDER.participant.btc.publicKey).toString('hex'))
     //
-    // // const pubKeyHash = bitcoin.crypto.hash160(_ORDER.participant.btc.publicKey).toString('hex')
-    // // expect(txb.tx.outs[1].script.toString('hex')).toEqual('76a914' + pubKeyHash + '88ac')
+    const pubKey = bitcoin.ECPair.fromPublicKeyBuffer(Buffer.from(_ORDER.participant.btc.publicKey, 'hex'))
+    const expectedOutputScript = bitcoin.address.toOutputScript(pubKey.getAddress())
+
+    console.log(expectedOutputScript)
+
+    expect(expectedOutputScript.data).toEqual(txb.tx.outs[1].script.data)
+    expect(true).toBe(false)
+    // const outputScript = bitcoin.script.pubKeyHash.output.decode(txb.tx.outs[1].script)
+    //
+    // expect(outputScript.pubKey.toString('hex')).toEqual(_ORDER.owner.btc.publicKey)
+
+    //   var ss = bitcoin.ECSignature.parseScriptSignature(scriptSig.signature)
+    //   var hash = tx.hashForSignature(i, prevOutScript, ss.hashType)
+    //
+    //
+    // // const pubKeyHash = bitcoin.crypto.hash160(compressedKey).toString('hex')
+    // expect(txb.tx.outs[1].script.toString('hex')).toEqual('76a914' + pubKeyHash + '88ac')
 
   })
 
-  test('withdraws ETH', async () => {
+  test('does not withdraw ETH when swap doesnt exist', async () => {
+    swap.flow.ethTokenSwap.contract.state.swapExists = false
+
+    SwapApp.services.room.emit('create eth contract', { ethSwapCreationTransactionHash: '555abcdef333', ..._roomId })
+
+    await timeout(100)
+
+    expect(swap.flow.ethTokenSwap.contract.methods.withdraw).not.toHaveBeenCalled()
+
+  })
+
+  test('withdraws ETH if balance is locked', async () => {
+    swap.flow.ethTokenSwap.contract.state.swapExists = true
+
+    swap.flow.steps[6]() // not for production use
     SwapApp.services.room.emit('create eth contract', { ethSwapCreationTransactionHash: '555abcdef333', ..._roomId })
 
     await timeout(100)

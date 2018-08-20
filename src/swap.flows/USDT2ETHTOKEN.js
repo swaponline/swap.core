@@ -60,9 +60,9 @@ export default (tokenName) => {
         ethSwapCreationTransactionHash: null,
 
         secretHash: null,
-        btcScriptValues: null,
+        usdtScriptValues: null,
 
-        btcScriptVerified: false,
+        usdtScriptVerified: false,
 
         isBalanceFetching: false,
         isBalanceEnough: false,
@@ -125,7 +125,7 @@ export default (tokenName) => {
 
         async () => {
           const { sellAmount, participant } = flow.swap
-          const { btcScriptValues } = flow.state
+          const { usdtScriptValues } = flow.state
           let usdtFundingTransactionHash, usdtFunding
 
           // TODO move this somewhere!
@@ -134,7 +134,7 @@ export default (tokenName) => {
 
           let scriptValues
 
-          if (!btcScriptValues) {
+          if (!usdtScriptValues) {
             scriptValues = {
               secretHash:         flow.state.secretHash,
               ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
@@ -143,10 +143,10 @@ export default (tokenName) => {
             }
 
             flow.setState({
-              btcScriptValues: scriptValues,
+              usdtScriptValues: scriptValues,
             })
           } else {
-            scriptValues = btcScriptValues
+            scriptValues = usdtScriptValues
           }
 
           console.log('sellAmount', sellAmount)
@@ -176,6 +176,7 @@ export default (tokenName) => {
           flow.swap.room.on('request btc script', () => {
             flow.swap.room.sendMessage('create btc script', {
               scriptValues,
+              fundingValues,
               usdtFundingTransactionHash,
               rawRedeemHex,
             })
@@ -189,7 +190,7 @@ export default (tokenName) => {
 
           flow.finishStep({
             isBtcScriptFunded: true,
-            btcScriptValues: scriptValues,
+            usdtScriptValues: scriptValues,
             usdtRawRedeemTransactionHex: rawRedeemHex,
           })
 
@@ -344,7 +345,7 @@ export default (tokenName) => {
 
     getRefundTxHex = () => {
       this.usdtSwap.getRefundHexTransaction({
-        scriptValues: this.state.btcScriptValues,
+        scriptValues: this.state.usdtScriptValues,
         secret: this.state.secret,
       })
         .then((txHex) => {
@@ -356,7 +357,7 @@ export default (tokenName) => {
 
     tryRefund() {
       return this.usdtSwap.refund({
-        scriptValues: this.state.btcScriptValues,
+        scriptValues: this.state.usdtScriptValues,
         secret: this.state.secret,
       }, (hash) => {
         this.setState({

@@ -3,7 +3,7 @@ import SwapApp, { SwapInterface, constants } from 'swap.app'
 const FEE_VALUE = 2000 // satoshis TODO how to get this value
 const DUST = 546
 
-const createOmniSimpleSend = require('./usdt/omni_tx')
+const createOmniSimpleSend = require('./usdt/omni_script')
 const createScript = require('./usdt/swap_script')
 const createFundingTransaction = require('./usdt/funding_tx')
 const createRedeemTransaction = require('./usdt/redeem_tx')
@@ -134,15 +134,47 @@ class UsdtSwap extends SwapInterface {
    * @returns {Promise.<string>}
    */
   async checkScript(data, expected) {
-    const { recipientPublicKey, lockTime } = data
-    const { scriptAddress, script } = this.createScript(data)
+    const { redeemHex, scriptValues, fundingTxHash } = data
 
-    const unspents      = await this.fetchUnspents(scriptAddress)
-    const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
-    const expectedValue = expected.value.multipliedBy(1e8).integerValue()
+    const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = scriptValues
+    const { scriptAddress, script } = createScript(secretHash, ownerPublicKey, recipientPublicKey, lockTime)
 
-    if (expectedValue.isGreaterThan(totalUnspent)) {
-      return `Expected script value: ${expectedValue.toNumber()}, got: ${totalUnspent}`
+    const fundingValues = {
+      txid: fundingTxHash,
+      scriptAddress,
+    }
+
+    // const { scriptValues, fundingValues, amount } = data
+    const hex = this.buildRawRedeemTransaction({ amount: expected.amount, scriptValues, fundingValues })
+
+    console.log('should be', hex)
+    console.log('given', redeemHex)
+
+    const txb = SwapApp.env.bitcoin.TransactionBuilder.fromTransaction(
+        SwapApp.env.bitcoin.Transaction.fromHex(redeemHex))
+
+    // expect(txb.inputs.length).toBe(2)
+    // // expect(txb.outputs.length).toBe(3)
+    // expect(txb.tx.outs.length).toBe(3)
+
+    console.dir('txb outs', txb.tx.outs)
+
+    // const pubKey = SwapApp.env.bitcoin.ECPair.fromPublicKeyBuffer(Buffer.from(_ORDER.participant.btc.publicKey, 'hex'))
+    const expectedP2PKHOutputScript = SwapApp.env.bitcoin.address.toOutputScript(SwapApp.auth.accounts.btc.getAddress())
+
+    const expectedOmniOutput = createOmniSimpleSend(expected.amount)
+
+    if (expectedOmniOutput.script !== txb.tx.outs[0].script || !expectedOmniOutput.script) {
+      return `Expected first output value: `
+      + SwapApp.env.bitcoin.script.toASM(expectedOutput.script)
+      + `, got: `
+      + SwapApp.env.bitcoin.script.toASM(txb.tx.outs[0].script)
+    }
+    if (expectedP2PKHOutputScript.data !== txb.tx.outs[1].script.data || !expectedP2PKHOutputScript.data) {
+      return `Expected second output value: `
+      + SwapApp.env.bitcoin.script.toASM(expectedP2PKHOutputScript)
+      + `, got: `
+      + SwapApp.env.bitcoin.script.toASM(txb.tx.outs[1].script)
     }
     if (expected.lockTime > lockTime) {
       return `Expected script lockTime: ${expected.lockTime}, got: ${lockTime}`
@@ -150,6 +182,20 @@ class UsdtSwap extends SwapInterface {
     if (expected.recipientPublicKey !== recipientPublicKey) {
       return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
     }
+
+    const unspents      = await this.fetchUnspents(scriptAddress)
+    const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+    const expectedValue = 546
+
+    if (expectedValue.isGreaterThan(totalUnspent)) {
+      return `Expected script value: ${expectedValue.toNumber()}, got: ${totalUnspent}`
+    }
+    if (expected.lockTime > lockTime) {
+      return `Expected script lockTime: ${expected.lockTime}, got: ${lockTime}`
+    }
+    // if (expected.recipientPublicKey !== recipientPublicKey) {
+    //   return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
+    // }
   }
 
   /**
@@ -236,8 +282,8 @@ class UsdtSwap extends SwapInterface {
         const { secretHash, lockTime: locktime } = scriptValues
         const { ownerPublicKey, recipientPublicKey } = scriptValues
 
-        const txb = bitcoin.TransactionBuilder.fromTransaction(
-            bitcoin.Transaction.fromHex(redeemHex))
+        const txb = SwapApp.env.bitcoin.TransactionBuilder.fromTransaction(
+            SwapApp.env.bitcoin.Transaction.fromHex(redeemHex))
 
         const { script, scriptAddress: addr } = createScript(
           secretHash,
@@ -280,13 +326,13 @@ class UsdtSwap extends SwapInterface {
   }
 
   getRedeemTransaction(data) {
-    const { usdtRawRedeemTransactionHex: redeemHex, secret, scriptValues } = data
+    const { redeemHex, secret, scriptValues } = data
 
     const { secretHash, lockTime: locktime } = scriptValues
     const { ownerPublicKey, recipientPublicKey } = scriptValues
 
-    const txb = bitcoin.TransactionBuilder.fromTransaction(
-        bitcoin.Transaction.fromHex(redeemHex))
+    const txb = SwapApp.env.bitcoin.TransactionBuilder.fromTransaction(
+        SwapApp.env.bitcoin.Transaction.fromHex(redeemHex))
 
     const { script, scriptAddress: addr } = createScript(
       secretHash,
@@ -296,7 +342,7 @@ class UsdtSwap extends SwapInterface {
 
     console.log('script address', addr)
 
-    const txTaw = txb.buildIncomplete()
+    const txRaw = txb.buildIncomplete()
 
     const forSigning = {
       txRaw,
@@ -431,7 +477,9 @@ class UsdtSwap extends SwapInterface {
           handleTransactionHash(txRaw.getId())
         }
 
+        console.log('txRaw', txRaw)
         const result = await this.broadcastTx(txRaw.toHex())
+        console.log('txRaw', result)
 
         resolve(result)
       }
