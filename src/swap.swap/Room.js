@@ -31,45 +31,18 @@ class Room {
     })
   }
 
-  sendMessage(...args) {
-    console.log(`send message`, args)
-    if (args.length === 1) {
-      const [ value ] = args
+  sendMessage(message) {
+    console.log('Room msg', message)
+    const { event, data } = message
 
-      // value - eventName
-      if (typeof value === 'string') {
-        SwapApp.services.room.sendMessage(this.peer, [
-          {
-            event: value,
-            data: {
-              swapId: this.swapId,
-            }
-          },
-        ])
-      }
-      // value - messages
-      else if (Array.isArray(value)) {
-        if (value[0] && !value[0].swapId) {
-          console.error(`Bad format`, value[0])
-          throw new Error(`Bad message format! ${value[0]}`)
-        }
-
-        SwapApp.services.room.sendMessage(this.peer, value)
-      }
-    }
-    else {
-      const [ eventName, message ] = args
-
-      SwapApp.services.room.sendMessage(this.peer, [
-        {
-          event: eventName,
-          data: {
-            swapId: this.swapId,
-            ...message,
-          },
-        },
-      ])
-    }
+    SwapApp.services.room.sendConfirmation(this.peer, {
+      event,
+      action: 'active',
+      data: {
+        swapId: this.swapId,
+        ...data,
+      },
+    })
   }
 }
 
