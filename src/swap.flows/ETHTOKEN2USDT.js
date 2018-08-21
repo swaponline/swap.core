@@ -98,12 +98,12 @@ export default (tokenName) => {
         // 2. Wait participant create, fund USDT Script
 
         () => {
-          flow.swap.room.once('create btc script', ({ scriptValues, usdtFundingTransactionHash, usdtRawRedeemTransactionHex }) => {
+          flow.swap.room.once('create btc script', ({ scriptValues, usdtFundingTransactionHash, rawRedeemHex }) => {
             flow.finishStep({
               secretHash: scriptValues.secretHash,
               usdtScriptValues: scriptValues,
               usdtFundingTransactionHash,
-              usdtRawRedeemTransactionHex,
+              usdtRawRedeemTransactionHex: rawRedeemHex,
             }, { step: 'wait-lock-usdt', silentError: true })
           })
 

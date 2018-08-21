@@ -55,6 +55,7 @@ export default (tokenName) => {
 
         // btcScriptCreatingTransactionHash: null,
         usdtFundingTransactionHash: null,
+        usdtFundingTransactionValues: null,
         usdtRawRedeemTransactionHex: null,
 
         ethSwapCreationTransactionHash: null,
@@ -128,7 +129,6 @@ export default (tokenName) => {
         async () => {
           const { sellAmount, participant } = flow.swap
           const { usdtScriptValues } = flow.state
-          let usdtFundingTransactionHash, usdtFunding
 
           // TODO move this somewhere!
           const utcNow = () => Math.floor(Date.now() / 1000)
@@ -152,22 +152,36 @@ export default (tokenName) => {
           }
 
           console.log('sellAmount', sellAmount)
+          console.log('scriptValues', scriptValues)
 
-          await flow.usdtSwap.fundScript(
-            { scriptValues },
-            (hash, funding) => {
-              usdtFundingTransactionHash = hash
-              usdtFunding = funding
+          let usdtFundingTransactionHash, usdtFunding
 
-              flow.setState({
-                usdtFundingTransactionHash: hash,
+          let fundingValues
+
+          if (flow.state.usdtFundingTransactionValues) {
+            fundingValues = flow.state.usdtFundingTransactionValues
+            // usdtFundingTransactionHash = flow.state.usdtFundingTransactionHash
+          } else {
+            await flow.usdtSwap.fundScript(
+              { scriptValues },
+              (hash, funding) => {
+                usdtFundingTransactionHash = hash
+                fundingValues = {
+                  txid: hash,
+                  scriptAddress: funding.scriptValues.scriptAddress,
+                }
+
+                flow.setState({
+                  usdtFundingTransactionValues: fundingValues,
+                  usdtFundingTransactionHash: hash,
+                })
               })
-            })
-
-          const fundingValues = {
-            txid: usdtFundingTransactionHash,
-            scriptAddress: usdtFunding.scriptValues.scriptAddress,
           }
+
+          // const fundingValues = {
+          //   txid: usdtFundingTransactionHash,
+          //   scriptAddress: usdtFunding.scriptValues.scriptAddress,
+          // }
 
           const rawRedeemHex = await flow.usdtSwap.buildRawRedeemTransaction({
             scriptValues,

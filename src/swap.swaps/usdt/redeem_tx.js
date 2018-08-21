@@ -9,11 +9,11 @@ const createScript = require('./swap_script')
 const createOmniScript = require('./omni_script')
 const getAddress = require('./get_address')
 
-const createRedeemTransaction = async (dialog, scriptValues, amount, getUnspents) => {
+const createRedeemTransaction = async (dialog, scriptValues, amount, getUnspents, network) => {
   const { owner: alice_pair, party: recipient_key } = dialog
   const { hash, lockTime: locktime, scriptAddress, txid } = scriptValues
 
-  const tx = new bitcoin.TransactionBuilder(net)
+  const tx = new bitcoin.TransactionBuilder(network)
 
   // input 0 = utxo from funding_tx
   // input 1 = utxo from Alice with SIGHASH_ALL
@@ -22,10 +22,10 @@ const createRedeemTransaction = async (dialog, scriptValues, amount, getUnspents
   const unspents = await getUnspents(alice_pair.getAddress())
   const scriptUnspents = await getUnspents(scriptAddress)
 
-  const utxo      = unspents[1]
+  const utxo      = unspents[0]
   const dust      = 546
   const fundValue = dust // dust
-  const feeValue  = 5000
+  const feeValue  = 2000
 
   const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
   const skipValue = utxo.satoshis - fundValue - feeValue - dust
@@ -46,11 +46,14 @@ const createRedeemTransaction = async (dialog, scriptValues, amount, getUnspents
   // const scriptHash = bitcoin.crypto.hash160(chunksIn[chunksIn.length - 1])
   // const address = bitcoin.address.toBase58Check(scriptHash, net.scriptHash)
 
-  const inputs = [
-    scriptUnspents[0] || { txid, vout: 0 },
-    unspents[0],
-    // ...unspents,
-  ]
+  // const inputs = [
+  //   { txid, vout: 0},
+  //   { txid, vout: 0},
+  //
+  //   scriptUnspents[0] || { txid, vout: 0 },
+  //   unspents[0],
+  //   // ...unspents,
+  // ]
 
   // inputs.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
 

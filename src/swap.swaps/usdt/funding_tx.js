@@ -1,10 +1,10 @@
 const bitcoin = require('bitcoinjs-lib')
 const net = bitcoin.networks.bitcoin
 
-const getUnspents = require('./unspents')
+// const getUnspents = require('./unspents')
 const createScript = require('./swap_script')
 
-const createFundingTransaction = async (dialog, scriptValues, getUnspents) => {
+const createFundingTransaction = async (dialog, scriptValues, getUnspents, network) => {
   const { secretHash: hash, lockTime: locktime } = scriptValues
   const { owner: alice_pair, party: bob_key } = dialog
 
@@ -12,7 +12,7 @@ const createFundingTransaction = async (dialog, scriptValues, getUnspents) => {
   // const alice_pair = bitcoin.ECPair(alice_privkey)
 
   // transaction funding_tx;
-  const funding_tx = new bitcoin.TransactionBuilder(net)
+  const funding_tx = new bitcoin.TransactionBuilder(network)
 
   // funding_tx.set_version(1u);
   //
@@ -47,6 +47,7 @@ const createFundingTransaction = async (dialog, scriptValues, getUnspents) => {
   const unspents = await getUnspents(alice_p2pkh)
   // const UTXO = unspents[0] // { txid, vout, satoshis }
 
+  console.log('unspents', unspents)
 
   /*
     std::string OddMoney_btc;
