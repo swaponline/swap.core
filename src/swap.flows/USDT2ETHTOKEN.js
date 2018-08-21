@@ -106,7 +106,9 @@ export default (tokenName) => {
           })
 
           // if I came late and he ALREADY send this, I request AGAIN
-          flow.swap.room.sendMessage('request sign')
+          flow.swap.room.sendMessage({
+            event: 'request sign',
+          })
         },
 
         // 2. Create secret, secret hash
@@ -174,18 +176,25 @@ export default (tokenName) => {
           })
 
           flow.swap.room.on('request btc script', () => {
-            flow.swap.room.sendMessage('create btc script', {
-              scriptValues,
-              fundingValues,
-              usdtFundingTransactionHash,
-              rawRedeemHex,
+            flow.swap.room.sendMessage({
+              event: 'create btc script',
+              data: {
+                scriptValues,
+                fundingValues,
+                usdtFundingTransactionHash,
+                rawRedeemHex,
+              }
             })
           })
 
-          flow.swap.room.sendMessage('create btc script', {
-            scriptValues,
-            usdtFundingTransactionHash,
-            rawRedeemHex,
+          flow.swap.room.sendMessage({
+            event: 'create btc script',
+            data: {
+              scriptValues,
+              usdtFundingTransactionHash,
+              rawRedeemHex,
+
+            }
           })
 
           flow.finishStep({
@@ -278,7 +287,9 @@ export default (tokenName) => {
             return
           }
 
-          flow.swap.room.sendMessage('finish eth withdraw')
+          flow.swap.room.sendMessage({
+            event: 'finish eth withdraw',
+          })
 
           flow.finishStep({
             isEthWithdrawn: true,

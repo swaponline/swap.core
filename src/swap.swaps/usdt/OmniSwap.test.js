@@ -6,7 +6,7 @@ const net = process.env.NETWORK === 'testnet'
   ? bitcoin.networks.testnet
   : bitcoin.networks.bitcoin
 
-const _unspents = require('../fixtures/unspents')
+const _unspents = require('./fixtures/unspents')
 
 const api = {
   fetchUnspents: jest.fn(() => _unspents),

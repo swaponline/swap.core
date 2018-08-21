@@ -7,6 +7,7 @@ let storage = {}
 let room = new EventEmitter()
 room.sendMessage = jest.fn()
 room.unsubscribe = jest.fn()
+room.sendConfirmation = jest.fn()
 
 const btcKey = bitcoin.ECPair.fromWIF('KwMUy5TKPK51UTF7MFZWtdkWe4DV1uWQVcSc9Jz6g51MCn8jTSQd')
 btcKey.getPublicKey = () => btcKey.getPublicKeyBuffer().toString('hex')
