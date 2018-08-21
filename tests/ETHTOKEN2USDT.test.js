@@ -99,7 +99,8 @@ test('create swap', () => {
 describe('full flow', () => {
   let swap
   const _roomId = { fromPeer: 'Qmbbb', swapId: 'Qm-1231231' }
-  const _messageForEvent = (event, payload) => [ "Qmbbb", [{ data: { swapId: 'Qm-1231231' }, event }] ]
+  const _messageForEvent = (event, payload) => [ "Qmbbb", { action: 'active', data: { swapId: 'Qm-1231231' }, event } ]
+
   beforeAll(() => {
     swap = new Swap("Qm-1231231", _ORDER)
   })
@@ -111,12 +112,14 @@ describe('full flow', () => {
     swap.flow.sign()
 
     SwapApp.services.room.emit('request sign', _roomId)
+    // SwapApp.services.room.emit('confirmation', _confirmationForEvent('request sign'))
+
 
     await timeout(100)
 
-    expect(SwapApp.services.room.sendMessage).toHaveBeenCalled()
-    expect(SwapApp.services.room.sendMessage.mock.calls[0]).toEqual(_messageForEvent('swap sign'))
-    expect(SwapApp.services.room.sendMessage.mock.calls[1]).toEqual(_messageForEvent('request btc script'))
+    expect(SwapApp.services.room.sendConfirmation).toHaveBeenCalled()
+    expect(SwapApp.services.room.sendConfirmation.mock.calls[0]).toEqual(_messageForEvent('swap sign'))
+    expect(SwapApp.services.room.sendConfirmation.mock.calls[1]).toEqual(_messageForEvent('request btc script'))
   })
 
   test('saves script values', async () => {
@@ -165,7 +168,7 @@ describe('full flow', () => {
 
     await timeout(100)
 
-    expect(SwapApp.services.room.sendMessage.mock.calls[2]).toEqual(_messageForEvent('create eth contract'))
+    expect(SwapApp.services.room.sendConfirmation.mock.calls[2]).toEqual(_messageForEvent('create eth contract'))
 
     // expect(SwapApp.services.room.sendMessage.mock.calls[2]).toEqual(_messageForEvent('create eth contract'))
 

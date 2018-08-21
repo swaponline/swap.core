@@ -161,7 +161,7 @@ describe('full flow', () => {
     console.log(expectedOutputScript)
 
     expect(expectedOutputScript.data).toEqual(txb.tx.outs[1].script.data)
-    expect(true).toBe(false)
+    // expect(true).toBe(false)
     // const outputScript = bitcoin.script.pubKeyHash.output.decode(txb.tx.outs[1].script)
     //
     // expect(outputScript.pubKey.toString('hex')).toEqual(_ORDER.owner.btc.publicKey)

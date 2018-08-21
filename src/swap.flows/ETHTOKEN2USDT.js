@@ -107,7 +107,9 @@ export default (tokenName) => {
             }, { step: 'wait-lock-usdt', silentError: true })
           })
 
-          flow.swap.room.sendMessage('request btc script')
+          flow.swap.room.sendMessage({
+            event: 'request btc script'
+          })
         },
 
         // 3. Verify USDT Script
@@ -169,8 +171,11 @@ export default (tokenName) => {
             })
           })
 
-          flow.swap.room.sendMessage('create eth contract', {
-            ethSwapCreationTransactionHash,
+          flow.swap.room.sendMessage({
+            event: 'create eth contract',
+            data: {
+              ethSwapCreationTransactionHash,
+            }
           })
 
           flow.finishStep({
@@ -276,7 +281,9 @@ export default (tokenName) => {
         // 8. Finish
 
         () => {
-          flow.swap.room.sendMessage('swap finished')
+          flow.swap.room.sendMessage({
+            event: 'swap finished'
+          })
 
           flow.finishStep({
             isFinished: true
@@ -306,12 +313,16 @@ export default (tokenName) => {
       const { participant } = this.swap
       const { isMeSigned } = this.state
 
-      if (isMeSigned) return this.swap.room.sendMessage('swap sign')
+      if (isMeSigned) return this.swap.room.sendMessage({
+          event: 'swap sign'
+        })
 
       const swapExists = await this._checkSwapAlreadyExists()
 
       if (swapExists) {
-        this.swap.room.sendMessage('swap exists')
+        this.swap.room.sendMessage({
+          event: 'swap exists'
+        })
         // TODO go to 6 step automatically here
         throw new Error(`Cannot sign: swap with ${participant.eth.address} already exists! Please refund it or drop ${this.swap.id}`)
         return false
@@ -322,10 +333,14 @@ export default (tokenName) => {
       })
 
       this.swap.room.once('request sign', () => {
-        this.swap.room.sendMessage('swap sign')
+        this.swap.room.sendMessage({
+          event: 'swap sign'
+        })
       })
 
-      this.swap.room.sendMessage('swap sign')
+      this.swap.room.sendMessage({
+        event: 'swap sign'
+      })
 
       this.finishStep({
         isMeSigned: true,
