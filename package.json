@@ -1,6 +1,6 @@
 {
   "name": "swap.core",
-  "version": "0.1.11rc5",
+  "version": "0.2.0rc1",
   "description": "Swap Core",
   "homepage": "https://github.com/swaponline/swap.core",
   "author": "Pavel Ivanov <grammka@gmail.com> (https://github.com/pavelivanov)",
@@ -16,7 +16,8 @@
     "clean": "rimraf ./lib",
     "build": "npm run clean && babel ./src --out-dir ./lib",
     "dev:umd": "NODE_ENV=development webpack --config webpack.config.babel.js --watch",
-    "build:umd": "NODE_ENV=production webpack --config webpack.config.babel.js"
+    "build:umd": "NODE_ENV=production webpack --config webpack.config.babel.js",
+    "build:umd:win": "webpack --config webpack.config.babel.js"
   },
   "peerDependencies": {
     "bitcoinjs-lib": "~3.3.2"
