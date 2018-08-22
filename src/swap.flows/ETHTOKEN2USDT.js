@@ -388,7 +388,7 @@ export default (tokenName) => {
     }
 
     async tryWithdraw(_secret) {
-      const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, usdtScriptValues } = this.state
+      const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, usdtScriptValues, usdtRawRedeemTransactionHex } = this.state
 
       if (!_secret)
         throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
@@ -425,7 +425,7 @@ export default (tokenName) => {
 
       await this.usdtSwap.withdraw({
         scriptValues: usdtScriptValues,
-        usdtRawRedeemTransactionHex,
+        redeemHex: usdtRawRedeemTransactionHex,
         secret: _secret,
       }, (hash) => {
         console.log(`TX hash=${hash}`)

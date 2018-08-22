@@ -145,10 +145,10 @@ class UsdtSwap extends SwapInterface {
     }
 
     // const { scriptValues, fundingValues, amount } = data
-    const hex = this.buildRawRedeemTransaction({ amount: expected.amount, scriptValues, fundingValues })
+    // const hex = this.buildRawRedeemTransaction({ amount: expected.amount, scriptValues, fundingValues })
 
-    console.log('should be', hex)
-    console.log('given', redeemHex)
+    // console.log('should be', hex)
+    console.log('tx hex', redeemHex)
 
     const txb = SwapApp.env.bitcoin.TransactionBuilder.fromTransaction(
         SwapApp.env.bitcoin.Transaction.fromHex(redeemHex))
