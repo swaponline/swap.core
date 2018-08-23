@@ -89,7 +89,6 @@ class Order {
 
     this.update({
       isRequested: true,
-      participant: SwapApp.services.auth.getPublicData(),
     })
 
     const participant = SwapApp.services.auth.getPublicData()
