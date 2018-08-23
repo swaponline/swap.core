@@ -1,4 +1,5 @@
 import SwapApp, { SwapInterface, constants } from 'swap.app'
+import BigNumber from 'bignumber.js'
 
 
 class EthTokenSwap extends SwapInterface {
@@ -36,10 +37,12 @@ class EthTokenSwap extends SwapInterface {
       throw new Error('EthTokenSwap: "tokenAbi" required')
     }
 
+
     this._swapName      = options.name.toUpperCase()
 
     this.address        = options.address
     this.abi            = options.abi
+    this.decimals       = options.decimals
     this.tokenAddress   = options.tokenAddress
     this.tokenAbi       = options.tokenAbi
 
@@ -55,51 +58,17 @@ class EthTokenSwap extends SwapInterface {
   /**
    *
    * @param {object} data
-   * @param {string} data.participantAddress
-   * @param {function} handleTransactionHash
-   * @returns {Promise}
-   */
-  sign(data, handleTransactionHash) {
-    const { participantAddress } = data
-
-    return new Promise(async (resolve, reject) => {
-      const params = {
-        from: SwapApp.services.auth.accounts.eth.address,
-        gas: this.gasLimit,
-      }
-
-      try {
-        const result = await this.contract.methods.sign(participantAddress).send(params)
-          .on('transactionHash', (hash) => {
-            if (typeof handleTransactionHash === 'function') {
-              handleTransactionHash(hash)
-            }
-          })
-          .on('error', (err) => {
-            reject(err)
-          })
-
-        resolve(result)
-      }
-      catch (err) {
-        reject(err)
-      }
-    })
-  }
-
-  /**
-   *
-   * @param {object} data
    * @param {BigNumber} data.amount
    * @param {function} handleTransactionHash
    * @returns {Promise}
    */
   approve(data, handleTransactionHash) {
     const { amount } = data
+    const newAmount = new BigNumber(String(amount)).times(new BigNumber(10).pow(this.decimals)).decimalPlaces(this.decimals).toNumber()
 
     return new Promise(async (resolve, reject) => {
       try {
-        const result = await this.ERC20.methods.approve(this.address, amount.toNumber()).send({
+        const result = await this.ERC20.methods.approve(this.address, newAmount).send({
           from: SwapApp.services.auth.accounts.eth.address,
           gas: this.gasLimit,
         })
@@ -155,11 +124,15 @@ class EthTokenSwap extends SwapInterface {
    */
   create(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount } = data
+    const newAmount = new BigNumber(String(amount)).times(new BigNumber(10).pow(this.decimals)).decimalPlaces(this.decimals).toNumber()
 
     return new Promise(async (resolve, reject) => {
       const hash    = `0x${secretHash.replace(/^0x/, '')}`
-      const values  = [ hash, participantAddress, amount.toNumber(), this.tokenAddress ]
-      const params  = { from: SwapApp.services.auth.accounts.eth.address, gas: this.gasLimit }
+      const values  = [ hash, participantAddress, newAmount, this.tokenAddress ]
+      const params  = {
+        from: SwapApp.services.auth.accounts.eth.address,
+        gas: this.gasLimit,
+      }
 
       try {
         const result = await this.contract.methods.createSwap(...values).send(params)
@@ -171,12 +144,39 @@ class EthTokenSwap extends SwapInterface {
           .on('error', (err) => {
             reject(err)
           })
-
+        console.log('result', result)
         resolve(result)
       }
       catch (err) {
         reject(err)
       }
+    })
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.ownerAddress
+   * @param {string} data.participantAddress
+   * @returns {Promise}
+   */
+  checkSwapExists(data) {
+    const { ownerAddress, participantAddress } = data
+
+    return new Promise(async (resolve, reject) => {
+      let swap
+
+      try {
+        swap = await this.contract.methods.swaps(ownerAddress, participantAddress).call()
+      }
+      catch (err) {
+        reject(err)
+      }
+
+      console.log('swapExists', swap)
+
+      const balance = parseInt(swap.balance)
+      resolve(balance)
     })
   }
 
@@ -200,7 +200,7 @@ class EthTokenSwap extends SwapInterface {
       catch (err) {
         reject(err)
       }
-
+      console.log('balance', balance)
       resolve(balance)
     })
   }
@@ -314,41 +314,43 @@ class EthTokenSwap extends SwapInterface {
     })
   }
 
-  /**
-   *
-   * @param {object} data
-   * @param {string} data.participantAddress
-   * @param handleTransactionHash
-   * @returns {Promise}
-   */
-  close(data, handleTransactionHash) {
-    const { participantAddress } = data
-
-    return new Promise(async (resolve, reject) => {
-      const params = {
-        from: SwapApp.services.auth.accounts.eth.address,
-        gas: this.gasLimit,
-      }
-
-      try {
-        const result = await this.contract.methods.close(participantAddress).send(params)
-          .on('transactionHash', (hash) => {
-            if (typeof handleTransactionHash === 'function') {
-              handleTransactionHash(hash)
-            }
-          })
-          .on('error', (err) => {
-            reject(err)
-          })
-
-        resolve(result)
-      }
-      catch (err) {
-        reject(err)
-      }
-    })
-  }
 }
 
 
 export default EthTokenSwap
+
+
+// /**
+//  *
+//  * @param {object} data
+//  * @param {string} data.participantAddress
+//  * @param {function} handleTransactionHash
+//  * @returns {Promise}
+//  */
+// sign(data, handleTransactionHash) {
+//   const { participantAddress } = data
+//
+//   return new Promise(async (resolve, reject) => {
+//     const params = {
+//       from: SwapApp.services.auth.accounts.eth.address,
+//       gas: this.gasLimit,
+//     }
+//
+//     try {
+//       const result = await this.contract.methods.sign(participantAddress).send(params)
+//         .on('transactionHash', (hash) => {
+//           if (typeof handleTransactionHash === 'function') {
+//             handleTransactionHash(hash)
+//           }
+//         })
+//         .on('error', (err) => {
+//           reject(err)
+//         })
+//
+//       resolve(result)
+//     }
+//     catch (err) {
+//       reject(err)
+//     }
+//   })
+// }

@@ -76,6 +76,8 @@ class BtcSwap extends SwapInterface {
   createScript(data) {
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
 
+    console.log('DATA', data)
+
     const script = SwapApp.env.bitcoin.script.compile([
 
       SwapApp.env.bitcoin.opcodes.OP_RIPEMD160,
@@ -126,7 +128,7 @@ class BtcSwap extends SwapInterface {
 
     const unspents      = await this.fetchUnspents(scriptAddress)
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
-    const expectedValue = expected.value.multipliedBy(1e8)
+    const expectedValue = expected.value.multipliedBy(1e8).integerValue()
 
     if (expectedValue.isGreaterThan(totalUnspent)) {
       return `Expected script value: ${expectedValue.toNumber()}, got: ${totalUnspent}`
@@ -157,10 +159,14 @@ class BtcSwap extends SwapInterface {
         const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
         const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.btc.getAddress())
 
-        const fundValue     = amount.multipliedBy(1e8).toNumber() // TODO check for number length (if need slice it)
+        const fundValue     = amount.multipliedBy(1e8).integerValue().toNumber()
         const feeValue      = 15000 // TODO how to get this value
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue
+
+        if (totalUnspent < feeValue + fundValue) {
+          throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue} + ${fundValue}`)
+        }
 
         unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout))
         tx.addOutput(scriptAddress, fundValue)
@@ -233,6 +239,10 @@ class BtcSwap extends SwapInterface {
     const unspents      = await this.fetchUnspents(scriptAddress)
     const feeValue      = 15000 // TODO how to get this value
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+
+    if (totalUnspent < feeValue) {
+      throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue}`)
+    }
 
     if (isRefund) {
       tx.setLockTime(scriptValues.lockTime)

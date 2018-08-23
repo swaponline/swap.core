@@ -2,15 +2,21 @@
 
 In-browser atomic swap protocol based on HTLC
 
-Try demo at testnet.swap.online
+<img src="https://api.travis-ci.org/caffeinum/swap.core.svg?branch=master" />
+
+Try demo at https://testnet.swap.online
+
+**THIS IS ALPHA VERSION AND CAN BE CHANGED SIGNIFICANTLY**
 
 Swap.online is a decentralized exchange protocol (DEP) for crosschain atomic swaps, based on HTLC. It is written on JavaScript and can be run in browser or via NodeJS.
 
 tags: HTLC, atomic swap, javascript, browser, crypto, bitcoin, ethereum, erc20
 
+Usage examples are located in `examples` directory.
 
 ## Usage
 
+Simplest config:
 ```js
 import Web3 from 'web3'
 import bitcoin from 'bitcoinjs-lib'

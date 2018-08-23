@@ -16,7 +16,20 @@ class BTC2ETH extends Flow {
 
     this.ethSwap = SwapApp.swaps[constants.COINS.eth]
     this.btcSwap = SwapApp.swaps[constants.COINS.btc]
+
     this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
+    this.myEthAddress = SwapApp.services.auth.accounts.eth.address
+
+    this.stepNumbers = {
+      'sign': 1,
+      'submit-secret': 2,
+      'sync-balance': 3,
+      'lock-btc': 4,
+      'wait-lock-eth': 5,
+      'withdraw-eth': 6,
+      'finish': 7,
+      'end': 8
+    }
 
     if (!this.ethSwap) {
       throw new Error('BTC2ETH: "ethSwap" of type object required')
@@ -33,6 +46,8 @@ class BTC2ETH extends Flow {
       isParticipantSigned: false,
 
       btcScriptCreatingTransactionHash: null,
+      ethSwapCreationTransactionHash: null,
+
       secretHash: null,
       btcScriptValues: null,
 
@@ -49,6 +64,9 @@ class BTC2ETH extends Flow {
 
       refundTransactionHash: null,
       isRefunded: false,
+
+      refundTxHex: null,
+      isFinished: false,
     }
 
     super._persistSteps()
@@ -77,10 +95,18 @@ class BTC2ETH extends Flow {
         flow.swap.room.once('swap sign', () => {
           flow.finishStep({
             isParticipantSigned: true,
-          })
+          }, { step: 'sign', silentError: true })
+        })
+
+        flow.swap.room.once('swap exists', () => {
+          console.log(`swap already exists`)
+        })
+
+        // if I came late and he ALREADY send this, I request AGAIN
+        flow.swap.room.sendMessage({
+          event: 'request sign',
         })
       },
-
       // 2. Create secret, secret hash
 
       () => {
@@ -91,12 +117,14 @@ class BTC2ETH extends Flow {
 
       () => {
         this.syncBalance()
+        console.log(`sync balance`)
       },
 
       // 4. Create BTC Script, fund, notify participant
 
       async () => {
         const { sellAmount, participant } = flow.swap
+        let btcScriptCreatingTransactionHash
 
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
@@ -113,19 +141,34 @@ class BTC2ETH extends Flow {
           scriptValues,
           amount: sellAmount,
         }, (hash) => {
+          btcScriptCreatingTransactionHash = hash
           flow.setState({
             btcScriptCreatingTransactionHash: hash,
           })
         })
 
-        flow.swap.room.sendMessage('create btc script', {
-          scriptValues,
+        flow.swap.room.on('request btc script', () => {
+          flow.swap.room.sendMessage({
+            event: 'create btc script',
+            data: {
+              scriptValues,
+              btcScriptCreatingTransactionHash,
+            }
+          })
+        })
+
+        flow.swap.room.sendMessage({
+          event: 'create btc script',
+          data: {
+            scriptValues,
+            btcScriptCreatingTransactionHash,
+          }
         })
 
         flow.finishStep({
           isBtcScriptFunded: true,
           btcScriptValues: scriptValues,
-        })
+        }, {  step: 'lock-btc' })
       },
 
       // 5. Wait participant creates ETH Contract
@@ -133,6 +176,12 @@ class BTC2ETH extends Flow {
       () => {
         const { participant } = flow.swap
         let timer
+
+        flow.swap.room.once('create eth contract', ({ ethSwapCreationTransactionHash }) => {
+          flow.setState({
+            ethSwapCreationTransactionHash,
+          })
+        })
 
         const checkEthBalance = () => {
           timer = setTimeout(async () => {
@@ -144,7 +193,7 @@ class BTC2ETH extends Flow {
               if (!flow.state.isEthContractFunded) { // redundant condition but who cares :D
                 flow.finishStep({
                   isEthContractFunded: true,
-                })
+                }, { step: 'wait-lock-eth' })
               }
             }
             else {
@@ -162,7 +211,7 @@ class BTC2ETH extends Flow {
 
             flow.finishStep({
               isEthContractFunded: true,
-            })
+            }, { step: 'wait-lock-eth' })
           }
         })
       },
@@ -183,18 +232,30 @@ class BTC2ETH extends Flow {
         })
 
         if (balanceCheckResult) {
-          console.error(`Eth balance check error:`, balanceCheckResult)
+          console.error(`Waiting until deposit: ETH balance check error:`, balanceCheckResult)
           flow.swap.events.dispatch('eth balance check error', balanceCheckResult)
           return
         }
 
-        await flow.ethSwap.withdraw(data, (hash) => {
-          flow.setState({
-            ethSwapWithdrawTransactionHash: hash,
+        try {
+          await flow.ethSwap.withdraw(data, (hash) => {
+            flow.setState({
+              ethSwapWithdrawTransactionHash: hash,
+            })
           })
-        })
+        } catch (err) {
+          // TODO user can stuck here after page reload...
+          if ( /known transaction/.test(err.message) )
+            return console.error(`known tx: ${err.message}`)
+          else if ( /out of gas/.test(err.message) )
+            return console.error(`tx failed (wrong secret?): ${err.message}`)
+          else
+            return console.error(err)
+        }
 
-        flow.swap.room.sendMessage('finish eth withdraw')
+        flow.swap.room.sendMessage({
+          event: 'finish eth withdraw',
+        })
 
         flow.finishStep({
           isEthWithdrawn: true,
@@ -204,18 +265,33 @@ class BTC2ETH extends Flow {
       // 7. Finish
 
       () => {
-
+        flow.swap.room.once('swap finished', () => {
+          flow.finishStep({
+            isFinished: true,
+          })
+        })
       },
+
+      // 8. Finished!
+      () => {
+
+      }
     ]
   }
 
   submitSecret(secret) {
+    if (this.state.secret) return true
+    if (!this.state.isParticipantSigned)
+      throw new Error(`Cannot proceed: participant not signed. step=${this.state.step}`)
+
     const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
     this.finishStep({
       secret,
       secretHash,
-    })
+    }, { step: 'submit-secret' })
+
+    return true
   }
 
   async syncBalance() {
@@ -233,9 +309,10 @@ class BTC2ETH extends Flow {
         balance,
         isBalanceFetching: false,
         isBalanceEnough: true,
-      })
+      }, { step: 'sync-balance' })
     }
     else {
+      console.error(`Not enough money: ${balance} < ${sellAmount}`)
       this.setState({
         balance,
         isBalanceFetching: false,
@@ -244,8 +321,20 @@ class BTC2ETH extends Flow {
     }
   }
 
+  getRefundTxHex = () => {
+    this.btcSwap.getRefundHexTransaction({
+      scriptValues: this.state.btcScriptValues,
+      secret: this.state.secret,
+    })
+      .then((txHex) => {
+        this.setState({
+          refundTxHex: txHex,
+        })
+      })
+  }
+
   tryRefund() {
-    this.btcSwap.refund({
+    return this.btcSwap.refund({
       scriptValues: this.state.btcScriptValues,
       secret: this.state.secret,
     }, (hash) => {

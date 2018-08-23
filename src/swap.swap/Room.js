@@ -12,6 +12,7 @@ class Room {
 
   on(eventName, handler) {
     SwapApp.services.room.on(eventName, ({ fromPeer, swapId, ...values }) => {
+      console.log(`on ${eventName} from ${fromPeer} at swap ${swapId}`, values)
       if (fromPeer === this.peer && swapId === this.swapId) {
         handler(values)
       }
@@ -22,6 +23,7 @@ class Room {
     const self = this
 
     SwapApp.services.room.on(eventName, function ({ fromPeer, swapId, ...values }) {
+      console.log(`once ${eventName} from ${fromPeer} at swap ${swapId}`, values)
       if (fromPeer === self.peer && swapId === self.swapId) {
         this.unsubscribe()
         handler(values)
@@ -29,37 +31,18 @@ class Room {
     })
   }
 
-  sendMessage(...args) {
-    if (args.length === 1) {
-      const [ value ] = args
+  sendMessage(message) {
+    console.log('Room msg', message)
+    const { event, data } = message
 
-      // value - eventName
-      if (typeof value === 'string') {
-        SwapApp.services.room.sendMessage(this.peer, [
-          {
-            event: value,
-            swapId: this.swapId,
-          },
-        ])
-      }
-      // value - messages
-      else if (Array.isArray(value)) {
-        SwapApp.services.room.sendMessage(this.peer, value)
-      }
-    }
-    else {
-      const [ eventName, message ] = args
-
-      SwapApp.services.room.sendMessage(this.peer, [
-        {
-          event: eventName,
-          data: {
-            swapId: this.swapId,
-            ...message,
-          },
-        },
-      ])
-    }
+    SwapApp.services.room.sendConfirmation(this.peer, {
+      event,
+      action: 'active',
+      data: {
+        swapId: this.swapId,
+        ...data,
+      },
+    })
   }
 }
 

@@ -12,6 +12,7 @@ const getUniqueId = (() => {
 })()
 
 const checkIncomeOrderFormat = (order) => {
+  console.log('order check', order)
   const format = {
     id: '?String',
     owner: {
@@ -32,6 +33,7 @@ const checkIncomeOrderFormat = (order) => {
     sellCurrency: util.typeforce.isCoinName,
     buyAmount: util.typeforce.isNumeric,
     sellAmount: util.typeforce.isNumeric,
+    exchangeRate: util.typeforce.t.maybe(util.typeforce.isNumeric),
     isProcessing: '?Boolean',
     isRequested: '?Boolean',
   }
@@ -49,6 +51,8 @@ const checkIncomeOrderOwner = ({ owner: { peer } }, fromPeer) =>
   peer === fromPeer
 
 const checkIncomeOrder = (order, fromPeer) => {
+  console.log('checkIncomeOrder', order)
+  console.log('checkIncomeOrder fromPeer', fromPeer)
   const isFormatValid = checkIncomeOrderFormat(order)
   const isOwnerValid = checkIncomeOrderOwner(order, fromPeer)
 
@@ -94,19 +98,20 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
         'buyCurrency',
         'sellCurrency',
         'buyAmount',
+        'exchangeRate',
         'sellAmount',
         'isRequested',
         'isProcessing',
       ))
 
-      SwapApp.services.room.sendMessage(peer, [
+      SwapApp.services.room.sendMessagePeer(peer,
         {
           event: 'new orders',
           data: {
             orders: myOrders,
           },
-        },
-      ])
+        }
+      )
     }
   }
 
@@ -241,6 +246,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
       'sellCurrency',
       'buyAmount',
       'sellAmount',
+      'exchangeRate',
       'participant',
       'requests',
       'isRequested',
@@ -273,24 +279,23 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
     })
     this._saveMyOrders()
 
-    SwapApp.services.room.sendMessage([
-      {
-        event: 'new order',
-        data: {
-          order: util.pullProps(
-            order,
-            'id',
-            'owner',
-            'buyCurrency',
-            'sellCurrency',
-            'buyAmount',
-            'sellAmount',
-            'isRequested',
-            'isProcessing',
-          ),
-        },
+    SwapApp.services.room.sendMessageRoom({
+      event: 'new order',
+      data: {
+        order: util.pullProps(
+          order,
+          'id',
+          'owner',
+          'buyCurrency',
+          'exchangeRate',
+          'sellCurrency',
+          'buyAmount',
+          'sellAmount',
+          'isRequested',
+          'isProcessing',
+        ),
       },
-    ])
+    })
   }
 
   /**
@@ -299,14 +304,12 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
    */
   remove(orderId) {
     this.removeByKey(orderId)
-    SwapApp.services.room.sendMessage([
-      {
-        event: 'remove order',
-        data: {
-          orderId,
-        },
+    SwapApp.services.room.sendMessageRoom({
+      event: 'remove order',
+      data: {
+        orderId,
       },
-    ])
+    })
     this._saveMyOrders()
   }
 
