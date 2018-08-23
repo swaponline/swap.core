@@ -1,7 +1,11 @@
 const request = require('superagent')
 
+const repo = '.ipfs/' + Math.random().toString().slice(2)
+console.log('ipfs repo', repo)
+
 module.exports = {
   swapRoom: {
+    repo,
     // roomName: 'swap.core.tests.swap.online',
     EXPERIMENTAL: {
       pubsub: true
