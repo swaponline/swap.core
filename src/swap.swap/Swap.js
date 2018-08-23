@@ -70,7 +70,9 @@ class Swap {
     }
 
     if (!swap.participant && !isMy) {
-      swap.participant = swap.owner
+      console.error(`swap.participant should be set after order request, please check current state: something's wrong.`)
+      console.log(swap.owner, swap.participant)
+      swap.participant = SwapApp.services.auth.getPublicData()
     }
 
     return swap
