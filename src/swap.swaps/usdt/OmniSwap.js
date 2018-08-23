@@ -3,7 +3,7 @@ const net = process.env.NETWORK === 'testnet'
   ? bitcoin.networks.testnet
   : bitcoin.networks.bitcoin
 
-const getUnspents = require('./unspents')
+
 const createScript = require('./swap_script')
 const createOmniScript = require('./omni_script')
 const signTransaction = require('./sign_tx')

@@ -1,7 +1,7 @@
 const bitcoin = require('bitcoinjs-lib')
 const net = bitcoin.networks.bitcoin
 
-// const getUnspents = require('./unspents')
+
 const createScript = require('./swap_script')
 
 const createFundingTransaction = async (dialog, scriptValues, getUnspents, network) => {
