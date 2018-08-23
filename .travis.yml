@@ -3,7 +3,6 @@ language: node_js
 node_js:
   - stable
 script:
-  - npm test
   - npm run build
 deploy:
   provider: npm
@@ -11,4 +10,4 @@ deploy:
   api_key: $NPM_TOKEN
   skip_cleanup: true
   on:
-    branch: master
+    branch: draft/usdt

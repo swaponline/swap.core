@@ -42,7 +42,7 @@ class EthTokenSwap extends SwapInterface {
 
     this.address        = options.address
     this.abi            = options.abi
-    this.decimals       = options.decimals
+    this.decimals       = options.decimals || 0
     this.tokenAddress   = options.tokenAddress
     this.tokenAbi       = options.tokenAbi
 

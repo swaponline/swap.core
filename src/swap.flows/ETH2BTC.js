@@ -364,10 +364,14 @@ class ETH2BTC extends Flow {
   }
 
 
-  verifyBtcScript() {
-    if (this.state.btcScriptVerified) return true
-    if (!this.state.btcScriptValues)
+  verifyBtcScript(_minFee = 500) {
+    const { btcScriptValues, btcScriptVerified } = this.state
+
+    if (btcScriptVerified) return true
+
+    if (!btcScriptValues) {
       throw new Error(`No script, cannot verify`)
+    }
 
     this.finishStep({
       btcScriptVerified: true,

@@ -32,7 +32,7 @@ class Room {
   }
 
   sendMessage(message) {
-    console.log('Room msg', message)
+    // console.log('Room msg', message)
     const { event, data } = message
 
     SwapApp.services.room.sendConfirmation(this.peer, {
