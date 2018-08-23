@@ -107,6 +107,7 @@ class Order {
         self.update({
           isProcessing: true,
           isRequested: false,
+          participant: SwapApp.services.auth.getPublicData(),
         })
 
         callback(true)
