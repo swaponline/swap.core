@@ -136,7 +136,8 @@ class Flow {
       ...(data || {}),
     }, true)
 
-    this.goStep(newStep)
+    if (this.steps.length > newStep)
+      this.goStep(newStep)
   }
 
   goStep(index) {
