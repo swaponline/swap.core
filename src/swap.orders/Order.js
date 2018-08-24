@@ -89,7 +89,6 @@ class Order {
 
     this.update({
       isRequested: true,
-      participant: SwapApp.services.auth.getPublicData(),
     })
 
     SwapApp.services.room.sendMessagePeer(this.owner.peer, {
