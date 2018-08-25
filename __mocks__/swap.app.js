@@ -84,10 +84,7 @@ const mockSwapApp = {
         eth: {
           address: '0xdadadadadadadadadadadadadadadadadadadada',
         },
-        btc: btcKey,
-        eos: {
-          getAccount: () => 'anyaccount'
-        }
+        btc: btcKey
       }
     },
     room,
