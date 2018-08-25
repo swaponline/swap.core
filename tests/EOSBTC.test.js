@@ -25,9 +25,12 @@ SwapApp.swaps['BTC'] = new BtcSwap({
 })
 
 const swapAccount = 'swaponline42'
+const userAccountKey = 'eos:account'
 SwapApp.swaps['EOS'] = new EosSwap({
-  swapAccount
+  swapAccount,
+  userAccountKey
 })
+SwapApp.services.env.storage.setItem(userAccountKey, 'userAccount')
 
 const order = (type, { orderID, eosOwner, btcOwner }) => {
   let order = {

@@ -14,20 +14,20 @@ class EosSwap extends SwapInterface {
 
     this.swapAccount = options.swapAccount
 
-    this.userAccount = SwapApp.services.auth.accounts.eos.getAccount()
+    this.eos = null
   }
 
   _initSwap() {
   }
 
   getAccounts = () => ({
-    userAccount: this.userAccount,
+    userAccount: SwapApp.services.auth.getPublicData().eos.address,
     swapAccount: this.swapAccount,
     tokenAccount: 'eosio.token'
   })
 
   getSwaps() {
-    return SwapApp.env.eos.getTableRows({
+    return this.eos.getTableRows({
       code: this.swapAccount,
       scope: this.swapAccount,
       table: 'swap',
@@ -35,89 +35,124 @@ class EosSwap extends SwapInterface {
     })
   }
 
-  async open({ participantAccount, secretHash, amount }) {
+  lazyInit() {
+    return SwapApp.env.eos.getInstance().then((eosInstance) => {
+      this.eos = eosInstance
+    })
+  }
+
+  open({ participantAccount, secretHash, amount }, finishCallback) {
     const { userAccount, swapAccount, tokenAccount } = this.getAccounts()
 
-    const swapID = (await this.getSwaps()).length || 0
-    const quantity = amountToAsset(amount)
+    return this.lazyInit()
+      .then(() => {
+        return this.getSwaps().then((swaps) => {
+          if (swaps && swaps.rows) {
+            return swaps.rows.length
+          } else {
+            return 0
+          }
+        })
+      })
+      .then((swapID) => {
+        const quantity = amountToAsset(amount)
+        
+        return this.eos.transaction({
+          actions: [
+            {
+              account: swapAccount,
+              name: 'open',
+              authorization: [{
+                actor: userAccount,
+                permission: 'active'
+              }],
+              data: {
+                secretHash,
+                eosOwner: userAccount,
+                btcOwner: participantAccount,
+                quantity: quantity
+              }
+            },
+            {
+              account: tokenAccount,
+              name: 'transfer',
+              authorization: [{
+                actor: userAccount,
+                permission: 'active'
+              }],
+              data: {
+                from: userAccount,
+                to: swapAccount,
+                quantity: quantity,
+                memo: swapID
+              }
+            }
+          ]
+        }).then((transaction) => {
+          const openTx = transaction.transaction_id
 
-    return SwapApp.env.eos.transaction({
-      actions: [
-        {
-          account: swapAccount,
-          name: 'open',
-          authorization: [{
-            actor: userAccount,
-            permission: 'active'
-          }],
-          data: {
-            secretHash,
-            eosOwner: userAccount,
-            btcOwner: participantAccount,
-            quantity: quantity
+          if (typeof finishCallback === 'function') {
+            finishCallback({ openTx, swapID })
           }
-        },
-        {
-          account: tokenAccount,
-          name: 'transfer',
-          authorization: [{
-            actor: userAccount,
-            permission: 'active'
-          }],
-          data: {
-            from: userAccount,
-            to: swapAccount,
-            quantity: quantity,
-            memo: swapID
-          }
-        }
-      ]
-    }).then(({ transaction_id }) => {
-      return {
-        openTx: transaction_id,
-        swapID
-      }
+          return { openTx, swapID }
+        })
     })
   }
 
-  withdraw({ swapID, secret }) {
+  withdraw({ swapID, secret }, finishCallback) {
     const { userAccount, swapAccount } = this.getAccounts()
 
-    return SwapApp.env.eos.transaction({
-      actions: [
-        {
-          account: swapAccount,
-          name: 'withdraw',
-          authorization: [{
-            actor: userAccount,
-            permission: 'active'
-          }],
-          data: {
-            swapID,
-            secret
+    return this.lazyInit().then(() => {
+      return this.eos.transaction({
+        actions: [
+          {
+            account: swapAccount,
+            name: 'withdraw',
+            authorization: [{
+              actor: userAccount,
+              permission: 'active'
+            }],
+            data: {
+              swapID,
+              secret
+            }
           }
+        ]
+      }).then((transaction) => {
+        const eosWithdrawTx = transaction.transaction_id
+
+        if (typeof finishCallback === 'function') {
+          finishCallback(eosWithdrawTx)
         }
-      ]
+        return eosWithdrawTx
+      })
     })
   }
 
-  refund({ swapID }) {
+  refund({ swapID }, finishCallback) {
     const { userAccount, swapAccount } = this.getAccounts()
 
-    return SwapApp.env.eos.transaction({
-      actions: [
-        {
-          account: swapAccount,
-          name: 'refund',
-          authorization: [{
-            actor: userAccount,
-            permission: 'active'
-          }],
-          data: {
-            swapID
+    this.lasyInit().then(() => {
+      this.eos.transaction({
+        actions: [
+          {
+            account: swapAccount,
+            name: 'refund',
+            authorization: [{
+              actor: userAccount,
+              permission: 'active'
+            }],
+            data: {
+              swapID
+            }
           }
+        ]
+      }).then((eosRefundTx) => {
+        if (typeof finishCallback === 'function') {
+          finishCallback(eosRefundTx)
         }
-      ]
+        return eosRefundTx
+      })
     })
   }
 
