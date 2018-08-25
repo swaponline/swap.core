@@ -4,5 +4,5 @@ export default {
   bitcoin: 'bitcoin',
   Ipfs: 'Ipfs',
   IpfsRoom: 'IpfsRoom',
-}
   storage: 'storage'
+}

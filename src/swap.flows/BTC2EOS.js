@@ -3,8 +3,14 @@ import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
 class BTC2EOS extends Flow {
+  static getName() {
+    return `${constants.COINS.btc}2${constants.COINS.eos}`
+  }
+
   constructor(swap) {
     super(swap)
+
+    this._flowName = BTC2EOS.getName()
 
     this.btcSwap = SwapApp.swaps[constants.COINS.btc]
     this.eosSwap = SwapApp.swaps[constants.COINS.eos]
@@ -25,6 +31,8 @@ class BTC2EOS extends Flow {
         btcWithdrawTx: null
       }
     }
+
+    this.listenRequests = {}
 
     super._persistSteps()
     super._persistState()
@@ -55,16 +63,8 @@ class BTC2EOS extends Flow {
           scriptValues,
           amount
         }, (createTx) => {
-          flow.swap.room.sendMessage({
-            event: 'create btc script',
-            data: {
-              scriptValues, createTx
-            }
-          })
-
-          flow.finishStep({
-            scriptValues, createTx
-          })
+          flow.finishStep({ scriptValues, createTx })
+          flow.send().btcScript()
         })
       },
       () => {
@@ -73,21 +73,14 @@ class BTC2EOS extends Flow {
         })
       },
       () => {
-        const { buyAmount, sellAmount } = flow.swap
         const { swapID, secret } = flow.state
 
         flow.eosSwap.withdraw({
           swapID,
           secret
-        }).then((eosWithdrawTx) => {
-          flow.swap.room.sendMessage({
-            event: 'eos withdraw',
-            data: {
-              eosWithdrawTx, secret
-            }
-          })
-
-          flow.finishStep({ eosWithdrawTx, secret })
+        }, (eosWithdrawTx) => {
+          flow.finishStep({ eosWithdrawTx })
+          flow.send().eosWithdraw()
         })
       },
       () => {
@@ -99,15 +92,17 @@ class BTC2EOS extends Flow {
   }
 
   needs() {
+    const flow = this
     const swap = this.swap
     return {
       secret: () => {
+        flow.updateListenRequests()
         return new Promise(resolve => {
             swap.events.once('submit secret', resolve)
-            swap.events.dispatch('request submit secret')
         })
       },
       openSwap: () => {
+        flow.updateListenRequests()
         return new Promise(resolve => {
           swap.room.once('open swap', resolve)
           swap.room.sendMessage({
@@ -116,11 +111,69 @@ class BTC2EOS extends Flow {
         })
       },
       btcWithdraw: () => {
+        flow.updateListenRequests()
         return new Promise(resolve => {
           swap.room.once('btc withdraw', resolve)
           swap.room.sendMessage({
             event: 'request btc withdraw'
           })
+        })
+      }
+    }
+  }
+
+  updateListenRequests() {
+    const flow = this
+    const state = this.state
+    const swap = this.swap
+
+    if (!flow.listenRequests['request create btc script']) {
+      if (state.scriptValues && state.createTx) {
+        swap.room.on('request create btc script', () => {
+          console.log('SEND BTC SCRIPT')
+
+          flow.send().btcScript()
+        })
+
+        flow.listenRequests['request create btc script'] = true
+      }
+    }
+
+    if (!flow.listenRequests['request eos withdraw']) {
+      if (state.eosWithdrawTx && state.secret) {
+        swap.room.on('request eos withdraw', () => {
+          flow.send().eosWithdraw()
+        })
+
+        flow.listenRequests['request eos withdraw']
+      }
+    }
+
+    console.log('listen requests', flow.listenRequests)
+  }
+
+  send() {
+    const state = this.state
+    const swap = this.swap
+    return {
+      btcScript: () => {
+        const { scriptValues, createTx } = state
+
+        swap.room.sendMessage({
+          event: 'create btc script',
+          data: {
+            scriptValues, createTx
+          }
+        })
+      },
+      eosWithdraw: () => {
+        const { eosWithdrawTx, secret } = state
+
+         swap.room.sendMessage({
+          event: 'eos withdraw',
+          data: {
+            eosWithdrawTx, secret
+          }
         })
       }
     }
