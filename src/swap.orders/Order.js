@@ -91,12 +91,14 @@ class Order {
       isRequested: true,
     })
 
+    const participant = SwapApp.services.auth.getPublicData()
+
     SwapApp.services.room.sendMessagePeer(this.owner.peer, {
       event: 'request swap',
       data: {
         orderId: this.id,
         // TODO why do we send this info?
-        participant: SwapApp.services.auth.getPublicData(),
+        participant,
       },
     })
 
@@ -107,6 +109,7 @@ class Order {
         self.update({
           isProcessing: true,
           isRequested: false,
+          participant
         })
 
         callback(true)
