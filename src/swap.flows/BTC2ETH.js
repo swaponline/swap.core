@@ -67,6 +67,7 @@ class BTC2ETH extends Flow {
 
       refundTxHex: null,
       isFinished: false,
+      isSwapExist: false,
     }
 
     super._persistSteps()
@@ -99,13 +100,22 @@ class BTC2ETH extends Flow {
         })
 
         flow.swap.room.once('swap exists', () => {
-          console.log(`swap already exists`)
+          flow.setState({
+            isSwapExist: true,
+          })
         })
 
-        // if I came late and he ALREADY send this, I request AGAIN
-        flow.swap.room.sendMessage({
-          event: 'request sign',
-        })
+        if (flow.state.isSwapExist) {
+          flow.swap.room.once('refund completed', () => {
+            flow.swap.room.sendMessage({
+              event: 'request sign',
+            })
+          })
+        } else {
+          flow.swap.room.sendMessage({
+            event: 'request sign',
+          })
+        }
       },
       // 2. Create secret, secret hash
 
@@ -347,6 +357,11 @@ class BTC2ETH extends Flow {
         isRefunded: true,
       })
     })
+      .then(() => {
+        this.setState({
+          isSwapExist: false,
+        })
+      })
   }
 }
 

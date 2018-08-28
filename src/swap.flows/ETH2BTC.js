@@ -69,6 +69,7 @@ class ETH2BTC extends Flow {
       isRefunded: false,
 
       isFinished: false,
+      isSwapExist: false,
     }
 
     super._persistSteps()
@@ -102,7 +103,7 @@ class ETH2BTC extends Flow {
         })
 
         flow.swap.room.sendMessage({
-          event: 'request btc script'
+          event: 'request btc script',
         })
         console.log(`request btc script`)
       },
@@ -258,43 +259,33 @@ class ETH2BTC extends Flow {
   }
 
   async sign() {
-    const { participant } = this.swap
-    const { isMeSigned } = this.state
-
-    if (isMeSigned) return this.swap.room.sendMessage({
-      event: 'swap sign',
-    })
-
     const swapExists = await this._checkSwapAlreadyExists()
 
     if (swapExists) {
       this.swap.room.sendMessage({
         event: 'swap exists',
       })
-      // TODO go to 6 step automatically here
-      throw new Error(`Cannot sign: swap with ${participant.eth.address} already exists! Please refund it or drop ${this.swap.id}`)
-      return false
-    }
 
-    this.setState({
-      isSignFetching: true,
-    })
-
-    this.swap.room.once('request sign', () => {
-      this.swap.room.sendMessage({
-        event: 'swap sign',
+      this.setState({
+        isSwapExist: true,
       })
-    })
+    } else {
+      this.setState({
+        isSignFetching: true,
+      })
 
-    this.swap.room.sendMessage({
-      event: 'swap sign',
-    })
+      this.swap.room.once('request sign', () => {
+        this.swap.room.sendMessage({
+          event: 'swap sign',
+        })
 
-    this.finishStep({
-      isMeSigned: true,
-    }, { step: 'sign' })
+        this.finishStep({
+          isMeSigned: true,
+        }, { step: 'sign' })
+      })
 
-    return true
+      return true
+    }
   }
 
 
@@ -400,6 +391,15 @@ class ETH2BTC extends Flow {
         isRefunded: true,
       })
     })
+      .then(() => {
+        this.swap.room.sendMessage({
+          event: 'refund completed',
+        })
+
+        this.setState({
+          isSwapExist: false,
+        })
+      })
   }
 }
 
