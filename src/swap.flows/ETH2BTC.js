@@ -125,7 +125,6 @@ class ETH2BTC extends Flow {
 
       async () => {
         const { participant, buyAmount, sellAmount } = flow.swap
-        let ethSwapCreationTransactionHash
 
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
@@ -151,7 +150,12 @@ class ETH2BTC extends Flow {
 
         try {
           await this.ethSwap.create(swapData, (hash) => {
-            ethSwapCreationTransactionHash = hash
+            flow.swap.room.sendMessage({
+              event: 'create eth contract',
+              data: {
+                ethSwapCreationTransactionHash: hash,
+              },
+            })
 
             flow.setState({
               ethSwapCreationTransactionHash: hash,
@@ -166,15 +170,6 @@ class ETH2BTC extends Flow {
           else
             return console.error(err)
         }
-
-        console.log(`create ETH contract, hash=${ethSwapCreationTransactionHash}`)
-
-        flow.swap.room.sendMessage({
-          event: 'create eth contract',
-          data: {
-            ethSwapCreationTransactionHash,
-          },
-        })
 
         console.log(`finish step`)
 
@@ -206,8 +201,6 @@ class ETH2BTC extends Flow {
 
       async () => {
         let { secret, btcScriptValues } = flow.state
-        console.log('secret withdraw 7', secret)
-        console.log('btcScriptValues withdraw 7', btcScriptValues)
 
         if (!btcScriptValues) {
           console.error('There is no "btcScriptValues" in state. No way to continue swap...')
