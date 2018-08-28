@@ -237,20 +237,16 @@ class BTC2ETH extends Flow {
           return
         }
 
-        let ethSwapWithdrawTransactionHash
-
         try {
           await flow.ethSwap.withdraw(data, (hash) => {
-            ethSwapWithdrawTransactionHash = hash
-            
             flow.setState({
-              ethSwapWithdrawTransactionHash,
+              ethSwapWithdrawTransactionHash: hash,
             })
 
             flow.swap.room.sendMessage({
               event: 'get ethSwapWithdrawTxHash',
               data: {
-                ethSwapWithdrawTransactionHash,
+                ethSwapWithdrawTransactionHash: hash,
               }
             })
 
