@@ -344,13 +344,9 @@ class BTC2ETH extends Flow {
     }, (hash) => {
       this.setState({
         refundTransactionHash: hash,
+        isRefunded: true,
       })
     })
-      .then(() => {
-        this.setState({
-          isRefunded: true,
-        })
-      })
   }
 }
 

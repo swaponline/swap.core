@@ -392,18 +392,14 @@ class ETH2BTC extends Flow {
   tryRefund() {
     const { participant } = this.swap
 
-    this.ethSwap.refund({
+    return this.ethSwap.refund({
       participantAddress: participant.eth.address,
     }, (hash) => {
       this.setState({
         refundTransactionHash: hash,
+        isRefunded: true,
       })
     })
-      .then(() => {
-        this.setState({
-          isRefunded: true,
-        })
-      })
   }
 }
 
