@@ -9,4 +9,5 @@ export default {
   jot: 'JOT',
   swap: 'SWAP',
   btrm: 'BTRM',
+  drt: 'DRT',
 }
