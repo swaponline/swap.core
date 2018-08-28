@@ -185,43 +185,17 @@ class ETH2BTC extends Flow {
       // 6. Wait participant withdraw
 
       () => {
-        const { participant } = flow.swap
-        let timer
+        flow.swap.room.once('get ethSwapWithdrawTxHash', async ({ ethSwapWithdrawTransactionHash }) => {
+          flow.setState({
+            ethSwapWithdrawTransactionHash,
+          })
 
-        const checkSecretExist = () => {
-          timer = setTimeout(async () => {
-            let secret
+          const secret = await flow.ethSwap.getSecretOfTxHash(ethSwapWithdrawTransactionHash)
 
-            try {
-              secret = await flow.ethSwap.getSecret({
-                participantAddress: participant.eth.address,
-              })
-            }
-            catch (err) {}
-
-            if (secret) {
-              if (!flow.state.isEthWithdrawn) { // redundant condition but who cares :D
-                flow.finishStep({
-                  isEthWithdrawn: true,
-                  secret,
-                }, { step: 'wait-withdraw-eth' })
-              }
-            }
-            else {
-              checkSecretExist()
-            }
-          }, 20 * 1000)
-        }
-
-        checkSecretExist()
-
-        flow.swap.room.once('finish eth withdraw', () => {
-          if (!flow.state.isEthWithdrawn) {
-            clearTimeout(timer)
-            timer = null
-
+          if (!flow.state.isEthWithdrawn && secret) {
             flow.finishStep({
               isEthWithdrawn: true,
+              secret,
             }, { step: 'wait-withdraw-eth' })
           }
         })
@@ -230,52 +204,12 @@ class ETH2BTC extends Flow {
       // 7. Withdraw
 
       async () => {
-        const { participant } = flow.swap
         let { secret, btcScriptValues } = flow.state
         console.log('secret withdraw 7', secret)
         console.log('btcScriptValues withdraw 7', btcScriptValues)
 
         if (!btcScriptValues) {
           console.error('There is no "btcScriptValues" in state. No way to continue swap...')
-          return
-        }
-
-        // if there is no secret in state then request it
-        if (!secret) {
-          try {
-            secret = await flow.ethSwap.getSecret({
-              participantAddress: participant.eth.address,
-            })
-
-            flow.setState({
-              secret,
-            })
-          }
-          catch (err) {
-            // TODO user can stuck here after page reload...
-            if ( !/known transaction/.test(err.message) )
-              return console.error(err)
-          }
-        }
-
-        // if there is still no secret stop withdraw
-        if (!secret) {
-          // if there is no secret then there is a chance that user have already did withdraw, if balance === 0 it's ok
-          const balance = await flow.btcSwap.getBalance(btcScriptValues)
-
-          console.log('balance', balance)
-
-          if (balance === 0) {
-            console.log('Look like you already did withdraw')
-
-            flow.finishStep({
-              isBtcWithdrawn: true,
-            }, { step: 'withdraw-btc' })
-
-            return
-          }
-
-          console.error(`FAIL! secret: ${secret}, balance: ${balance}`)
           return
         }
 

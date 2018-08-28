@@ -237,11 +237,23 @@ class BTC2ETH extends Flow {
           return
         }
 
+        let ethSwapWithdrawTransactionHash
+
         try {
           await flow.ethSwap.withdraw(data, (hash) => {
+            ethSwapWithdrawTransactionHash = hash
+            
             flow.setState({
-              ethSwapWithdrawTransactionHash: hash,
+              ethSwapWithdrawTransactionHash,
             })
+
+            flow.swap.room.sendMessage({
+              event: 'get ethSwapWithdrawTxHash',
+              data: {
+                ethSwapWithdrawTransactionHash,
+              }
+            })
+
           })
         } catch (err) {
           // TODO user can stuck here after page reload...
@@ -280,9 +292,7 @@ class BTC2ETH extends Flow {
   }
 
   submitSecret(secret) {
-    if (this.state.secret) return true
-    if (!this.state.isParticipantSigned)
-      throw new Error(`Cannot proceed: participant not signed. step=${this.state.step}`)
+    if (this.state.secret) { return }
 
     const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
@@ -290,8 +300,6 @@ class BTC2ETH extends Flow {
       secret,
       secretHash,
     }, { step: 'submit-secret' })
-
-    return true
   }
 
   async syncBalance() {
