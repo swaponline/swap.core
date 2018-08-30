@@ -1,6 +1,7 @@
 export default {
   eth: 'ETH',
   btc: 'BTC',
+  eos: 'EOS',
   nim: 'NIM',
 
   // ETH Tokens
