@@ -274,7 +274,9 @@ class BTC2ETH extends Flow {
         flow.swap.room.on('request ethWithdrawTxHash', () => {
           flow.swap.room.sendMessage({
             event: 'ethWithdrawTxHash',
-            data: this.state.ethSwapWithdrawTransactionHash,
+            data: {
+              ethSwapWithdrawTransactionHash: flow.state.ethSwapWithdrawTransactionHash,
+            },
           })
         })
 
