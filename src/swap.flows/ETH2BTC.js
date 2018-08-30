@@ -105,7 +105,6 @@ class ETH2BTC extends Flow {
         flow.swap.room.sendMessage({
           event: 'request btc script',
         })
-        console.log(`request btc script`)
       },
 
       // 3. Verify BTC Script
@@ -181,12 +180,12 @@ class ETH2BTC extends Flow {
       // 6. Wait participant withdraw
 
       () => {
-        flow.swap.room.once('get ethSwapWithdrawTxHash', async ({ ethSwapWithdrawTransactionHash }) => {
+        flow.swap.room.once('ethWithdrawTxHash', async ({ ethSwapWithdrawTransactionHash }) => {
           flow.setState({
             ethSwapWithdrawTransactionHash,
           })
 
-          const secret = await flow.ethSwap.getSecretOfTxHash(ethSwapWithdrawTransactionHash)
+          const secret = await flow.ethSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
 
           if (!flow.state.isEthWithdrawn && secret) {
             flow.finishStep({
@@ -195,6 +194,12 @@ class ETH2BTC extends Flow {
             }, { step: 'wait-withdraw-eth' })
           }
         })
+
+        flow.swap.room.sendMessage({
+          event: 'request ethWithdrawTxHash',
+        })
+
+
       },
 
       // 7. Withdraw

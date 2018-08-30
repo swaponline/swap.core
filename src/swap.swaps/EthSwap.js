@@ -1,4 +1,4 @@
-import SwapApp, { SwapInterface, constants } from 'swap.app'
+import SwapApp, {constants, SwapInterface} from 'swap.app'
 import BigNumber from 'bignumber.js'
 import InputDataDecoder from 'ethereum-input-data-decoder'
 
@@ -148,20 +148,25 @@ class EthSwap extends SwapInterface {
    *
    * @param {number} repeat
    * @param {function} action
-   * @returns {string}
+   * @param delay
+   * @returns {Promise<any>}
    */
-  repeatToTheResult = async (repeat, action) => {
-    let result = await action()
+  repeatToTheResult = (repeat, action, delay = 5000) =>
+    new Promise(async (resolve, reject) => {
+      let result = await action()
 
-    if (repeat > 0 && (result === 0 || typeof result === 'undefined' || result === null)) {
-      repeat--
-      setTimeout(async () => {
-       result = await this.repeatToTheResult(repeat, action)
-      }, 5000)
-    }
-
-    return result
-  }
+      if (result === 0 || typeof result === 'undefined' || result === null) {
+        if (repeat > 0) {
+          repeat--
+          setTimeout(async () => {
+            result = await this.repeatToTheResult(repeat, action)
+            resolve(result)
+          }, delay)
+        }
+      } else {
+        resolve(result)
+      }
+    })
 
 
   /**
@@ -277,12 +282,12 @@ class EthSwap extends SwapInterface {
    * @param {string} transactionHash
    * @returns {String}
    */
-  getSecretOfTxHash = (transactionHash) =>
+  getSecretFromTxhash = (transactionHash) =>
     this.repeatToTheResult(9, () => SwapApp.env.web3.eth.getTransaction(transactionHash)
       .then(txResult => {
         const bytes32 = this.decoder.decodeData(txResult.input)
-        const result  = SwapApp.env.web3.utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
-        return result
+        // delete ETH protocol and get secret
+        return SwapApp.env.web3.utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
       }))
 
   /**

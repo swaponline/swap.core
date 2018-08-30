@@ -13,7 +13,7 @@ class Room {
 
 
   getOnlineParticipant =  () => {
-    const online = SwapApp.services.room.hasPeer(this.peer)
+    const online = SwapApp.services.room.connection.hasPeer(this.peer)
 
     if (!online) {
       this._events.dispatch('participant is offline', this.peer)
@@ -44,7 +44,7 @@ class Room {
   }
 
   sendMessage(message) {
-    if (!this.getOnlineParticipant) {
+    if (!this.getOnlineParticipant()) {
       setTimeout(() => {
         this.sendMessage(message)
       }, 3000)

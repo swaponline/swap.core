@@ -254,7 +254,7 @@ class BTC2ETH extends Flow {
             })
 
             flow.swap.room.sendMessage({
-              event: 'get ethSwapWithdrawTxHash',
+              event: 'ethWithdrawTxHash',
               data: {
                 ethSwapWithdrawTransactionHash: hash,
               }
@@ -270,6 +270,13 @@ class BTC2ETH extends Flow {
           else
             return console.error(err)
         }
+
+        flow.swap.room.on('request ethWithdrawTxHash', () => {
+          flow.swap.room.sendMessage({
+            event: 'ethWithdrawTxHash',
+            data: this.state.ethSwapWithdrawTransactionHash,
+          })
+        })
 
         flow.swap.room.sendMessage({
           event: 'finish eth withdraw',
@@ -299,6 +306,10 @@ class BTC2ETH extends Flow {
 
   submitSecret(secret) {
     if (this.state.secret) { return }
+
+    if (!this.state.isParticipantSigned) {
+      throw new Error(`Cannot proceed: participant not signed. step=${this.state.step}`)
+    }
 
     const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
