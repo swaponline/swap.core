@@ -278,15 +278,18 @@ class EthSwap extends SwapInterface {
 
 
 /*
-  Function: withdraw(bytes32 _secret, address _ownerAddress)
-  bytes32 {...}
-  inputs: (2) […]
-    0: Uint8Array(32) [ 208, 202, 170, … ]
-    1: "e918c8719bae0525786548b8da7fbef9b33d4e25"
-  name: "withdraw"
-  types: (2) […]
-    0: "bytes32"
-    1: "address"
+  const bytes32 = this.decoder.decodeData(txResult.input)
+  const raw_secret = bytes32.inputs[0]
+  const hex_secret = SwapApp.env.web3.utils.bytesToHex(raw_secret)
+  return hex_secret.replace('0x','')
+  bytes32 {…}
+    inputs: (2) […]
+      0: Uint8Array(32) [ 208, 202, 170, … ]
+      1: "e918c8719bae0525786548b8da7fbef9b33d4e25"
+    name: "withdraw"
+    types: (2) […]
+      0: "bytes32"
+      1: "address"
 */
 
   /**
@@ -298,8 +301,7 @@ class EthSwap extends SwapInterface {
     this.repeatToTheResult(9, () => SwapApp.env.web3.eth.getTransaction(transactionHash)
       .then(txResult => {
         const bytes32 = this.decoder.decodeData(txResult.input)
-        console.log('bytes32', bytes32)
-        return SwapApp.env.web3.utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
+        return SwapApp.env.web3.utils.bytesToHex(bytes32.inputs[0]).replace('0x','')
       }))
 
   /**
