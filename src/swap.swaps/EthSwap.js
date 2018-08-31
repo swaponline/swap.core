@@ -1,5 +1,7 @@
-import SwapApp, { SwapInterface, constants } from 'swap.app'
+import SwapApp, {constants, SwapInterface} from 'swap.app'
 import BigNumber from 'bignumber.js'
+import InputDataDecoder from 'ethereum-input-data-decoder'
+
 
 class EthSwap extends SwapInterface {
 
@@ -34,6 +36,7 @@ class EthSwap extends SwapInterface {
   }
 
   _initSwap() {
+    this.decoder  = new InputDataDecoder(this.abi)
     this.contract = new SwapApp.env.web3.eth.Contract(this.abi, this.address)
   }
 
@@ -140,6 +143,32 @@ class EthSwap extends SwapInterface {
     })
   }
 
+
+  /**
+   *
+   * @param {number} repeat
+   * @param {function} action
+   * @param delay
+   * @returns {Promise<any>}
+   */
+  repeatToTheResult = (repeat, action, delay = 5000) =>
+    new Promise(async (resolve, reject) => {
+      let result = await action()
+
+      if (result === 0 || typeof result === 'undefined' || result === null) {
+        if (repeat > 0) {
+          repeat--
+          setTimeout(async () => {
+            result = await this.repeatToTheResult(repeat, action)
+            resolve(result)
+          }, delay)
+        }
+      } else {
+        resolve(result)
+      }
+    })
+
+
   /**
    *
    * @param {object} data
@@ -149,7 +178,8 @@ class EthSwap extends SwapInterface {
    */
   async checkBalance(data) {
     const { ownerAddress, expectedValue } = data
-    const balance = await this.getBalance({ ownerAddress })
+    let balance = await this.repeatToTheResult(9, () => this.getBalance({ ownerAddress }))
+
 
     if (expectedValue.isGreaterThan(balance)) {
       return `Expected value: ${expectedValue.toNumber()}, got: ${balance}`
@@ -234,6 +264,8 @@ class EthSwap extends SwapInterface {
           from: SwapApp.services.auth.accounts.eth.address,
         })
 
+        console.log('secret ethswap.js', secret)
+
         const secretValue = secret && !/^0x0+/.test(secret) ? secret : null
 
         resolve(secretValue)
@@ -243,6 +275,32 @@ class EthSwap extends SwapInterface {
       }
     })
   }
+
+
+/*
+  Function: withdraw(bytes32 _secret, address _ownerAddress)
+  bytes32 {...}
+  inputs: (2) […]
+    0: Uint8Array(32) [ 208, 202, 170, … ]
+    1: "e918c8719bae0525786548b8da7fbef9b33d4e25"
+  name: "withdraw"
+  types: (2) […]
+    0: "bytes32"
+    1: "address"
+*/
+
+  /**
+   *
+   * @param {string} transactionHash
+   * @returns {Promise<any>}
+   */
+  getSecretFromTxhash = (transactionHash) =>
+    this.repeatToTheResult(9, () => SwapApp.env.web3.eth.getTransaction(transactionHash)
+      .then(txResult => {
+        const bytes32 = this.decoder.decodeData(txResult.input)
+        console.log('bytes32', bytes32)
+        return SwapApp.env.web3.utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
+      }))
 
   /**
    *
