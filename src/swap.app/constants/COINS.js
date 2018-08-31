@@ -3,6 +3,7 @@ export default {
   btc: 'BTC',
   eos: 'EOS',
   nim: 'NIM',
+  usdt: 'USDT',
 
   // ETH Tokens
   noxon: 'NOXON',

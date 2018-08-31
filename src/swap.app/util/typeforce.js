@@ -23,6 +23,7 @@ const isCoinAddress = {
   [constants.COINS.nim]: (value) => typeof value === 'string' && /^0x[A-Fa-f0-9]{40}$/.test(value),
   [constants.COINS.noxon]: (value) => typeof value === 'string' && /^0x[A-Fa-f0-9]{40}$/.test(value),
   [constants.COINS.swap]: (value) => typeof value === 'string' && /^0x[A-Fa-f0-9]{40}$/.test(value),
+  [constants.COINS.usdt]: (value) => typeof value === 'string',
 }
 
 const isPublicKey = {
@@ -32,6 +33,7 @@ const isPublicKey = {
   [constants.COINS.nim]: '?String', // TODO we don't have / use nim publicKey
   [constants.COINS.noxon]: '?String', // TODO we don't have / use nim publicKey
   [constants.COINS.swap]: '?String', // TODO we don't have / use nim publicKey
+  [constants.COINS.usdt]: '?String', // TODO we don't have / use nim publicKey
 }
 
 

@@ -67,6 +67,7 @@ class BTC2ETH extends Flow {
 
       refundTxHex: null,
       isFinished: false,
+      isSwapExist: false,
     }
 
     super._persistSteps()
@@ -99,13 +100,22 @@ class BTC2ETH extends Flow {
         })
 
         flow.swap.room.once('swap exists', () => {
-          console.log(`swap already exists`)
+          flow.setState({
+            isSwapExist: true,
+          })
         })
 
-        // if I came late and he ALREADY send this, I request AGAIN
-        flow.swap.room.sendMessage({
-          event: 'request sign',
-        })
+        if (flow.state.isSwapExist) {
+          flow.swap.room.once('refund completed', () => {
+            flow.swap.room.sendMessage({
+              event: 'request sign',
+            })
+          })
+        } else {
+          flow.swap.room.sendMessage({
+            event: 'request sign',
+          })
+        }
       },
       // 2. Create secret, secret hash
 
@@ -242,6 +252,14 @@ class BTC2ETH extends Flow {
             flow.setState({
               ethSwapWithdrawTransactionHash: hash,
             })
+
+            flow.swap.room.sendMessage({
+              event: 'ethWithdrawTxHash',
+              data: {
+                ethSwapWithdrawTransactionHash: hash,
+              }
+            })
+
           })
         } catch (err) {
           // TODO user can stuck here after page reload...
@@ -252,6 +270,15 @@ class BTC2ETH extends Flow {
           else
             return console.error(err)
         }
+
+        flow.swap.room.on('request ethWithdrawTxHash', () => {
+          flow.swap.room.sendMessage({
+            event: 'ethWithdrawTxHash',
+            data: {
+              ethSwapWithdrawTransactionHash: flow.state.ethSwapWithdrawTransactionHash,
+            },
+          })
+        })
 
         flow.swap.room.sendMessage({
           event: 'finish eth withdraw',
@@ -280,9 +307,11 @@ class BTC2ETH extends Flow {
   }
 
   submitSecret(secret) {
-    if (this.state.secret) return true
-    if (!this.state.isParticipantSigned)
+    if (this.state.secret) { return }
+
+    if (!this.state.isParticipantSigned) {
       throw new Error(`Cannot proceed: participant not signed. step=${this.state.step}`)
+    }
 
     const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
@@ -290,8 +319,6 @@ class BTC2ETH extends Flow {
       secret,
       secretHash,
     }, { step: 'submit-secret' })
-
-    return true
   }
 
   async syncBalance() {
@@ -340,11 +367,12 @@ class BTC2ETH extends Flow {
     }, (hash) => {
       this.setState({
         refundTransactionHash: hash,
+        isRefunded: true,
       })
     })
       .then(() => {
         this.setState({
-          isRefunded: true,
+          isSwapExist: false,
         })
       })
   }
