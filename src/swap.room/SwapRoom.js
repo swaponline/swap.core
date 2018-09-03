@@ -89,7 +89,6 @@ class SwapRoom extends ServiceInterface {
   }
 
   _handleNewMessage = (message) => {
-    // console.log('_handleNewMessage', message)
     const { from, data: rawData } = message
 
     if (from === this.peer) {
@@ -104,8 +103,6 @@ class SwapRoom extends ServiceInterface {
     catch (err) {
       console.error('parse message data err:', err)
     }
-
-    // console.log('_handleNewMessage parsed data', parsedData)
 
     const { fromAddress, data, sign, event, action } = parsedData
 
@@ -123,8 +120,6 @@ class SwapRoom extends ServiceInterface {
     if (action === 'active') {
       this.acknowledgeReceipt(parsedData)
     }
-
-    console.log('data', data)
 
     this._events.dispatch(event, {
       fromPeer: from,
@@ -160,8 +155,6 @@ class SwapRoom extends ServiceInterface {
   }
 
   _signMessage(message) {
-    // console.log('message sign', message)
-
     const hash  = SwapApp.env.web3.utils.soliditySha3(JSON.stringify(message))
     const sign  = SwapApp.env.web3.eth.accounts.sign(hash, SwapApp.services.auth.accounts.eth.privateKey)
 
@@ -233,7 +226,6 @@ class SwapRoom extends ServiceInterface {
       return
     }
 
-    // console.log('acknowledgeReceipt', message)
     const { fromAddress, data } = message
 
     this.sendMessagePeer(fromAddress, {
@@ -251,8 +243,6 @@ class SwapRoom extends ServiceInterface {
       }
       return
     }
-
-    // console.log('sendMessagePeer', message)
 
     const { data, event }  = message
     const sign = this._signMessage(data)

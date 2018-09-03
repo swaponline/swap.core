@@ -1,16 +1,34 @@
 import bitcoin from 'bitcoinjs-lib'
 import Events from 'swap.app/Events'
 import EventEmitter from 'events'
+import Eos from "eosjs"
 
 let storage = {}
 
 let room = new EventEmitter()
 room.sendMessage = jest.fn()
 room.unsubscribe = jest.fn()
-room.sendConfirmation = jest.fn()
+room.sendConfirmation = jest.fn((peer, values) => {
+  room.emit(values.event, {
+    ...values.data, ...{
+      fromPeer: peer,
+      swapId: values.data.swapId
+    }
+  })
+})
 
 const btcKey = bitcoin.ECPair.fromWIF('KwMUy5TKPK51UTF7MFZWtdkWe4DV1uWQVcSc9Jz6g51MCn8jTSQd')
 btcKey.getPublicKey = () => btcKey.getPublicKeyBuffer().toString('hex')
+
+const eosMockProvider = () => {
+  return Eos({
+    mockTransactions: 'pass',
+    httpEndpoint: 'https://jungle.eosio.cr',
+    chainId: '038f4b0fc8ff18a4f0842a8f0564611f6e96e8535901dd45e43ac8691a1c4dca',
+    keyProvider: '5K7B6Pgwkv4Yydmw94Hk95uZnW2T4PMNRMKoJzAbfKPRQRkEcEm',
+    verbose: true
+  })
+}
 
 const mockSwapApp = {
   isMainNet: () => true,
@@ -57,7 +75,8 @@ const mockSwapApp = {
     storage: {
       getItem: (key) => storage[key],
       setItem: (key, value) => storage[key] = value,
-    }
+    },
+    eos: eosMockProvider()
   },
   services: {
     auth: {
@@ -65,7 +84,7 @@ const mockSwapApp = {
         eth: {
           address: '0xdadadadadadadadadadadadadadadadadadadada',
         },
-        btc: btcKey,
+        btc: btcKey
       }
     },
     room,
@@ -82,7 +101,7 @@ const SwapInterface = function () {
 }
 
 const constants = {
-  COINS: { btc: 'BTC', eth: 'ETH', swap: 'SWAP', usdt: 'USDT' },
+  COINS: { btc: 'BTC', eth: 'ETH', swap: 'SWAP', usdt: 'USDT', eos: 'EOS' },
 }
 
 export default mockSwapApp

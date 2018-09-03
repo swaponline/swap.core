@@ -69,6 +69,7 @@ class ETH2BTC extends Flow {
       isRefunded: false,
 
       isFinished: false,
+      isSwapExist: false,
     }
 
     super._persistSteps()
@@ -102,9 +103,8 @@ class ETH2BTC extends Flow {
         })
 
         flow.swap.room.sendMessage({
-          event: 'request btc script'
+          event: 'request btc script',
         })
-        console.log(`request btc script`)
       },
 
       // 3. Verify BTC Script
@@ -124,7 +124,6 @@ class ETH2BTC extends Flow {
 
       async () => {
         const { participant, buyAmount, sellAmount } = flow.swap
-        let ethSwapCreationTransactionHash
 
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
@@ -150,7 +149,12 @@ class ETH2BTC extends Flow {
 
         try {
           await this.ethSwap.create(swapData, (hash) => {
-            ethSwapCreationTransactionHash = hash
+            flow.swap.room.sendMessage({
+              event: 'create eth contract',
+              data: {
+                ethSwapCreationTransactionHash: hash,
+              },
+            })
 
             flow.setState({
               ethSwapCreationTransactionHash: hash,
@@ -166,15 +170,6 @@ class ETH2BTC extends Flow {
             return console.error(err)
         }
 
-        console.log(`create ETH contract, hash=${ethSwapCreationTransactionHash}`)
-
-        flow.swap.room.sendMessage({
-          event: 'create eth contract',
-          data: {
-            ethSwapCreationTransactionHash,
-          },
-        })
-
         console.log(`finish step`)
 
         flow.finishStep({
@@ -185,97 +180,35 @@ class ETH2BTC extends Flow {
       // 6. Wait participant withdraw
 
       () => {
-        const { participant } = flow.swap
-        let timer
+        flow.swap.room.once('ethWithdrawTxHash', async ({ ethSwapWithdrawTransactionHash }) => {
+          flow.setState({
+            ethSwapWithdrawTransactionHash,
+          })
 
-        const checkSecretExist = () => {
-          timer = setTimeout(async () => {
-            let secret
+          const secret = await flow.ethSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
 
-            try {
-              secret = await flow.ethSwap.getSecret({
-                participantAddress: participant.eth.address,
-              })
-            }
-            catch (err) {}
-
-            if (secret) {
-              if (!flow.state.isEthWithdrawn) { // redundant condition but who cares :D
-                flow.finishStep({
-                  isEthWithdrawn: true,
-                  secret,
-                }, { step: 'wait-withdraw-eth' })
-              }
-            }
-            else {
-              checkSecretExist()
-            }
-          }, 20 * 1000)
-        }
-
-        checkSecretExist()
-
-        flow.swap.room.once('finish eth withdraw', () => {
-          if (!flow.state.isEthWithdrawn) {
-            clearTimeout(timer)
-            timer = null
-
+          if (!flow.state.isEthWithdrawn && secret) {
             flow.finishStep({
               isEthWithdrawn: true,
+              secret,
             }, { step: 'wait-withdraw-eth' })
           }
         })
+
+        flow.swap.room.sendMessage({
+          event: 'request ethWithdrawTxHash',
+        })
+
+
       },
 
       // 7. Withdraw
 
       async () => {
-        const { participant } = flow.swap
         let { secret, btcScriptValues } = flow.state
-        console.log('secret withdraw 7', secret)
-        console.log('btcScriptValues withdraw 7', btcScriptValues)
 
         if (!btcScriptValues) {
           console.error('There is no "btcScriptValues" in state. No way to continue swap...')
-          return
-        }
-
-        // if there is no secret in state then request it
-        if (!secret) {
-          try {
-            secret = await flow.ethSwap.getSecret({
-              participantAddress: participant.eth.address,
-            })
-
-            flow.setState({
-              secret,
-            })
-          }
-          catch (err) {
-            // TODO user can stuck here after page reload...
-            if ( !/known transaction/.test(err.message) )
-              return console.error(err)
-          }
-        }
-
-        // if there is still no secret stop withdraw
-        if (!secret) {
-          // if there is no secret then there is a chance that user have already did withdraw, if balance === 0 it's ok
-          const balance = await flow.btcSwap.getBalance(btcScriptValues)
-
-          console.log('balance', balance)
-
-          if (balance === 0) {
-            console.log('Look like you already did withdraw')
-
-            flow.finishStep({
-              isBtcWithdrawn: true,
-            }, { step: 'withdraw-btc' })
-
-            return
-          }
-
-          console.error(`FAIL! secret: ${secret}, balance: ${balance}`)
           return
         }
 
@@ -324,43 +257,33 @@ class ETH2BTC extends Flow {
   }
 
   async sign() {
-    const { participant } = this.swap
-    const { isMeSigned } = this.state
-
-    if (isMeSigned) return this.swap.room.sendMessage({
-      event: 'swap sign',
-    })
-
     const swapExists = await this._checkSwapAlreadyExists()
 
     if (swapExists) {
       this.swap.room.sendMessage({
         event: 'swap exists',
       })
-      // TODO go to 6 step automatically here
-      throw new Error(`Cannot sign: swap with ${participant.eth.address} already exists! Please refund it or drop ${this.swap.id}`)
-      return false
-    }
 
-    this.setState({
-      isSignFetching: true,
-    })
-
-    this.swap.room.once('request sign', () => {
-      this.swap.room.sendMessage({
-        event: 'swap sign',
+      this.setState({
+        isSwapExist: true,
       })
-    })
+    } else {
+      this.setState({
+        isSignFetching: true,
+      })
 
-    this.swap.room.sendMessage({
-      event: 'swap sign',
-    })
+      this.swap.room.once('request sign', () => {
+        this.swap.room.sendMessage({
+          event: 'swap sign',
+        })
 
-    this.finishStep({
-      isMeSigned: true,
-    }, { step: 'sign' })
+        this.finishStep({
+          isMeSigned: true,
+        }, { step: 'sign' })
+      })
 
-    return true
+      return true
+    }
   }
 
 
@@ -462,16 +385,21 @@ class ETH2BTC extends Flow {
   tryRefund() {
     const { participant } = this.swap
 
-    this.ethSwap.refund({
+    return this.ethSwap.refund({
       participantAddress: participant.eth.address,
     }, (hash) => {
       this.setState({
         refundTransactionHash: hash,
+        isRefunded: true,
       })
     })
       .then(() => {
+        this.swap.room.sendMessage({
+          event: 'refund completed',
+        })
+
         this.setState({
-          isRefunded: true,
+          isSwapExist: false,
         })
       })
   }

@@ -1,4 +1,4 @@
-import SwapApp from 'swap.app'
+import SwapApp, { Events } from 'swap.app'
 
 
 class Room {
@@ -6,8 +6,20 @@ class Room {
   // TODO add destroy method with all events unsubscribe (when swap is finished)
 
   constructor({ swapId, participantPeer }) {
-    this.swapId = swapId
-    this.peer = participantPeer
+    this.swapId           = swapId
+    this.peer  = participantPeer
+    this._events          = new Events()
+  }
+
+
+  getOnlineParticipant =  () => {
+    const online = SwapApp.services.room.connection.hasPeer(this.peer)
+
+    if (!online) {
+      this._events.dispatch('participant is offline', this.peer)
+    }
+
+    return online
   }
 
   on(eventName, handler) {
@@ -32,7 +44,12 @@ class Room {
   }
 
   sendMessage(message) {
-    // console.log('Room msg', message)
+    if (!this.getOnlineParticipant()) {
+      setTimeout(() => {
+        this.sendMessage(message)
+      }, 3000)
+    }
+
     const { event, data } = message
 
     SwapApp.services.room.sendConfirmation(this.peer, {
