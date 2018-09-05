@@ -37,6 +37,7 @@ class EosSwap extends SwapInterface {
 
   lazyInit() {
     return SwapApp.env.eos.getInstance().then((eosInstance) => {
+      console.log('lazyInit() then', eosInstance)
       this.eos = eosInstance
     })
   }
@@ -44,8 +45,13 @@ class EosSwap extends SwapInterface {
   open({ participantAccount, secretHash, amount }, finishCallback) {
     const { userAccount, swapAccount, tokenAccount } = this.getAccounts()
 
+    console.log('open userAccount', userAccount)
+    console.log('open swapAccount', swapAccount)
+    console.log('open tokenAccount', tokenAccount)
+
     return this.lazyInit()
       .then(() => {
+        console.log('lazyInit then')
         return this.getSwaps().then((swaps) => {
           if (swaps && swaps.rows) {
             return swaps.rows.length
@@ -56,7 +62,8 @@ class EosSwap extends SwapInterface {
       })
       .then((swapID) => {
         const quantity = amountToAsset(amount)
-        
+        console.log('swapID then')
+
         return this.eos.transaction({
           actions: [
             {
@@ -90,7 +97,7 @@ class EosSwap extends SwapInterface {
           ]
         }).then((transaction) => {
           const openTx = transaction.transaction_id
-
+          console.log('transaction then')
           if (typeof finishCallback === 'function') {
             finishCallback({ openTx, swapID })
           }
@@ -101,6 +108,9 @@ class EosSwap extends SwapInterface {
 
   withdraw({ swapID, secret }, finishCallback) {
     const { userAccount, swapAccount } = this.getAccounts()
+
+    console.log('withdraw userAccount', userAccount)
+    console.log('withdraw swapAccount', swapAccount)
 
     return this.lazyInit().then(() => {
       return this.eos.transaction({

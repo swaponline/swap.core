@@ -40,6 +40,11 @@ class EthSwap extends SwapInterface {
     this.contract = new SwapApp.env.web3.eth.Contract(this.abi, this.address)
   }
 
+  async updateGas() {
+    this.gasPrice = await SwapApp.env.web3.eth.getGasPrice((err, _gasPrice) =>
+      parseInt(_gasPrice.toString(10)) + parseInt(1300000000))
+  }
+
   /**
    *
    * @param {object} data
@@ -49,8 +54,10 @@ class EthSwap extends SwapInterface {
    * @param {function} handleTransactionHash
    * @returns {Promise}
    */
-  create(data, handleTransactionHash) {
+  async create(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount } = data
+
+    await this.updateGas()
 
     const base = BigNumber(10).pow(18)
     const newAmount = new BigNumber(amount.toString()).times(base).integerValue().toNumber()
@@ -87,8 +94,7 @@ class EthSwap extends SwapInterface {
    * @param {string} value
    */
   addGasPrice = (value) => {
-    value = value.toNumber()
-    this.gasPrice = value
+    this.gasPrice = Number(value)
   }
 
   /**
@@ -194,8 +200,10 @@ class EthSwap extends SwapInterface {
    * @param {function} handleTransactionHash
    * @returns {Promise}
    */
-  withdraw(data, handleTransactionHash) {
+  async withdraw(data, handleTransactionHash) {
     const { ownerAddress, secret } = data
+
+    await this.updateGas()
 
     return new Promise(async (resolve, reject) => {
       const _secret = `0x${secret.replace(/^0x/, '')}`
@@ -203,6 +211,7 @@ class EthSwap extends SwapInterface {
       const params = {
         from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
+        gasPrice: this.gasPrice,
       }
 
       const receipt = await this.contract.methods.withdraw(_secret, ownerAddress).send(params)
@@ -226,13 +235,16 @@ class EthSwap extends SwapInterface {
    * @param {function} handleTransactionHash
    * @returns {Promise}
    */
-  refund(data, handleTransactionHash) {
+  async refund(data, handleTransactionHash) {
     const { participantAddress } = data
+
+    await this.updateGas()
 
     return new Promise(async (resolve, reject) => {
       const params = {
         from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
+        gasPrice: this.gasPrice,
       }
 
       const receipt = await this.contract.methods.refund(participantAddress).send(params)
@@ -309,13 +321,16 @@ class EthSwap extends SwapInterface {
    * @param handleTransactionHash
    * @returns {Promise}
    */
-  close(data, handleTransactionHash) {
+  async close(data, handleTransactionHash) {
     const { participantAddress } = data
+
+    await this.updateGas()
 
     return new Promise(async (resolve, reject) => {
       const params = {
         from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
+        gasPrice: this.gasPrice,
       }
 
       try {
