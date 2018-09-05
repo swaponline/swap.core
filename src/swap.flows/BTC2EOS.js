@@ -6,7 +6,12 @@ class BTC2EOS extends Flow {
   static getName() {
     return `${constants.COINS.btc}2${constants.COINS.eos}`
   }
-
+  static getFromName() {
+    return constants.COINS.btc;
+  }
+  static getToName() {
+    return constants.COINS.eth;
+  }
   constructor(swap) {
     super(swap)
 

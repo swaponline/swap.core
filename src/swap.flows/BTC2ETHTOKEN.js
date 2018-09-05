@@ -10,7 +10,12 @@ export default (tokenName) => {
     static getName() {
       return `${constants.COINS.btc}2${tokenName.toUpperCase()}`
     }
-
+	static getFromName() {
+	  return constants.COINS.btc;
+	}
+	static getToName() {
+	  return `${tokenName.toUpperCase()}`
+	}
     constructor(swap) {
       super(swap)
 

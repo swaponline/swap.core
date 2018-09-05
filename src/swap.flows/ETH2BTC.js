@@ -8,7 +8,12 @@ class ETH2BTC extends Flow {
   static getName() {
     return `${constants.COINS.eth}2${constants.COINS.btc}`
   }
-
+  static getFromName() {
+    return constants.COINS.eth;
+  }
+  static getToName() {
+    return constants.COINS.btc;
+  }
   constructor(swap) {
     super(swap)
 
