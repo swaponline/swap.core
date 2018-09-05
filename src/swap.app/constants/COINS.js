@@ -1,6 +1,7 @@
 export default {
   eth: 'ETH',
   btc: 'BTC',
+  usdt: 'USDT',
   eos: 'EOS',
   nim: 'NIM',
   usdt: 'USDT',
@@ -10,4 +11,5 @@ export default {
   jot: 'JOT',
   swap: 'SWAP',
   btrm: 'BTRM',
+  cash: 'RUB',
 }
