@@ -56,15 +56,6 @@ class EthTokenSwap extends SwapInterface {
     this.ERC20          = new SwapApp.env.web3.eth.Contract(this.tokenAbi, this.tokenAddress)
   }
 
-  /**
-   *
-   * @param {string} value
-   */
-  addGasPrice = (value) => {
-    this.gasPrice = Number(value)
-  }
-
-
   async updateGas() {
     this.gasPrice = await SwapApp.env.web3.eth.getGasPrice((err, _gasPrice) =>
       parseInt(_gasPrice.toString(10)) + parseInt(1300000000))
