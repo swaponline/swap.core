@@ -21,11 +21,9 @@ class SwapApp {
     this.flows      = {}
 
     this._addEnv(options.env || {})
-    this._addServices(options.services || [])
-    this._addSwaps(options.swaps || [])
-    this._addFlows(options.flows || [])
-
-    console.log('this app', this)
+    this._addServices(options.services || {})
+    this._addSwaps(options.swaps || {})
+    this._addFlows(options.flows || {})
   }
 
   // Configure -------------------------------------------------------- /
