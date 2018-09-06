@@ -187,44 +187,33 @@ export default (tokenName) => {
 
         () => {
           const { participant } = flow.swap
-          let timer
 
-          const checkSecretExist = () => {
-            timer = setTimeout(async () => {
-              let secret
-
-              try {
-                secret = await flow.ethTokenSwap.getSecret({
-                  participantAddress: participant.eth.address,
-                })
-              }
-              catch (err) {}
+          const checkSecretExist = async () => {
+            try {
+              const secret = await flow.ethTokenSwap.getSecret({
+                participantAddress: participant.eth.address,
+              })
 
               if (secret) {
-                if (!flow.state.isEthWithdrawn) { // redundant condition but who cares :D
-                  flow.finishStep({
-                    isEthWithdrawn: true,
-                    secret,
-                  }, { step: 'wait-withdraw-eth' })
+                clearInterval(checkSecretTimer)
+
+                if (flow.state.secret && secret !== flow.state.secret) {
+                  throw new Error(`Secret already exists and it differs! ${secret} ≠ ${flow.state.secret}`)
                 }
+
+                flow.finishStep({
+                  secret,
+                  isEthWithdrawn: true,
+                }, { step: 'wait-withdraw-eth' })
               }
-              else {
-                checkSecretExist()
-              }
-            }, 20 * 1000)
+            }
+            catch (err) { console.error(err) }
           }
 
-          checkSecretExist()
+          const checkSecretTimer = setInterval(checkSecretExist, 20 * 1000)
 
           flow.swap.room.once('finish eth withdraw', () => {
-            if (!flow.state.isEthWithdrawn) {
-              clearTimeout(timer)
-              timer = null
-
-              flow.finishStep({
-                isEthWithdrawn: true,
-              }, { step: 'wait-withdraw-eth' })
-            }
+            checkSecretExist()
           })
         },
 
@@ -232,28 +221,7 @@ export default (tokenName) => {
 
         async () => {
           const { participant } = flow.swap
-          let { secret } = flow.state
-
-          const data = {
-            participantAddress: participant.eth.address,
-          }
-
-          // if there is no secret in state then request it
-          if (!secret) {
-            try {
-              secret = await flow.ethTokenSwap.getSecret(data)
-
-              flow.setState({
-                secret,
-              })
-            }
-            catch (err) {
-              // TODO notify user that smth goes wrong
-              if ( !/known transaction/.test(err.message) )
-                console.error(err)
-              return
-            }
-          }
+          const { secret } = flow.state
 
           // if there is still no secret stop withdraw
           if (!secret) {
