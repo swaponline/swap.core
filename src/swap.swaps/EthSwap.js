@@ -41,8 +41,14 @@ class EthSwap extends SwapInterface {
   }
 
   async updateGas() {
-    this.gasPrice = await SwapApp.env.web3.eth.getGasPrice((err, _gasPrice) =>
-      parseInt(_gasPrice.toString(10)) + parseInt(1300000000))
+    try {
+      await SwapApp.env.web3.eth.getGasPrice(gasPrice => {
+        const newGas = new BigNumber(String(gasPrice)).plus(new BigNumber(String(1300000000)))
+        this.gasPrice = Number(newGas)
+      })
+    } catch {
+      this.gasPrice = 15e9
+    }
   }
 
   /**
@@ -57,7 +63,11 @@ class EthSwap extends SwapInterface {
   async create(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount } = data
 
+    console.log('create before', this.gasPrice)
+
     await this.updateGas()
+
+    console.log('create after', this.gasPrice)
 
     const base = BigNumber(10).pow(18)
     const newAmount = new BigNumber(amount.toString()).times(base).integerValue().toNumber()
@@ -71,6 +81,8 @@ class EthSwap extends SwapInterface {
         value: newAmount,
         gasPrice: this.gasPrice,
       }
+
+      console.log('params', params)
 
       const values = [ hash, participantAddress ]
 
