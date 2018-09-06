@@ -143,6 +143,14 @@ class UsdtSwap extends SwapInterface {
       txid: fundingTxHash,
       scriptAddress,
     }
+    
+    const unspents = await this.fetchUnspents(scriptAddress)
+    const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+    const expectedValue = 546
+
+    if (expectedValue > totalUnspent) {
+      return `Expected script value: ${expectedValue}, got: ${totalUnspent}. Maybe the script was not mined?`
+    }
 
     // const { scriptValues, fundingValues, amount } = data
     // const hex = this.buildRawRedeemTransaction({ amount: expected.amount, scriptValues, fundingValues })
