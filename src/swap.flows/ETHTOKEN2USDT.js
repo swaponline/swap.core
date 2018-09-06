@@ -159,12 +159,20 @@ export default (tokenName) => {
             amount:               sellAmount,
           }
 
+          console.log('approve')
+
           await flow.ethTokenSwap.approve({
             amount: sellAmount,
+          }, hash => {
+            console.log('approve tx hash', hash)
           })
+
+          console.log('create swap')
 
           await flow.ethTokenSwap.create(swapData, (hash) => {
             ethSwapCreationTransactionHash = hash
+
+            console.log('create swap tx hash', hash)
 
             flow.setState({
               ethSwapCreationTransactionHash: hash,
@@ -229,12 +237,13 @@ export default (tokenName) => {
             return
           }
 
-
           await flow.usdtSwap.withdraw({
             scriptValues: flow.state.usdtScriptValues,
             secret,
             redeemHex: flow.state.usdtRawRedeemTransactionHex,
           }, (hash) => {
+            console.log('withdraw tx hash', hash)
+
             flow.setState({
               usdtSwapWithdrawTransactionHash: hash,
             })
