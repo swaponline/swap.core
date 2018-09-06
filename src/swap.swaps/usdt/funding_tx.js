@@ -120,7 +120,7 @@ const createFundingTransaction = async (dialog, scriptValues, getUnspents, netwo
   operation::list p2pkhScript=script::to_pay_key_hash_pattern(Alice_address.hash()); //скрипт для возвращает сдачу себе
   output Output1(OddMoney_satoshi, p2pkhScript); //создаем второй выход
   */
-  funding_tx.addOutput(alice_p2pkh, OddMoney_satoshi)
+  funding_tx.addOutput(alice_p2pkh, OddMoney_satoshi < 546 ? 546 : OddMoney_satoshi)
 
   /*
   funding_tx.outputs().push_back(Output0);

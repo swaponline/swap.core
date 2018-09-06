@@ -9,6 +9,8 @@ const createScript = require('./swap_script')
 const createOmniScript = require('./omni_script')
 const getAddress = require('./get_address')
 
+const BITCOIN_DUST = 546
+
 const createRedeemTransaction = async (dialog, scriptValues, amount, getUnspents, network) => {
   const { owner: alice_pair, party: recipient_key } = dialog
   const { hash, lockTime: locktime, scriptAddress, txid } = scriptValues
@@ -23,12 +25,11 @@ const createRedeemTransaction = async (dialog, scriptValues, amount, getUnspents
   const scriptUnspents = await getUnspents(scriptAddress)
 
   const utxo      = unspents[0]
-  const dust      = 546
-  const fundValue = dust // dust
-  const feeValue  = 2000
+  const fundValue = BITCOIN_DUST // dust
+  const feeValue  = 1000
 
   const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
-  const skipValue = utxo.satoshis - fundValue - feeValue - dust
+  const skipValue = utxo.satoshis - fundValue - feeValue - BITCOIN_DUST
   // dust accounts extra fee that was used for funding_tx, but not yet in the balance
 
   // const skipValue = scriptUnspents.map(u => u.satoshis).reduce((sum, sat) => sum + sat, 0) - fundValue - feeValue
@@ -68,7 +69,9 @@ const createRedeemTransaction = async (dialog, scriptValues, amount, getUnspents
   tx.addOutput(omniOutput, 0)
   tx.addOutput(recipient_address, fundValue) // should be first!
 
-  tx.addOutput(alice_pair.getAddress(), skipValue)
+  if (skipValue >= BITCOIN_DUST) {
+    tx.addOutput(alice_pair.getAddress(), skipValue)
+  }
 
   // signing
 
