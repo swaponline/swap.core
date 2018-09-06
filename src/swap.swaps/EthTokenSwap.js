@@ -62,6 +62,7 @@ class EthTokenSwap extends SwapInterface {
         const newGas = new BigNumber(String(gasPrice)).plus(new BigNumber(String(1300000000)))
         this.gasPrice = Number(newGas)
       })
+
     }
     catch(err) {
       this.gasPrice = 15e9
