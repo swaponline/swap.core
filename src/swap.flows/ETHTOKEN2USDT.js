@@ -148,7 +148,6 @@ export default (tokenName) => {
 
           if (scriptCheckResult) {
             console.error(`Btc script check error:`, scriptCheckResult)
-            throw new Error(`Btc script check error:` + scriptCheckResult)
             flow.swap.events.dispatch('usdt script check error', scriptCheckResult)
             return
           }
