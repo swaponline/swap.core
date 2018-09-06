@@ -48,6 +48,7 @@ class EthSwap extends SwapInterface {
       })
     }
     catch(err) {
+      console.error(`${err.name}: ${err.message}`)
       this.gasPrice = 15e9
     }
   }
