@@ -10,4 +10,7 @@ export default {
   jot: 'JOT',
   swap: 'SWAP',
   btrm: 'BTRM',
+  syc: 'SYC',
+  drt: 'DRT',
+  yup: 'YUP',
 }

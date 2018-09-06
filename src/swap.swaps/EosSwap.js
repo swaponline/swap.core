@@ -56,7 +56,7 @@ class EosSwap extends SwapInterface {
       })
       .then((swapID) => {
         const quantity = amountToAsset(amount)
-        
+
         return this.eos.transaction({
           actions: [
             {
@@ -90,7 +90,6 @@ class EosSwap extends SwapInterface {
           ]
         }).then((transaction) => {
           const openTx = transaction.transaction_id
-
           if (typeof finishCallback === 'function') {
             finishCallback({ openTx, swapID })
           }

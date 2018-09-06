@@ -109,7 +109,6 @@ class Order {
         self.update({
           isProcessing: true,
           isRequested: false,
-          participant
         })
 
         callback(true)
