@@ -58,8 +58,8 @@ class EthTokenSwap extends SwapInterface {
 
   async updateGas() {
     try {
-      await SwapApp.env.web3.eth.getGasPrice(gasPrice => {
-        const newGas = new BigNumber(String(gasPrice)).plus(new BigNumber(String(1300000000)))
+      await SwapApp.env.web3.eth.getGasPrice((err, _gasPrice) => {
+        const newGas = new BigNumber(String(_gasPrice)).plus(new BigNumber(String(1300000000)))
         this.gasPrice = Number(newGas)
       })
     }
