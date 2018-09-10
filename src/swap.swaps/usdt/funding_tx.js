@@ -4,7 +4,7 @@ const net = bitcoin.networks.bitcoin
 
 const createScript = require('./swap_script')
 
-const createFundingTransaction = async (dialog, scriptValues, getUnspents, network) => {
+const createFundingTransaction = async (dialog, scriptValues, getUnspents, getRecommendedFees, network) => {
   const { secretHash: hash, lockTime: locktime } = scriptValues
   const { owner: alice_pair, party: bob_key } = dialog
 
@@ -57,8 +57,10 @@ const createFundingTransaction = async (dialog, scriptValues, getUnspents, netwo
     decode_base10(OddMoney_satoshi,OddMoney_btc, btc_decimal_places);
   */
 
+  const recommendedFee= await getRecommendedFees() || 5 // satoshis/byte
+  const txMedianSize  = 400
   const fundValue     = 546 // dust
-  const feeValue      = 1000
+  const feeValue      = recommendedFee * txMedianSize
   const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
   const skipValue     = totalUnspent - fundValue - feeValue
 

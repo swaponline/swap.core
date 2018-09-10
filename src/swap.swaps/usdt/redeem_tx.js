@@ -11,7 +11,7 @@ const getAddress = require('./get_address')
 
 const BITCOIN_DUST = 546
 
-const createRedeemTransaction = async (dialog, scriptValues, amount, getUnspents, network) => {
+const createRedeemTransaction = async (dialog, scriptValues, amount, getUnspents, getRecommendedFees, network) => {
   const { owner: alice_pair, party: recipient_key } = dialog
   const { hash, lockTime: locktime, scriptAddress, txid } = scriptValues
 
@@ -24,9 +24,12 @@ const createRedeemTransaction = async (dialog, scriptValues, amount, getUnspents
   const unspents = await getUnspents(alice_pair.getAddress())
   const scriptUnspents = await getUnspents(scriptAddress)
 
-  const utxo      = unspents[0]
-  const fundValue = BITCOIN_DUST // dust
-  const feeValue  = 1000
+  const recommendedFee= await getRecommendedFees() || 5 // satoshis/byte
+  const txMedianSize  = 600
+  const utxo          = unspents[0]
+  const fundValue     = BITCOIN_DUST // dust
+  const feeValue      = recommendedFee * txMedianSize
+
 
   const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
   const skipValue = utxo.satoshis - fundValue - feeValue - BITCOIN_DUST

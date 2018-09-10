@@ -34,6 +34,8 @@ class UsdtSwap extends SwapInterface {
     this.fetchBalance   = options.fetchBalance
     this.fetchUnspents  = options.fetchUnspents
     this.broadcastTx    = options.broadcastTx
+
+    this.getRecommendedFees = options.getRecommendedFees || (() => {})
   }
 
   _initSwap() {
@@ -232,7 +234,7 @@ class UsdtSwap extends SwapInterface {
           party: Buffer.from(recipientPublicKey, 'hex')
         }
 
-        const funding = await createFundingTransaction(dialog, scriptValues, this.fetchUnspents, this.network)
+        const funding = await createFundingTransaction(dialog, scriptValues, this.fetchUnspents, this.getRecommendedFees, this.network)
 
         if (typeof handleTransactionHash === 'function') {
           const txRaw = funding.tx.buildIncomplete()
@@ -271,7 +273,7 @@ class UsdtSwap extends SwapInterface {
           ...scriptValues,
         }
 
-        const redeem_tx = await createRedeemTransaction(dialog, omniScriptValues, amount, this.fetchUnspents, this.network)
+        const redeem_tx = await createRedeemTransaction(dialog, omniScriptValues, amount, this.fetchUnspents, this.getRecommendedFees, this.network)
 
         try {
           const result = redeem_tx.buildIncomplete().toHex()
