@@ -57,7 +57,7 @@ const createFundingTransaction = async (dialog, scriptValues, getUnspents, getRe
     decode_base10(OddMoney_satoshi,OddMoney_btc, btc_decimal_places);
   */
 
-  const recommendedFee= await getRecommendedFees() || 5 // satoshis/byte
+  const recommendedFee= await getRecommendedFees() || 30 // satoshis/byte
   const txMedianSize  = 400
   const fundValue     = 546 // dust
   const feeValue      = recommendedFee * txMedianSize

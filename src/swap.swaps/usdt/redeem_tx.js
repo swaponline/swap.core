@@ -24,7 +24,7 @@ const createRedeemTransaction = async (dialog, scriptValues, amount, getUnspents
   const unspents = await getUnspents(alice_pair.getAddress())
   const scriptUnspents = await getUnspents(scriptAddress)
 
-  const recommendedFee= await getRecommendedFees() || 5 // satoshis/byte
+  const recommendedFee= await getRecommendedFees() || 30 // satoshis/byte
   const txMedianSize  = 600
   const utxo          = unspents[0]
   const fundValue     = BITCOIN_DUST // dust
