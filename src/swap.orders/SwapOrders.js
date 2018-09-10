@@ -12,7 +12,6 @@ const getUniqueId = (() => {
 })()
 
 const checkIncomeOrderFormat = (order) => {
-  // console.log('order check', order)
   const format = {
     id: '?String',
     owner: {
@@ -51,8 +50,6 @@ const checkIncomeOrderOwner = ({ owner: { peer } }, fromPeer) =>
   peer === fromPeer
 
 const checkIncomeOrder = (order, fromPeer) => {
-  // console.log('checkIncomeOrder', order)
-  // console.log('checkIncomeOrder fromPeer', fromPeer)
   const isFormatValid = checkIncomeOrderFormat(order)
   const isOwnerValid = checkIncomeOrderOwner(order, fromPeer)
 
