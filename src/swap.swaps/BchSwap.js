@@ -50,12 +50,12 @@ class BchSwap extends SwapInterface {
 
     const hashType      = SwapApp.env.bitcoin.Transaction.SIGHASH_ALL
     const signatureHash = txRaw.hashForSignature(0, script, hashType)
-    const signature     = SwapApp.services.auth.accounts.bch.sign(signatureHash).toScriptSignature(hashType)
+    const signature     = SwapApp.services.auth.accounts.btc.sign(signatureHash).toScriptSignature(hashType)
 
     const scriptSig = SwapApp.env.bitcoin.script.scriptHash.input.encode(
       [
         signature,
-        SwapApp.services.auth.accounts.bch.getPublicKeyBuffer(),
+        SwapApp.services.auth.accounts.btc.getPublicKeyBuffer(),
         Buffer.from(secret.replace(/^0x/, ''), 'hex'),
       ],
       script,
@@ -157,7 +157,7 @@ class BchSwap extends SwapInterface {
         const { scriptAddress } = this.createScript(scriptValues)
 
         const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
-        const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.bch.getAddress())
+        const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.btc.getAddress())
 
         const fundValue     = amount.multipliedBy(1e8).integerValue().toNumber()
         const feeValue      = 15000 // TODO how to get this value
@@ -170,9 +170,9 @@ class BchSwap extends SwapInterface {
 
         unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout))
         tx.addOutput(scriptAddress, fundValue)
-        tx.addOutput(SwapApp.services.auth.accounts.bch.getAddress(), skipValue)
+        tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), skipValue)
         tx.inputs.forEach((input, index) => {
-          tx.sign(index, SwapApp.services.auth.accounts.bch)
+          tx.sign(index, SwapApp.services.auth.accounts.btc)
         })
 
         const txRaw = tx.buildIncomplete()
@@ -249,7 +249,7 @@ class BchSwap extends SwapInterface {
     }
 
     unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
-    tx.addOutput(SwapApp.services.auth.accounts.bch.getAddress(), totalUnspent - feeValue)
+    tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
 
     const txRaw = tx.buildIncomplete()
 

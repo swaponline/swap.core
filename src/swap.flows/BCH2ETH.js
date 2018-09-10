@@ -143,7 +143,7 @@ class BCH2ETH extends Flow {
         const scriptValues = {
           secretHash:         flow.state.secretHash,
           ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
-          recipientPublicKey: participant.bch.publicKey,
+          recipientPublicKey: participant.btc.publicKey,
           lockTime:           getLockTime(),
         }
 
