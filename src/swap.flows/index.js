@@ -6,6 +6,8 @@ import USDT2ETHTOKEN from './USDT2ETHTOKEN'
 import ETHTOKEN2USDT from './ETHTOKEN2USDT'
 import EOS2BTC from './EOS2BTC'
 import BTC2EOS from './BTC2EOS'
+import ETH2BCH from './ETH2BCH'
+import BCH2ETH from './BCH2ETH'
 
 export {
   ETH2BTC,
@@ -15,5 +17,7 @@ export {
   USDT2ETHTOKEN,
   ETHTOKEN2USDT,
   EOS2BTC,
-  BTC2EOS
+  BTC2EOS,
+  ETH2BCH,
+  BCH2ETH,
 }
