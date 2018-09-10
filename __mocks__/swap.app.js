@@ -31,6 +31,7 @@ const eosMockProvider = () => {
 }
 
 const mockSwapApp = {
+  isMainNet: () => true,
   env: {
     bitcoin,
     web3: {
@@ -91,6 +92,9 @@ const mockSwapApp = {
   flows: {},
   swaps: {},
 }
+const util = {
+  pullProps: (obj, ...keys) => obj,
+}
 
 const SwapInterface = function () {
 
@@ -101,4 +105,4 @@ const constants = {
 }
 
 export default mockSwapApp
-export { SwapInterface, constants }
+export { SwapInterface, constants, util, Events }

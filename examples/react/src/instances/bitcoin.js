@@ -62,6 +62,25 @@ class Bitcoin {
       },
     })
   }
+
+  fetchOmniBalance(address, assetId) {
+    return request.post(`https://api.omniexplorer.info/v1/address/addr/`)
+      .send(`addr=${address}`)
+      .then(({ text }) => {
+        const balances = text
+
+        const findById = balances
+          .filter(asset => parseInt(asset.id) === assetId || asset.id === assetId)
+
+        if (!findById.length) {
+          return 0
+        }
+
+        console.log('Omni Balance:', findById[0])
+
+        return findById[0].value
+      })
+  }
 }
 
 
