@@ -3,7 +3,7 @@ import SwapApp, { SwapInterface, constants } from 'swap.app'
 const FEE_VALUE = 2000 // satoshis TODO how to get this value
 const DUST = 546
 
-const createOmniSimpleSend = require('./usdt/omni_script')
+const createOmniScript = require('./usdt/omni_script')
 const createScript = require('./usdt/swap_script')
 const createFundingTransaction = require('./usdt/funding_tx')
 const createRedeemTransaction = require('./usdt/redeem_tx')
@@ -141,11 +141,6 @@ class UsdtSwap extends SwapInterface {
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = scriptValues
     const { scriptAddress, script } = createScript(secretHash, ownerPublicKey, recipientPublicKey, lockTime)
 
-    const fundingValues = {
-      txid: fundingTxHash,
-      scriptAddress,
-    }
-    
     const unspents = await this.fetchUnspents(scriptAddress)
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
     const expectedValue = 546
@@ -154,64 +149,30 @@ class UsdtSwap extends SwapInterface {
       return `Expected script value: ${expectedValue}, got: ${totalUnspent}. Maybe the script was not mined?`
     }
 
-    // const { scriptValues, fundingValues, amount } = data
-    // const hex = this.buildRawRedeemTransaction({ amount: expected.amount, scriptValues, fundingValues })
+    // TODO
+    // const outputs = await this.fetchInputs(fundingTxHash)
 
-    // console.log('should be', hex)
-    console.log('tx hex', redeemHex)
+    // check output-0 is script with same address
+    // if () {
+    //   return `Expected script address: ${scriptAddress}, got: ${output.scriptAddress}`
+    // }
 
-    const txb = SwapApp.env.bitcoin.TransactionBuilder.fromTransaction(
-        SwapApp.env.bitcoin.Transaction.fromHex(redeemHex))
+    // check output-1 is a OMNI
+    const expectedOmniOutput = createOmniScript(expected.amount)
 
-    // expect(txb.inputs.length).toBe(2)
-    // // expect(txb.outputs.length).toBe(3)
-    // expect(txb.tx.outs.length).toBe(3)
+    // if (!expectedOmniOutput.equals(txb.tx.outs[0].script)) {
+    //   return `Expected first output value: `
+    //   + SwapApp.env.bitcoin.script.toASM(expectedOmniOutput)
+    //   + `, got: `
+    //   + SwapApp.env.bitcoin.script.toASM(txb.tx.outs[0].script)
+    // }
 
-    console.dir('txb outs', txb.tx.outs)
-
-    // const pubKey = SwapApp.env.bitcoin.ECPair.fromPublicKeyBuffer(Buffer.from(_ORDER.participant.btc.publicKey, 'hex'))
-    const expectedP2PKHOutputScript = SwapApp.env.bitcoin.address.toOutputScript(SwapApp.services.auth.accounts.btc.getAddress())
-
-    const expectedOmniOutput = createOmniSimpleSend(expected.amount)
-
-    console.log('expectedOmniOutput', expectedOmniOutput)
-    console.log('expectedOmniOutput', txb.tx.outs[0].script)
-
-    console.log('expectedP2PKHOutput', expectedP2PKHOutputScript)
-    console.log('expectedP2PKHOutput', txb.tx.outs[1].script)
-
-    if (!expectedOmniOutput.equals(txb.tx.outs[0].script)) {
-      return `Expected first output value: `
-      + SwapApp.env.bitcoin.script.toASM(expectedOmniOutput)
-      + `, got: `
-      + SwapApp.env.bitcoin.script.toASM(txb.tx.outs[0].script)
-    }
-    if (!expectedP2PKHOutputScript.equals(txb.tx.outs[1].script)) {
-      return `Expected second output value: `
-      + SwapApp.env.bitcoin.script.toASM(expectedP2PKHOutputScript)
-      + `, got: `
-      + SwapApp.env.bitcoin.script.toASM(txb.tx.outs[1].script)
-    }
     if (expected.lockTime > lockTime) {
       return `Expected script lockTime: ${expected.lockTime}, got: ${lockTime}`
     }
     if (expected.recipientPublicKey !== recipientPublicKey) {
       return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
     }
-
-    // const unspents      = await this.fetchUnspents(scriptAddress)
-    // const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
-    // const expectedValue = 546
-    //
-    // // if (expectedValue.isGreaterThan(totalUnspent)) {
-    // //   return `Expected script value: ${expectedValue.toNumber()}, got: ${totalUnspent}`
-    // // }
-    if (expected.lockTime > lockTime) {
-      return `Expected script lockTime: ${expected.lockTime}, got: ${lockTime}`
-    }
-    // if (expected.recipientPublicKey !== recipientPublicKey) {
-    //   return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
-    // }
   }
 
   /**
@@ -223,7 +184,7 @@ class UsdtSwap extends SwapInterface {
    * @returns {Promise}
    */
    fundScript(data, handleTransactionHash) {
-    const { scriptValues } = data
+    const { scriptValues, amount } = data
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -234,7 +195,7 @@ class UsdtSwap extends SwapInterface {
           party: Buffer.from(recipientPublicKey, 'hex')
         }
 
-        const funding = await createFundingTransaction(dialog, scriptValues, this.fetchUnspents, this.getRecommendedFees, this.network)
+        const funding = await createFundingTransaction(amount, dialog, scriptValues, this.fetchUnspents, this.network)
 
         if (typeof handleTransactionHash === 'function') {
           const txRaw = funding.tx.buildIncomplete()
@@ -292,32 +253,71 @@ class UsdtSwap extends SwapInterface {
 
   redeemScript(data, handleTransactionHash) {
     const { usdtRawRedeemTransactionHex: redeemHex, secret, scriptValues } = data
+    const { amount } = data
 
     return new Promise(async (resolve, reject) => {
       try {
-        const { secretHash, lockTime: locktime } = scriptValues
+        const { secretHash, lockTime } = scriptValues
         const { ownerPublicKey, recipientPublicKey } = scriptValues
 
-        const txb = SwapApp.env.bitcoin.TransactionBuilder.fromTransaction(
-            SwapApp.env.bitcoin.Transaction.fromHex(redeemHex))
 
-        const { script, scriptAddress: addr } = createScript(
+        const redeem_tx = new SwapApp.env.bitcoin.TransactionBuilder()
+
+        const { script, scriptAddress } = createScript(
           secretHash,
           ownerPublicKey,
           recipientPublicKey,
-          locktime)
+          lockTime)
 
-        console.log('script address', addr)
+        console.log('script address', scriptAddress)
+        const keyPair = SwapApp.services.auth.accounts.btc
+        const myBtcAddress = keyPair.getAddress()
+
+        const myUnspents      = await this.fetchUnspents(myBtcAddress)
+        const scriptUnspents  = await this.fetchUnspents(scriptAddress)
+
+
+        const unspents  = [ ...scriptUnspents, ...myUnspents ]
+        console.log('unspents', unspents)
+        const fundValue = DUST
+        const feeValue  = 5000
+
+        const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+        const totalValue    = totalUnspent - feeValue - fundValue
+
+        if (totalUnspent < feeValue + fundValue) {
+          throw new Error(`Total less than fee: ${totalUnspent} < ${fundValue} + ${feeValue}`)
+        }
+
+        scriptUnspents.forEach(({ txid, vout }) => {
+          redeem_tx.addInput(txid, vout)
+        })
+
+        myUnspents.forEach(({ txid, vout }, index) => {
+          redeem_tx.addInput(txid, vout)
+        })
+
+        const omniOutput = createOmniScript(amount)
+
+        redeem_tx.addOutput(myBtcAddress, totalValue)
+        redeem_tx.addOutput(omniOutput, fundValue)
+
+        myUnspents.forEach((utxo, index) => {
+          const inputIndex = index + scriptUnspents.length
+          redeem_tx.sign(inputIndex, keyPair)
+        })
+
+        const txRaw = redeem_tx.buildIncomplete()
 
         const forSigning = {
-          txRaw: txb.buildIncomplete(),
+          txRaw,
           script,
           secret,
         }
 
-        this._signTransaction(forSigning, 1)
+        this._signTransaction(forSigning, 0)
 
-        const tx = txb.build()
+        const tx = txRaw
 
         console.log('redeem tx hash', tx.getId())
         console.log(`redeem tx hex ${tx.toHex()}`)

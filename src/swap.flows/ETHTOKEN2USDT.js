@@ -227,7 +227,7 @@ export default (tokenName) => {
         // 7. Withdraw
 
         async () => {
-          const { participant } = flow.swap
+          const { participant, buyAmount } = flow.swap
           const { secret } = flow.state
 
           // if there is still no secret stop withdraw
@@ -236,17 +236,23 @@ export default (tokenName) => {
             return
           }
 
-          await flow.usdtSwap.withdraw({
-            scriptValues: flow.state.usdtScriptValues,
-            secret,
-            redeemHex: flow.state.usdtRawRedeemTransactionHex,
-          }, (hash) => {
-            console.log('withdraw tx hash', hash)
+          try {
+            await flow.usdtSwap.redeemScript({
+              scriptValues: flow.state.usdtScriptValues,
+              secret,
+              amount: buyAmount,
+              redeemHex: flow.state.usdtRawRedeemTransactionHex,
+            }, (hash) => {
+              console.log('withdraw tx hash', hash)
 
-            flow.setState({
-              usdtSwapWithdrawTransactionHash: hash,
+              flow.setState({
+                usdtSwapWithdrawTransactionHash: hash,
+              })
             })
-          })
+          } catch (err) {
+            console.error(err)
+            return
+          }
 
           flow.finishStep({
             isBtcWithdrawn: true,

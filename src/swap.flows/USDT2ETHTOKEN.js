@@ -163,7 +163,7 @@ export default (tokenName) => {
             // usdtFundingTransactionHash = flow.state.usdtFundingTransactionHash
           } else {
             await flow.usdtSwap.fundScript(
-              { scriptValues },
+              { scriptValues, amount: sellAmount },
               (hash, funding) => {
                 usdtFundingTransactionHash = hash
                 fundingValues = {
