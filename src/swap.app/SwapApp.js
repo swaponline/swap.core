@@ -83,8 +83,6 @@ class SwapApp {
   }
   _addFlow(Flow) {
 	const flowName = Flow.getName()
-	const fromName = Flow.getFromName();
-	const toName = Flow.getToName();
 
     if ( !Object.values(constants.COINS).includes( Flow.getFromName() )
       || !Object.values(constants.COINS).includes( Flow.getToName() )
