@@ -85,15 +85,6 @@ class SwapApp {
 	const flowName = Flow.getName()
 	const fromName = Flow.getFromName();
 	const toName = Flow.getToName();
-		
-    
-
-    if (!/^[A-Za-z0-9]+2[A-Za-z0-9]+$/.test(flowName)) {
-      throw new Error('SwapApp flow "_flowName" property should be "^[A-Za-z0-9]+2[A-Za-z0-9]+$" format')
-    }
-
-    const flowNameLeftPart = flowName.match(/^[^\d]+/)
-    const flowNameRightPart = flowName.match(/[^\d]+$/)
 
     if ( !Object.values(constants.COINS).includes( Flow.getFromName() )
       || !Object.values(constants.COINS).includes( Flow.getToName() )

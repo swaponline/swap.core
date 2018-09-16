@@ -8,7 +8,7 @@ export default (tokenName) => {
   class BTC2ETHTOKEN extends Flow {
 
     static getName() {
-      return `${constants.COINS.btc}2${tokenName.toUpperCase()}`
+      return `${this.getFromName()}2${this.getToName()}`
     }
 	static getFromName() {
 	  return constants.COINS.btc;

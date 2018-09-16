@@ -3,7 +3,7 @@ import { Flow } from 'swap.swap'
 
 class EOS2BTC extends Flow {
   static getName() {
-    return `${constants.COINS.eos}2${constants.COINS.btc}`
+    return `${this.getFromName()}2${this.getToName()}`
   }
   static getFromName() {
     return constants.COINS.eos;
