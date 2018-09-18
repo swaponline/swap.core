@@ -16,7 +16,9 @@ export default (tokenName) => {
 	static getToName() {
 	  return constants.COINS.btc;
 	}
-
+	setEthAddress(newEthAddress) {
+	  this.targetWallet = newEthAddress;
+	}
     constructor(swap) {
       super(swap)
 
@@ -27,7 +29,8 @@ export default (tokenName) => {
 
       this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
       this.myEthAddress = SwapApp.services.auth.accounts.eth.address
-
+      this.targetWallet = null;
+	  
       this.stepNumbers = {
         'sign': 1,
         'wait-lock-btc': 2,
@@ -158,13 +161,20 @@ export default (tokenName) => {
           })
 
           await flow.ethTokenSwap.create(swapData, (hash) => {
-            ethSwapCreationTransactionHash = hash
-
-            flow.setState({
-              ethSwapCreationTransactionHash: hash,
-            })
+			ethSwapCreationTransactionHash = hash;
+		  })
+		  if (flow.targetWallet) {
+			await flow.ethTokenSwap.setTargetWallet(
+			  flow.swap.participant.eth.address, 
+			  flow.targetWallet,
+			  (hash) => {
+				/* console.log('set target wallet tx ',hash); */
+			  }
+			);
+		  }
+          flow.setState({
+            ethSwapCreationTransactionHash: ethSwapCreationTransactionHash,
           })
-
           flow.swap.room.sendMessage({
             event: 'create eth contract',
             data: {
