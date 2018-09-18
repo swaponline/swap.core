@@ -277,8 +277,8 @@ class EthTokenSwap extends SwapInterface {
    */
   async withdraw(data, handleTransactionHash) {
     const { ownerAddress, secret } = data
-    
-	await this.updateGas()
+
+    await this.updateGas()
 	
     return new Promise(async (resolve, reject) => {
       const _secret = `0x${secret.replace(/^0x/, '')}`
