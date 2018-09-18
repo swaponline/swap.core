@@ -382,7 +382,7 @@ export default (tokenName) => {
       console.log(`address=${scriptAddress}, balance=${balance}`)
 
       if (balance === 0) {
-        flow.finishStep({
+        this.finishStep({
           isBtcWithdrawn: true,
         }, {step: 'withdraw-btc'})
         throw new Error(`Already withdrawn: address=${scriptAddress},balance=${balance}`)
