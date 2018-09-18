@@ -50,13 +50,21 @@ class BTC2EOS extends Flow {
         })
       },
       () => {
-        const { sellAmount: amount, participant } = flow.swap
+        const { sellAmount: amount, participant: eosOwner } = flow.swap
+
+        const utcNow = () => Math.floor(Date.now() / 1000)
+        const getLockTime = () => {
+          const eosLockPeriod = flow.eosSwap.getLockPeriod()
+          const btcLockPeriod = eosLockPeriod * 2
+
+          return utcNow() + btcLockPeriod
+        }
 
         const scriptValues = {
           secretHash: flow.state.secretHash,
           ownerPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
-          recipientPublicKey: participant.btc.publicKey,
-          lockTime: flow.eosSwap.getLockTime()
+          recipientPublicKey: eosOwner.btc.publicKey,
+          lockTime: getLockTime()
         }
 
         flow.btcSwap.fundScript({
@@ -74,9 +82,11 @@ class BTC2EOS extends Flow {
       },
       () => {
         const { swapID, secret } = flow.state
+        const { participant: eosOwner } = flow.swap
+
 
         flow.eosSwap.withdraw({
-          swapID,
+          eosOwner: eosOwner.eos.address,
           secret
         }, (eosWithdrawTx) => {
           flow.finishStep({ eosWithdrawTx })
