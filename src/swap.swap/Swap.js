@@ -1,19 +1,21 @@
 import BigNumber from 'bignumber.js'
-import SwapApp, { Events, util } from 'swap.app'
+import SwapApp, { Events, util,  } from 'swap.app'
 import Room from './Room'
 
 
 class Swap {
 
   constructor(id) {
-    this.id             = null
-    this.isMy           = null
-    this.owner          = null
-    this.participant    = null
-    this.buyCurrency    = null
-    this.sellCurrency   = null
-    this.buyAmount      = null
-    this.sellAmount     = null
+    this.id               = null
+    this.isMy             = null
+    this.owner            = null
+    this.participant      = null
+    this.buyCurrency      = null
+    this.sellCurrency     = null
+    this.buyAmount        = null
+    this.sellAmount       = null
+    this.ownerSwap        = null
+    this.participantSwap  = null
 
     let data = SwapApp.env.storage.getItem(`swap.${id}`)
 
@@ -32,8 +34,9 @@ class Swap {
       participantPeer: this.participant.peer,
     })
 
-    // NOXON2BTC
-    // BTC2NOXON
+    this.ownerSwap        = SwapApp.swaps[data.buyCurrency.toUpperCase()]
+    this.participantSwap  = SwapApp.swaps[data.sellCurrency.toUpperCase()]
+
     const Flow = SwapApp.flows[`${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}`]
 
     if (!Flow) {

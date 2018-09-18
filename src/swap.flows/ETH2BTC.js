@@ -14,23 +14,8 @@ class ETH2BTC extends Flow {
 
     this._flowName = ETH2BTC.getName()
 
-    this.ethSwap = SwapApp.swaps[constants.COINS.eth]
-    this.btcSwap = SwapApp.swaps[constants.COINS.btc]
-
-    this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
-    this.myEthAddress = SwapApp.services.auth.accounts.eth.address
-
-    this.stepNumbers = {
-      'sign': 1,
-      'wait-lock-btc': 2,
-      'verify-script': 3,
-      'sync-balance': 4,
-      'lock-eth': 5,
-      'wait-withdraw-eth': 6, // aka getSecret
-      'withdraw-btc': 7,
-      'finish': 8,
-      'end': 9
-    }
+    this.ethSwap = swap.participantSwap
+    this.btcSwap = swap.ownerSwap
 
     if (!this.ethSwap) {
       throw new Error('BTC2ETH: "ethSwap" of type object required')
@@ -198,8 +183,6 @@ class ETH2BTC extends Flow {
         flow.swap.room.sendMessage({
           event: 'request ethWithdrawTxHash',
         })
-
-
       },
 
       // 7. Withdraw
@@ -288,9 +271,12 @@ class ETH2BTC extends Flow {
 
 
   verifyBtcScript() {
-    if (this.state.btcScriptVerified) return true
-    if (!this.state.btcScriptValues)
+    if (this.state.btcScriptVerified) {
+      return true
+    }
+    if (!this.state.btcScriptValues) {
       throw new Error(`No script, cannot verify`)
+    }
 
     this.finishStep({
       btcScriptVerified: true,
@@ -323,59 +309,6 @@ class ETH2BTC extends Flow {
         isBalanceEnough: false,
       })
     }
-  }
-
-  async tryWithdraw(_secret) {
-    const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, btcScriptValues } = this.state
-
-    if (!_secret)
-      throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
-
-    if (!btcScriptValues)
-      throw new Error(`Cannot withdraw without script values`)
-
-    if (secret && secret != _secret)
-      console.warn(`Secret already known and is different. Are you sure?`)
-
-    if (isBtcWithdrawn)
-      console.warn(`Looks like money were already withdrawn, are you sure?`)
-
-    console.log(`WITHDRAW using secret = ${_secret}`)
-
-    const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
-
-    if (secretHash != _secretHash)
-      console.warn(`Hash does not match!`)
-
-    const { scriptAddress } = this.btcSwap.createScript(btcScriptValues)
-
-    const balance = await this.btcSwap.getBalance(scriptAddress)
-
-    console.log(`address=${scriptAddress}, balance=${balance}`)
-
-    if (balance === 0) {
-      flow.finishStep({
-        isBtcWithdrawn: true,
-      }, { step: 'withdraw-btc' })
-
-      throw new Error(`Already withdrawn: address=${scriptAddress},balance=${balance}`)
-    }
-
-    await this.btcSwap.withdraw({
-      scriptValues: btcScriptValues,
-      secret: _secret,
-    }, (hash) => {
-      console.log(`TX hash=${hash}`)
-      this.setState({
-        btcSwapWithdrawTransactionHash: hash,
-      })
-    })
-
-    console.log(`TX withdraw sent: ${this.state.btcSwapWithdrawTransactionHash}`)
-
-    this.finishStep({
-      isBtcWithdrawn: true,
-    }, { step: 'withdraw-btc' })
   }
 
   tryRefund() {
