@@ -63,7 +63,7 @@ class EOS2BTC extends Flow {
         const { sellAmount: amount, participant } = flow.swap
 
         flow.eosSwap.open({
-          participantAccount: participant.eos.address,
+          btcOwner: participant.eos.address,
           secretHash,
           amount
         }, ({ openTx, swapID }) => {
@@ -85,6 +85,16 @@ class EOS2BTC extends Flow {
         })
       }
     ]
+  }
+
+  tryRefund() {
+    const { participant: btcOwner } = this.swap
+
+    return this.eosSwap.refund({
+      btcOwner
+    }, (eosRefundTx) => {
+      this.setState({ eosRefundTx })
+    })
   }
 
   needs() {

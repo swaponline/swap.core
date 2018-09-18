@@ -40,6 +40,19 @@ class EthSwap extends SwapInterface {
     this.contract = new SwapApp.env.web3.eth.Contract(this.abi, this.address)
   }
 
+  async updateGas() {
+    try {
+      await SwapApp.env.web3.eth.getGasPrice((err, _gasPrice) => {
+        const newGas = new BigNumber(String(_gasPrice)).plus(new BigNumber(String(1300000000)))
+        this.gasPrice = Number(newGas)
+      })
+    }
+    catch(err) {
+      console.error(`${err.name}: ${err.message}`)
+      this.gasPrice = 15e9
+    }
+  }
+
   /**
    *
    * @param {object} data
@@ -49,8 +62,14 @@ class EthSwap extends SwapInterface {
    * @param {function} handleTransactionHash
    * @returns {Promise}
    */
-  create(data, handleTransactionHash) {
+  async create(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount } = data
+
+    console.log('create before', this.gasPrice)
+
+    await this.updateGas()
+
+    console.log('create after', this.gasPrice)
 
     const base = BigNumber(10).pow(18)
     const newAmount = new BigNumber(amount.toString()).times(base).integerValue().toNumber()
@@ -64,6 +83,8 @@ class EthSwap extends SwapInterface {
         value: newAmount,
         gasPrice: this.gasPrice,
       }
+
+      console.log('params', params)
 
       const values = [ hash, participantAddress ]
 
@@ -79,16 +100,6 @@ class EthSwap extends SwapInterface {
 
       resolve(receipt)
     })
-  }
-
-
-  /**
-   *
-   * @param {string} value
-   */
-  addGasPrice = (value) => {
-    value = value.toNumber()
-    this.gasPrice = value
   }
 
   /**
@@ -194,8 +205,10 @@ class EthSwap extends SwapInterface {
    * @param {function} handleTransactionHash
    * @returns {Promise}
    */
-  withdraw(data, handleTransactionHash) {
+  async withdraw(data, handleTransactionHash) {
     const { ownerAddress, secret } = data
+
+    await this.updateGas()
 
     return new Promise(async (resolve, reject) => {
       const _secret = `0x${secret.replace(/^0x/, '')}`
@@ -203,6 +216,7 @@ class EthSwap extends SwapInterface {
       const params = {
         from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
+        gasPrice: this.gasPrice,
       }
 
       const receipt = await this.contract.methods.withdraw(_secret, ownerAddress).send(params)
@@ -226,13 +240,16 @@ class EthSwap extends SwapInterface {
    * @param {function} handleTransactionHash
    * @returns {Promise}
    */
-  refund(data, handleTransactionHash) {
+  async refund(data, handleTransactionHash) {
     const { participantAddress } = data
+
+    await this.updateGas()
 
     return new Promise(async (resolve, reject) => {
       const params = {
         from: SwapApp.services.auth.accounts.eth.address,
         gas: this.gasLimit,
+        gasPrice: this.gasPrice,
       }
 
       const receipt = await this.contract.methods.refund(participantAddress).send(params)
@@ -301,72 +318,7 @@ class EthSwap extends SwapInterface {
         console.log('bytes32', bytes32)
         return SwapApp.env.web3.utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
       }))
-
-  /**
-   *
-   * @param {object} data
-   * @param {string} data.participantAddress
-   * @param handleTransactionHash
-   * @returns {Promise}
-   */
-  close(data, handleTransactionHash) {
-    const { participantAddress } = data
-
-    return new Promise(async (resolve, reject) => {
-      const params = {
-        from: SwapApp.services.auth.accounts.eth.address,
-        gas: this.gasLimit,
-      }
-
-      try {
-        const result = await this.contract.methods.close(participantAddress).send(params)
-          .on('transactionHash', (hash) => {
-            if (typeof handleTransactionHash === 'function') {
-              handleTransactionHash(hash)
-            }
-          })
-          .on('error', (err) => {
-            reject(err)
-          })
-
-        resolve(result)
-      }
-      catch (err) {
-        reject(err)
-      }
-    })
-  }
 }
 
 
 export default EthSwap
-
-// /**
-//  *
-//  * @param {object} data
-//  * @param {string} data.participantAddress
-//  * @param {function} handleTransactionHash
-//  * @returns {Promise}
-//  */
-// sign(data, handleTransactionHash) {
-//   const { participantAddress } = data
-//
-//   return new Promise(async (resolve, reject) => {
-//     const params = {
-//       from: SwapApp.services.auth.accounts.eth.address,
-//       gas: this.gasLimit,
-//     }
-//
-//     const receipt = await this.contract.methods.sign(participantAddress).send(params)
-//       .on('transactionHash', (hash) => {
-//         if (typeof handleTransactionHash === 'function') {
-//           handleTransactionHash(hash)
-//         }
-//       })
-//       .on('error', (err) => {
-//         reject(err)
-//       })
-//
-//     resolve(receipt)
-//   })
-// }

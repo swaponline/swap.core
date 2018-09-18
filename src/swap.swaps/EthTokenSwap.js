@@ -279,7 +279,7 @@ class EthTokenSwap extends SwapInterface {
     const { ownerAddress, secret } = data
 
     await this.updateGas()
-	
+
     return new Promise(async (resolve, reject) => {
       const _secret = `0x${secret.replace(/^0x/, '')}`
 
