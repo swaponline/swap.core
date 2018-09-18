@@ -16,8 +16,20 @@ export default (tokenName) => {
 
       this._flowName = ETHTOKEN2BTC.getName()
 
+      this.stepNumbers = {
+        'sign': 1,
+        'wait-lock-btc': 2,
+        'verify-script': 3,
+        'sync-balance': 4,
+        'lock-eth': 5,
+        'wait-withdraw-eth': 6, // aka getSecret
+        'withdraw-btc': 7,
+        'finish': 8,
+        'end': 9
+      }
+
       this.ethTokenSwap = swap.participantSwap
-      this.btcSwap      = swap.ownerSwap
+      this.btcSwap = swap.ownerSwap
 
       if (!this.ethTokenSwap) {
         throw new Error('ETHTOKEN2BTC: "ethTokenSwap" of type object required')
@@ -80,12 +92,12 @@ export default (tokenName) => {
         // 2. Wait participant create, fund BTC Script
 
         () => {
-          flow.swap.room.once('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
+          flow.swap.room.once('create btc script', ({scriptValues, btcScriptCreatingTransactionHash}) => {
             flow.finishStep({
               secretHash: scriptValues.secretHash,
               btcScriptValues: scriptValues,
               btcScriptCreatingTransactionHash,
-            }, { step: 'wait-lock-btc', silentError: true })
+            }, {step: 'wait-lock-btc', silentError: true})
           })
 
           flow.swap.room.sendMessage({
@@ -108,7 +120,7 @@ export default (tokenName) => {
         // 5. Create ETH Contract
 
         async () => {
-          const { participant, buyAmount, sellAmount, owner } = flow.swap
+          const {participant, buyAmount, sellAmount, owner} = flow.swap
 
           // TODO move this somewhere!
           const utcNow = () => Math.floor(Date.now() / 1000)
@@ -127,9 +139,9 @@ export default (tokenName) => {
           }
 
           const swapData = {
-            participantAddress:   participant.eth.address,
-            secretHash:           flow.state.secretHash,
-            amount:               sellAmount,
+            participantAddress: participant.eth.address,
+            secretHash: flow.state.secretHash,
+            amount: sellAmount,
           }
 
           const allowance = await flow.ethTokenSwap.checkAllowance(SwapApp.services.auth.getPublicData().eth.address)
@@ -168,13 +180,13 @@ export default (tokenName) => {
 
           flow.finishStep({
             isEthContractFunded: true,
-          }, { step: 'lock-eth' })
+          }, {step: 'lock-eth'})
         },
 
         // 6. Wait participant withdraw
 
         () => {
-          flow.swap.room.once('ethWithdrawTxHash', async ({ ethSwapWithdrawTransactionHash }) => {
+          flow.swap.room.once('ethWithdrawTxHash', async ({ethSwapWithdrawTransactionHash}) => {
             flow.setState({
               ethSwapWithdrawTransactionHash,
             })
@@ -185,7 +197,7 @@ export default (tokenName) => {
               flow.finishStep({
                 isEthWithdrawn: true,
                 secret,
-              }, { step: 'wait-withdraw-eth' })
+              }, {step: 'wait-withdraw-eth'})
             }
           })
 
@@ -197,7 +209,7 @@ export default (tokenName) => {
         // 7. Withdraw
 
         async () => {
-          let { secret, btcScriptValues } = flow.state
+          let {secret, btcScriptValues} = flow.state
 
           if (!btcScriptValues) {
             console.error('There is no "btcScriptValues" in state. No way to continue swap...')
@@ -215,7 +227,7 @@ export default (tokenName) => {
 
           flow.finishStep({
             isBtcWithdrawn: true,
-          }, { step: 'withdraw-btc' })
+          }, {step: 'withdraw-btc'})
         },
 
 
@@ -240,10 +252,10 @@ export default (tokenName) => {
     }
 
     _checkSwapAlreadyExists() {
-      const { participant } = this.swap
+      const {participant} = this.swap
 
       const swapData = {
-        ownerAddress:       SwapApp.services.auth.accounts.eth.address,
+        ownerAddress: SwapApp.services.auth.accounts.eth.address,
         participantAddress: participant.eth.address
       }
 
@@ -273,7 +285,7 @@ export default (tokenName) => {
 
           this.finishStep({
             isMeSigned: true,
-          }, { step: 'sign' })
+          }, {step: 'sign'})
         })
 
         return true
@@ -290,13 +302,13 @@ export default (tokenName) => {
 
       this.finishStep({
         btcScriptVerified: true,
-      }, { step: 'verify-script' })
+      }, {step: 'verify-script'})
 
       return true
     }
 
     async syncBalance() {
-      const { sellAmount } = this.swap
+      const {sellAmount} = this.swap
 
       this.setState({
         isBalanceFetching: true,
@@ -310,7 +322,7 @@ export default (tokenName) => {
           balance,
           isBalanceFetching: false,
           isBalanceEnough: true,
-        }, { step: 'sync-balance' })
+        }, {step: 'sync-balance'})
       }
       else {
         this.setState({
@@ -322,7 +334,7 @@ export default (tokenName) => {
     }
 
     async tryRefund() {
-      const { participant } = this.swap
+      const {participant} = this.swap
 
       return this.ethTokenSwap.refund({
         participantAddress: participant.eth.address,
@@ -341,6 +353,40 @@ export default (tokenName) => {
             isSwapExist: false,
           })
         })
+    }
+
+    async tryWithdraw(_secret) {
+      const {secret, secretHash, isEthWithdrawn, isBtcWithdrawn, btcScriptValues} = this.state
+      if (!_secret)
+        throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
+
+      if (!btcScriptValues)
+        throw new Error(`Cannot withdraw without script values`)
+
+      if (secret && secret != _secret)
+        console.warn(`Secret already known and is different. Are you sure?`)
+
+      if (isBtcWithdrawn)
+        console.warn(`Looks like money were already withdrawn, are you sure?`)
+
+      console.log(`WITHDRAW using secret = ${_secret}`)
+
+      const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
+
+      if (secretHash != _secretHash)
+        console.warn(`Hash does not match!`)
+
+      const {scriptAddress} = this.btcSwap.createScript(btcScriptValues)
+      const balance = await this.btcSwap.getBalance(scriptAddress)
+
+      console.log(`address=${scriptAddress}, balance=${balance}`)
+
+      if (balance === 0) {
+        flow.finishStep({
+          isBtcWithdrawn: true,
+        }, {step: 'withdraw-btc'})
+        throw new Error(`Already withdrawn: address=${scriptAddress},balance=${balance}`)
+      }
     }
   }
 

@@ -14,6 +14,17 @@ class BTC2ETH extends Flow {
 
     this._flowName = BTC2ETH.getName()
 
+    this.stepNumbers = {
+      'sign': 1,
+      'submit-secret': 2,
+      'sync-balance': 3,
+      'lock-btc': 4,
+      'wait-lock-eth': 5,
+      'withdraw-eth': 6,
+      'finish': 7,
+      'end': 8
+    }
+
     this.ethSwap = swap.ownerSwap
     this.btcSwap = swap.participantSwap
 
