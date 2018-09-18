@@ -101,6 +101,18 @@ class BTC2EOS extends Flow {
     ]
   }
 
+  tryRefund() {
+    return this.btcSwap.refund({
+      scriptValues: this.state.btcScriptValues,
+      secret: this.state.secret,
+    }, (hash) => {
+      this.setState({
+        refundTransactionHash: hash,
+        isRefunded: true,
+      })
+    })
+  }
+
   needs() {
     const flow = this
     const swap = this.swap
