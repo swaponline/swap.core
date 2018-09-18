@@ -292,7 +292,8 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
           'isProcessing',
         ),
       },
-    })
+    });
+	return order;
   }
 
   /**

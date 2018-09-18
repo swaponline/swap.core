@@ -50,7 +50,6 @@ class EthTokenSwap extends SwapInterface {
     this.gasPrice       = options.gasPrice || 2e9
     this.fetchBalance   = options.fetchBalance
   }
-
   _initSwap() {
     this.contract       = new SwapApp.env.web3.eth.Contract(this.abi, this.address)
     this.ERC20          = new SwapApp.env.web3.eth.Contract(this.tokenAbi, this.tokenAddress)
@@ -171,7 +170,35 @@ class EthTokenSwap extends SwapInterface {
       }
     })
   }
-
+  /**
+   * @param {string} participantAddress
+   * @param {string} newTargetWallet
+   * @param {function} handleTransactionHash
+   */
+  async setTargetWallet(participantAddress, newTargetWallet, handleTransactionHash) {
+	return new Promise(async (resolve, reject) => {
+	  try {
+		const params  = {
+          from: SwapApp.services.auth.accounts.eth.address,
+          gas: this.gasLimit,
+          gasPrice: this.gasPrice,
+        }
+        const result = await this.contract.methods.setTargetWallet(participantAddress, newTargetWallet).send(params)
+          .on('transactionHash', (hash) => {
+            if (typeof handleTransactionHash === 'function') {
+              handleTransactionHash(hash)
+            }
+          })
+		  .on('error', (err) => {
+            reject(err)
+          })
+        resolve("ok")
+      }
+      catch (err) {
+        reject(err)
+      }
+	});
+  }
   /**
    *
    * @param {object} data
@@ -239,7 +266,7 @@ class EthTokenSwap extends SwapInterface {
       return `Expected value: ${expectedValue.toNumber()}, got: ${balance}`
     }
   }
-
+  
   /**
    *
    * @param {object} data
