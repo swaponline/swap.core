@@ -13,4 +13,5 @@ export default {
   syc: 'SYC',
   drt: 'DRT',
   yup: 'YUP',
+  lev: 'LEV',
 }

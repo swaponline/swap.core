@@ -14,12 +14,6 @@ class BTC2ETH extends Flow {
 
     this._flowName = BTC2ETH.getName()
 
-    this.ethSwap = SwapApp.swaps[constants.COINS.eth]
-    this.btcSwap = SwapApp.swaps[constants.COINS.btc]
-
-    this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
-    this.myEthAddress = SwapApp.services.auth.accounts.eth.address
-
     this.stepNumbers = {
       'sign': 1,
       'submit-secret': 2,
@@ -30,6 +24,9 @@ class BTC2ETH extends Flow {
       'finish': 7,
       'end': 8
     }
+
+    this.ethSwap = swap.ownerSwap
+    this.btcSwap = swap.participantSwap
 
     if (!this.ethSwap) {
       throw new Error('BTC2ETH: "ethSwap" of type object required')
@@ -127,7 +124,6 @@ class BTC2ETH extends Flow {
 
       () => {
         this.syncBalance()
-        console.log(`sync balance`)
       },
 
       // 4. Create BTC Script, fund, notify participant
@@ -328,7 +324,7 @@ class BTC2ETH extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.btcSwap.fetchBalance(this.myBtcAddress)
+    const balance = await this.btcSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
     if (isEnoughMoney) {

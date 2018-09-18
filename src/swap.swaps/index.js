@@ -7,5 +7,5 @@ export {
   EthSwap,
   BtcSwap,
   EthTokenSwap,
-  EosSwap
+  EosSwap,
 }
