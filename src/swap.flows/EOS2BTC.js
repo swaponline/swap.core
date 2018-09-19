@@ -73,9 +73,19 @@ class EOS2BTC extends Flow {
       },
       () => {
         const { secret, scriptValues } = flow.state
+        
+        // withdraw fails until funding transaction will get confirmed
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+        const withdraw = () => {
+          return flow.btcSwap.withdraw({ scriptValues, secret }, null, null)
+            .catch((error) => {
+              console.log('Cannot withdraw BTC, try again in 5 sec...')
+              return sleep(5000).then(withdraw)
+            })
+        }
 
-        flow.btcSwap.withdraw({ scriptValues, secret }, (btcWithdrawTx) => {
-          this.finishStep({ btcWithdrawTx })
+        withdraw().then(({ txid }) => {
+          flow.finishStep({ btcWithdrawTx: txid })
           flow.send().btcWithdraw()
         })
       }
