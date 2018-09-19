@@ -69,15 +69,13 @@ class BTC2EOS extends Flow {
           lockTime: lockTime
         }
 
-        const opcodeSHA256 = SwapApp.env.bitcoin.opcodes.OP_SHA256
-
         flow.btcSwap.fundScript({
           scriptValues,
           amount
         }, (createTx) => {
           flow.finishStep({ scriptValues, createTx })
           flow.send().btcScript()
-        }, opcodeSHA256)
+        }, 'sha256')
       },
       () => {
         flow.needs().openSwap().then(({ openTx, swapID }) => {
