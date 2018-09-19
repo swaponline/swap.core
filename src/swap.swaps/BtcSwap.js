@@ -73,14 +73,16 @@ class BtcSwap extends SwapInterface {
    * @param {number} data.lockTime
    * @returns {{scriptAddress: *, script: (*|{ignored})}}
    */
-  createScript(data) {
+  createScript(data, hashOpcode) {
+    hashOpcode = hashOpcode || SwapApp.env.bitcoin.opcodes.OP_RIPEMD160
+
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
 
     console.log('DATA', data)
 
     const script = SwapApp.env.bitcoin.script.compile([
 
-      SwapApp.env.bitcoin.opcodes.OP_RIPEMD160,
+      hashOpcode,
       Buffer.from(secretHash, 'hex'),
       SwapApp.env.bitcoin.opcodes.OP_EQUALVERIFY,
 
@@ -122,9 +124,9 @@ class BtcSwap extends SwapInterface {
    * @param {string} expected.recipientPublicKey
    * @returns {Promise.<string>}
    */
-  async checkScript(data, expected) {
+  async checkScript(data, expected, hashOpcode) {
     const { recipientPublicKey, lockTime } = data
-    const { scriptAddress, script } = this.createScript(data)
+    const { scriptAddress, script } = this.createScript(data, hashOpcode)
 
     const unspents      = await this.fetchUnspents(scriptAddress)
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
@@ -149,12 +151,12 @@ class BtcSwap extends SwapInterface {
    * @param {function} handleTransactionHash
    * @returns {Promise}
    */
-  fundScript(data, handleTransactionHash) {
+  fundScript(data, handleTransactionHash, hashOpcode) {
     const { scriptValues, amount } = data
 
     return new Promise(async (resolve, reject) => {
       try {
-        const { scriptAddress } = this.createScript(scriptValues)
+        const { scriptAddress } = this.createScript(scriptValues, hashOpcode)
 
         const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
         const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.btc.getAddress())
@@ -201,14 +203,14 @@ class BtcSwap extends SwapInterface {
    * @param {object|string} data - scriptValues or wallet address
    * @returns {Promise.<void>}
    */
-  async getBalance(data) {
+  async getBalance(data, hashOpcode) {
     let address
 
     if (typeof data === 'string') {
       address = data
     }
     else if (typeof data === 'object') {
-      const { scriptAddress } = this.createScript(data)
+      const { scriptAddress } = this.createScript(data, hashOpcode)
 
       address = scriptAddress
     }
@@ -230,10 +232,10 @@ class BtcSwap extends SwapInterface {
    * @param {boolean} isRefund
    * @returns {Promise}
    */
-  async getWithdrawRawTransaction(data, isRefund) {
+  async getWithdrawRawTransaction(data, isRefund, hashOpcode) {
     const { scriptValues, secret } = data
 
-    const { script, scriptAddress } = this.createScript(scriptValues)
+    const { script, scriptAddress } = this.createScript(scriptValues, hashOpcode)
 
     const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
     const unspents      = await this.fetchUnspents(scriptAddress)
@@ -309,10 +311,11 @@ class BtcSwap extends SwapInterface {
    * @param {boolean} isRefund
    * @returns {Promise}
    */
-  withdraw(data, handleTransactionHash, isRefund) {
+  withdraw(data, handleTransactionHash, isRefund, hashOpcode) {
     return new Promise(async (resolve, reject) => {
       try {
-        const txRaw = await this.getWithdrawRawTransaction(data, isRefund)
+        const txRaw = await this.getWithdrawRawTransaction(data, isRefund, hashOpcode)
+        console.log('raw tx withdraw', txRaw.toHex())
 
         if (typeof handleTransactionHash === 'function') {
           handleTransactionHash(txRaw.getId())
