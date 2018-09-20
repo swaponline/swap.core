@@ -34,6 +34,7 @@ class UsdtSwap extends SwapInterface {
     this.fetchBalance   = options.fetchBalance
     this.fetchUnspents  = options.fetchUnspents
     this.broadcastTx    = options.broadcastTx
+    this.fetchTx        = options.fetchTx
 
     this.getRecommendedFees = options.getRecommendedFees || (() => {})
   }
@@ -149,23 +150,52 @@ class UsdtSwap extends SwapInterface {
       return `Expected script value: ${expectedValue}, got: ${totalUnspent}. Maybe the script was not mined?`
     }
 
-    // TODO
-    // const outputs = await this.fetchInputs(fundingTxHash)
+    let outputs
+    try {
+      const tx = await this.fetchTx(fundingTxHash)
+
+      outputs = tx.vout
+    } catch (err) {
+      console.error(err)
+      return `Can't get funding tx outputs ${fundingTxHash}`
+    }
+    console.log(outputs)
+
+    if (!outputs || outputs.length < 2) {
+      return `Expected at least 2 outputs at funding tx ${fundingTxHash}, got: ${outputs}`
+    }
 
     // check output-0 is script with same address
-    // if () {
-    //   return `Expected script address: ${scriptAddress}, got: ${output.scriptAddress}`
-    // }
+    const htlcScriptOutput = outputs[0]
+    try {
+      const fundedScriptAddress = htlcScriptOutput.scriptPubKey.addresses[0]
+
+      if (scriptAddress !== fundedScriptAddress) {
+        return `Expected script address: ${scriptAddress}, got: ${fundedScriptAddress}`
+      }
+    } catch (err) {
+      console.error(err)
+      return `Expected script address: ${scriptAddress}, got error at ${htlcScriptOutput}`
+    }
 
     // check output-1 is a OMNI
-    const expectedOmniOutput = createOmniScript(expected.amount)
+    const omniOutput = outputs[1]
+    try {
+      const omniScript = omniOutput.scriptPubKey.asm
+      const expectedOmniScript = createOmniScript(expected.amount)
+      const expectedOmniOutput = SwapApp.env.bitcoin.script.toASM(expectedOmniScript)
 
-    // if (!expectedOmniOutput.equals(txb.tx.outs[0].script)) {
-    //   return `Expected first output value: `
-    //   + SwapApp.env.bitcoin.script.toASM(expectedOmniOutput)
-    //   + `, got: `
-    //   + SwapApp.env.bitcoin.script.toASM(txb.tx.outs[0].script)
-    // }
+      if (expectedOmniOutput !== omniScript) {
+        console.log(expectedOmniOutput, omniScript)
+        return `Expected first output value: `
+        + expectedOmniOutput
+        + `, got: `
+        + omniScript
+      }
+    } catch (err) {
+      console.error(err)
+      return `Expected omni output for amount = ${expected.amount}, got error at ${omniOutput}`
+    }
 
     if (expected.lockTime > lockTime) {
       return `Expected script lockTime: ${expected.lockTime}, got: ${lockTime}`
@@ -217,43 +247,8 @@ class UsdtSwap extends SwapInterface {
     })
   }
 
-  buildRawRedeemTransaction(data) {
-    const { scriptValues, fundingValues, amount } = data
-
-    return new Promise(async (resolve, reject) => {
-      try {
-        const { ownerPublicKey, recipientPublicKey } = scriptValues
-
-        const dialog = {
-          owner: SwapApp.services.auth.accounts.btc,
-          party: Buffer.from(recipientPublicKey, 'hex')
-        }
-
-        const omniScriptValues = {
-          ...fundingValues,
-          ...scriptValues,
-        }
-
-        const redeem_tx = await createRedeemTransaction(dialog, omniScriptValues, amount, this.fetchUnspents, this.getRecommendedFees, this.network)
-
-        try {
-          const result = redeem_tx.buildIncomplete().toHex()
-
-          resolve(result)
-        }
-        catch (err) {
-          reject(err)
-        }
-      }
-      catch (err) {
-        reject(err)
-      }
-    })
-  }
-
-  redeemScript(data, handleTransactionHash) {
-    const { usdtRawRedeemTransactionHex: redeemHex, secret, scriptValues } = data
-    const { amount } = data
+  redeemScript(data, handleTransactionHash, isRefund) {
+    const { amount, scriptValues, secret } = data
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -261,7 +256,7 @@ class UsdtSwap extends SwapInterface {
         const { ownerPublicKey, recipientPublicKey } = scriptValues
 
 
-        const redeem_tx = new SwapApp.env.bitcoin.TransactionBuilder()
+        const redeem_tx = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
 
         const { script, scriptAddress } = createScript(
           secretHash,
@@ -289,8 +284,12 @@ class UsdtSwap extends SwapInterface {
           throw new Error(`Total less than fee: ${totalUnspent} < ${fundValue} + ${feeValue}`)
         }
 
+        if (isRefund) {
+          redeem_tx.setLockTime(lockTime)
+        }
+
         scriptUnspents.forEach(({ txid, vout }) => {
-          redeem_tx.addInput(txid, vout)
+          redeem_tx.addInput(txid, vout, 0xfffffffe)
         })
 
         myUnspents.forEach(({ txid, vout }, index) => {
@@ -299,8 +298,8 @@ class UsdtSwap extends SwapInterface {
 
         const omniOutput = createOmniScript(amount)
 
-        redeem_tx.addOutput(myBtcAddress, totalValue)
-        redeem_tx.addOutput(omniOutput, fundValue)
+        redeem_tx.addOutput(myBtcAddress, totalValue + fundValue)
+        redeem_tx.addOutput(omniOutput, 0)
 
         myUnspents.forEach((utxo, index) => {
           const inputIndex = index + scriptUnspents.length
@@ -341,36 +340,6 @@ class UsdtSwap extends SwapInterface {
     })
   }
 
-  getRedeemTransaction(data) {
-    const { redeemHex, secret, scriptValues } = data
-
-    const { secretHash, lockTime: locktime } = scriptValues
-    const { ownerPublicKey, recipientPublicKey } = scriptValues
-
-    const txb = SwapApp.env.bitcoin.TransactionBuilder.fromTransaction(
-        SwapApp.env.bitcoin.Transaction.fromHex(redeemHex))
-
-    const { script, scriptAddress: addr } = createScript(
-      secretHash,
-      ownerPublicKey,
-      recipientPublicKey,
-      locktime)
-
-    console.log('script address', addr)
-
-    const txRaw = txb.buildIncomplete()
-
-    const forSigning = {
-      txRaw,
-      script,
-      secret,
-    }
-
-    this._signTransaction(forSigning, 1)
-
-    return txRaw
-  }
-
   /**
    *
    * @param {object|string} data - scriptValues or wallet address
@@ -402,107 +371,12 @@ class UsdtSwap extends SwapInterface {
    * @param {object} data
    * @param {object} data.scriptValues
    * @param {string} data.secret
-   * @param {boolean} isRefund
-   * @returns {Promise}
-   */
-  async getWithdrawRawTransaction(data, isRefund) {
-    const { scriptValues, secret } = data
-
-    const { script, scriptAddress } = this.createScript(scriptValues)
-
-    const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
-    const unspents      = await this.fetchUnspents(scriptAddress)
-    const feeValue      = FEE_VALUE
-    const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
-
-    if (totalUnspent < feeValue) {
-      throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue}`)
-    }
-
-    if (isRefund) {
-      tx.setLockTime(scriptValues.lockTime)
-    }
-
-    unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
-    tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
-
-    const txRaw = tx.buildIncomplete()
-
-    this._signTransaction({
-      script,
-      secret,
-      txRaw,
-    })
-
-    return txRaw
-  }
-
-  /**
-   *
-   * @param {object} data
-   * @param {object} data.scriptValues
-   * @param {string} data.secret
-   * @param {boolean} isRefund
-   * @returns {Promise}
-   */
-  async getWithdrawHexTransaction(data, isRefund) {
-    const txRaw = await this.getWithdrawRawTransaction(data, isRefund)
-
-    return txRaw.toHex()
-  }
-
-  /**
-   *
-   * @param {object} data
-   * @param {object} data.scriptValues
-   * @param {string} data.secret
-   * @returns {Promise}
-   */
-  getRefundRawTransaction(data) {
-    return this.getWithdrawRawTransaction(data, true)
-  }
-
-  /**
-   *
-   * @param {object} data
-   * @param {object} data.scriptValues
-   * @param {string} data.secret
-   * @returns {Promise}
-   */
-  async getRefundHexTransaction(data) {
-    const txRaw = await this.getRefundRawTransaction(data)
-
-    return txRaw.toHex()
-  }
-
-  /**
-   *
-   * @param {object} data
-   * @param {object} data.scriptValues
-   * @param {string} data.secret
    * @param {function} handleTransactionHash
    * @param {boolean} isRefund
    * @returns {Promise}
    */
-  withdraw(data, handleTransactionHash, isRefund) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const txRaw = await this.getRedeemTransaction(data)
-
-        if (typeof handleTransactionHash === 'function') {
-          handleTransactionHash(txRaw.getId())
-        }
-
-        console.log('txRaw', txRaw)
-        const result = await this.broadcastTx(txRaw.toHex())
-        console.log('txRaw', result)
-
-        resolve(result)
-      }
-      catch (err) {
-        reject(err)
-      }
-    })
+  withdraw(data, handleTransactionHash) {
+    return this.redeemScript(data, handleTransactionHash, false)
   }
 
   /**
@@ -514,7 +388,7 @@ class UsdtSwap extends SwapInterface {
    * @returns {Promise}
    */
   refund(data, handleTransactionHash) {
-    return this.withdraw(data, handleTransactionHash, true)
+    return this.redeemScript(data, handleTransactionHash, true)
   }
 }
 

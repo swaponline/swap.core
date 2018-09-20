@@ -183,11 +183,6 @@ export default (tokenName) => {
           //   scriptAddress: usdtFunding.scriptValues.scriptAddress,
           // }
 
-          const rawRedeemHex = await flow.usdtSwap.buildRawRedeemTransaction({
-            scriptValues,
-            fundingValues,
-            amount: sellAmount,
-          })
 
           flow.swap.room.on('request btc script', () => {
             flow.swap.room.sendMessage({
@@ -196,7 +191,6 @@ export default (tokenName) => {
                 scriptValues,
                 fundingValues,
                 usdtFundingTransactionHash,
-                rawRedeemHex,
               }
             })
           })
@@ -206,15 +200,12 @@ export default (tokenName) => {
             data: {
               scriptValues,
               usdtFundingTransactionHash,
-              rawRedeemHex,
-
             }
           })
 
           flow.finishStep({
             isBtcScriptFunded: true,
             usdtScriptValues: scriptValues,
-            usdtRawRedeemTransactionHex: rawRedeemHex,
           })
 
           // leave only when we have and the party has all values
