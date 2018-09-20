@@ -298,7 +298,8 @@ class UsdtSwap extends SwapInterface {
 
         const omniOutput = createOmniScript(amount)
 
-        redeem_tx.addOutput(myBtcAddress, totalValue + fundValue)
+        redeem_tx.addOutput(myBtcAddress, fundValue)
+        redeem_tx.addOutput(myBtcAddress, totalValue)
         redeem_tx.addOutput(omniOutput, 0)
 
         myUnspents.forEach((utxo, index) => {
