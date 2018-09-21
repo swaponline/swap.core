@@ -78,7 +78,7 @@ beforeAll(() => {
 
   SwapApp.swaps['USDT'] = new UsdtSwap({
     fetchBalance: jest.fn(address => 100),
-    fetchUnspents: jest.fn(address => fixtures.unspents),
+    fetchUnspents: jest.fn(address => fixtures.unspents.filter(u => u.address == address)),
     broadcastTx: jest.fn(tx => Promise.resolve()),
   })
 
@@ -191,10 +191,9 @@ describe('full flow', () => {
 
     SwapApp.services.room.emit('finish eth withdraw', _roomId)
 
-    expect(swap.flow.state.step).toBe(7)
-    expect(swap.flow.state.isEthWithdrawn).toBe(true)
-
     await timeout(100)
+    expect(swap.flow.state.step).toBe(9)
+    expect(swap.flow.state.isEthWithdrawn).toBe(true)
     expect(swap.flow.state.isBtcWithdrawn).toBe(true)
   })
 

@@ -5,7 +5,7 @@ import Room from './Room'
 
 class Swap {
 
-  constructor(id) {
+  constructor(id, order) {
     this.id               = null
     this.isMy             = null
     this.owner            = null

@@ -6,6 +6,8 @@ import Eos from "eosjs"
 let storage = {}
 
 let room = new EventEmitter()
+room.connection = {}
+room.connection.hasPeer = jest.fn(peer => true)
 room.sendMessage = jest.fn()
 room.unsubscribe = jest.fn()
 room.sendConfirmation = jest.fn((peer, values) => {
