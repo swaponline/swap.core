@@ -14,4 +14,6 @@ export default {
   drt: 'DRT',
   yup: 'YUP',
   lev: 'LEV',
+  arn: 'ARN',
+  gusd: 'GUSD',
 }
