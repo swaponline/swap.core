@@ -75,6 +75,7 @@ beforeAll(() => {
     fetchBalance: jest.fn(address => 100),
     fetchUnspents: jest.fn(address => fixtures.unspents),
     broadcastTx: jest.fn(),
+    fetchTx: jest.fn(),
   })
 
   SwapApp.swaps['SWAP']._initSwap()

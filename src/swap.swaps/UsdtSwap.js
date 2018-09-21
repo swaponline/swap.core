@@ -6,7 +6,6 @@ const DUST = 546
 const createOmniScript = require('./usdt/omni_script')
 const createScript = require('./usdt/swap_script')
 const createFundingTransaction = require('./usdt/funding_tx')
-const createRedeemTransaction = require('./usdt/redeem_tx')
 
 class UsdtSwap extends SwapInterface {
 
@@ -137,7 +136,7 @@ class UsdtSwap extends SwapInterface {
    * @returns {Promise.<string>}
    */
   async checkScript(data, expected) {
-    const { redeemHex, scriptValues, fundingTxHash } = data
+    const { scriptValues, fundingTxHash } = data
 
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = scriptValues
     const { scriptAddress, script } = createScript(secretHash, ownerPublicKey, recipientPublicKey, lockTime)

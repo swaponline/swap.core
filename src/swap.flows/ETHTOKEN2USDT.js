@@ -57,9 +57,7 @@ export default (tokenName) => {
         isBalanceEnough: false,
         balance: null,
 
-        // usdtFundingTransactionHash: null,
         usdtFundingTransactionHash: null,
-        usdtRawRedeemTransactionHex: null,
 
         ethSwapCreationTransactionHash: null,
         usdtSwapWithdrawTransactionHash: null,
@@ -98,12 +96,11 @@ export default (tokenName) => {
         // 2. Wait participant create, fund USDT Script
 
         () => {
-          flow.swap.room.once('create btc script', ({ scriptValues, usdtFundingTransactionHash, rawRedeemHex }) => {
+          flow.swap.room.once('create btc script', ({ scriptValues, usdtFundingTransactionHash }) => {
             flow.finishStep({
               secretHash: scriptValues.secretHash,
               usdtScriptValues: scriptValues,
               usdtFundingTransactionHash,
-              usdtRawRedeemTransactionHex: rawRedeemHex,
             }, { step: 'wait-lock-usdt', silentError: true })
           })
 
@@ -135,7 +132,6 @@ export default (tokenName) => {
           const getLockTime = () => utcNow() + 3600 * 1 // 1 hour from now
 
           const scriptValues = {
-            redeemHex: flow.state.usdtRawRedeemTransactionHex,
             scriptValues: flow.state.usdtScriptValues,
             fundingTxHash: flow.state.usdtFundingTransactionHash,
           }
@@ -241,7 +237,6 @@ export default (tokenName) => {
               scriptValues: flow.state.usdtScriptValues,
               secret,
               amount: buyAmount,
-              redeemHex: flow.state.usdtRawRedeemTransactionHex,
             }, (hash) => {
               console.log('withdraw tx hash', hash)
 
@@ -370,7 +365,7 @@ export default (tokenName) => {
     }
 
     async tryWithdraw(_secret) {
-      const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, usdtScriptValues, usdtRawRedeemTransactionHex } = this.state
+      const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, usdtScriptValues } = this.state
 
       if (!_secret)
         throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
@@ -407,7 +402,6 @@ export default (tokenName) => {
 
       await this.usdtSwap.withdraw({
         scriptValues: usdtScriptValues,
-        redeemHex: usdtRawRedeemTransactionHex,
         secret: _secret,
       }, (hash) => {
         console.log(`TX hash=${hash}`)

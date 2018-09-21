@@ -80,6 +80,7 @@ beforeAll(() => {
     fetchBalance: jest.fn(address => 100),
     fetchUnspents: jest.fn(address => fixtures.unspents.filter(u => u.address == address)),
     broadcastTx: jest.fn(tx => Promise.resolve()),
+    fetchTx: jest.fn(),
   })
 
   SwapApp.swaps['USDT'].checkScript = () => {}

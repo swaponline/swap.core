@@ -2,12 +2,6 @@ import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
-class Tx {
-  constructor(hash, hex) {
-    this.hash = hash
-    this.hex = hex
-  }
-}
 
 export default (tokenName) => {
 
@@ -56,7 +50,6 @@ export default (tokenName) => {
         // btcScriptCreatingTransactionHash: null,
         usdtFundingTransactionHash: null,
         usdtFundingTransactionValues: null,
-        usdtRawRedeemTransactionHex: null,
 
         ethSwapCreationTransactionHash: null,
 
@@ -160,7 +153,6 @@ export default (tokenName) => {
 
           if (flow.state.usdtFundingTransactionValues) {
             fundingValues = flow.state.usdtFundingTransactionValues
-            // usdtFundingTransactionHash = flow.state.usdtFundingTransactionHash
           } else {
             await flow.usdtSwap.fundScript(
               { scriptValues, amount: sellAmount },
@@ -177,11 +169,6 @@ export default (tokenName) => {
                 })
               })
           }
-
-          // const fundingValues = {
-          //   txid: usdtFundingTransactionHash,
-          //   scriptAddress: usdtFunding.scriptValues.scriptAddress,
-          // }
 
 
           flow.swap.room.on('request btc script', () => {
