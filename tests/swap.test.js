@@ -23,7 +23,7 @@ test('check app loaded', () => {
 })
 
 test('sets the right type of room', () => {
-  expect(app.services.room.roomName).toBe('testnet.swap.online')
+  expect(app.services.room.roomName).toBe('swap.core.tests.swap.online')
 })
 
 test('create an order', async () => {

@@ -2,7 +2,7 @@ const request = require('superagent')
 
 module.exports = {
   swapRoom: {
-    // roomName: 'swap.core.tests.swap.online',
+    roomName: 'swap.core.tests.swap.online',
     EXPERIMENTAL: {
       pubsub: true
     },
