@@ -30,13 +30,14 @@ class SwapRoom extends ServiceInterface {
       throw new Error('SwapRoomService: IpfsRoom required')
     }
 
-    const { roomName, EXPERIMENTAL, ...config } = this._config
-    
+    const { roomName, EXPERIMENTAL, config, ...options } = this._config
+
     const ipfs = new SwapApp.env.Ipfs({
       EXPERIMENTAL: {
         pubsub: true,
       },
-      ...config,
+      config: { config },
+      ...options,
     })
       .on('ready', () => ipfs.id((err, info) => {
         console.info('IPFS ready!')
