@@ -30,8 +30,14 @@ class SwapRoom extends ServiceInterface {
       throw new Error('SwapRoomService: IpfsRoom required')
     }
 
-    const { roomName, EXPERIMENTAL, ...config } = this._config
-    
+    const defaultRoomName = SwapApp.isMainNet()
+      ? 'swap.online'
+      : 'testnet.swap.online'
+
+    const { config, roomName } = this._config
+
+    this.roomName = roomName || defaultRoomName
+
     const ipfs = new SwapApp.env.Ipfs({
       EXPERIMENTAL: {
         pubsub: true,
@@ -64,12 +70,6 @@ class SwapRoom extends ServiceInterface {
     }
 
     this.peer = peer
-
-    const defaultRoomName = SwapApp.isMainNet()
-                  ? 'swap.online'
-                  : 'testnet.swap.online'
-
-    this.roomName = this._config.roomName || defaultRoomName
 
     console.log(`Using room: ${this.roomName}`)
 
