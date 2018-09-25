@@ -28,6 +28,9 @@ class EthTokenSwap extends SwapInterface {
     if (typeof options.address !== 'string') {
       throw new Error('EthTokenSwap: "address" required')
     }
+    if (typeof options.decimals !== 'number') {
+      throw new Error('EthTokenSwap: "decimals" required')
+    }
     if (!Array.isArray(options.abi)) {
       throw new Error('EthTokenSwap: "abi" required')
     }
