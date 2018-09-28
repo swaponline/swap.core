@@ -5,7 +5,7 @@ import Room from './Room'
 
 class Swap {
 
-  constructor(id) {
+  constructor(id, order) {
     this.id               = null
     this.isMy             = null
     this.owner            = null
@@ -20,7 +20,7 @@ class Swap {
     let data = SwapApp.env.storage.getItem(`swap.${id}`)
 
     if (!data) {
-      const order = SwapApp.services.orders.getByKey(id)
+      order = order || SwapApp.services.orders.getByKey(id)
 
       data = this._getDataFromOrder(order)
     }
@@ -38,6 +38,7 @@ class Swap {
     this.participantSwap  = SwapApp.swaps[data.sellCurrency.toUpperCase()]
 
     const Flow = SwapApp.flows[`${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}`]
+
 
     if (!Flow) {
       throw new Error(`Flow with name "${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}" not found in SwapApp.flows`)

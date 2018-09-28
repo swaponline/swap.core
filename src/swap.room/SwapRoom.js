@@ -31,7 +31,7 @@ class SwapRoom extends ServiceInterface {
     }
 
     const { roomName, EXPERIMENTAL, ...config } = this._config
-    
+
     const ipfs = new SwapApp.env.Ipfs({
       EXPERIMENTAL: {
         pubsub: true,
