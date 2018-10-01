@@ -30,7 +30,7 @@ class EthSwap extends SwapInterface {
     this.abi            = options.abi
 
     this._swapName      = constants.COINS.eth
-    this.gasLimit       = options.gasLimit || 3e6
+    this.gasLimit       = options.gasLimit || 1e5
     this.gasPrice       = options.gasPrice || 2e9
     this.fetchBalance   = options.fetchBalance
   }

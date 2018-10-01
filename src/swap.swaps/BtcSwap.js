@@ -1,5 +1,6 @@
 import SwapApp, { SwapInterface, constants } from 'swap.app'
 
+const FEE_VALUE = 5000
 
 class BtcSwap extends SwapInterface {
 
@@ -163,7 +164,7 @@ class BtcSwap extends SwapInterface {
         const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.btc.getAddress())
 
         const fundValue     = amount.multipliedBy(1e8).integerValue().toNumber()
-        const feeValue      = 15000 // TODO how to get this value
+        const feeValue      = FEE_VALUE // TODO how to get this value
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue
 
@@ -240,7 +241,7 @@ class BtcSwap extends SwapInterface {
 
     const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
     const unspents      = await this.fetchUnspents(scriptAddress)
-    const feeValue      = 15000 // TODO how to get this value
+    const feeValue      = FEE_VALUE // TODO how to get this value
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
 
     if (totalUnspent < feeValue) {
