@@ -1,6 +1,5 @@
 import SwapApp, { SwapInterface, constants } from 'swap.app'
 
-const FEE_VALUE = 5000
 
 class BtcSwap extends SwapInterface {
 
@@ -28,6 +27,7 @@ class BtcSwap extends SwapInterface {
     this.fetchBalance   = options.fetchBalance
     this.fetchUnspents  = options.fetchUnspents
     this.broadcastTx    = options.broadcastTx
+    this.feeValue       = options.feeValue || 5000
   }
 
   _initSwap() {
@@ -164,7 +164,7 @@ class BtcSwap extends SwapInterface {
         const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.btc.getAddress())
 
         const fundValue     = amount.multipliedBy(1e8).integerValue().toNumber()
-        const feeValue      = FEE_VALUE // TODO how to get this value
+        const feeValue      = this.feeValue // TODO how to get this value
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue
 
@@ -216,7 +216,7 @@ class BtcSwap extends SwapInterface {
 
       address = scriptAddress
     }
-    else {
+    else {this.feeValue
       throw new Error('Wrong data type')
     }
 
@@ -241,7 +241,7 @@ class BtcSwap extends SwapInterface {
 
     const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
     const unspents      = await this.fetchUnspents(scriptAddress)
-    const feeValue      = FEE_VALUE // TODO how to get this value
+    const feeValue      = this.feeValue // TODO how to get this value
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
 
     if (totalUnspent < feeValue) {
