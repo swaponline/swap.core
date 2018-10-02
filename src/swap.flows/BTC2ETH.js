@@ -6,7 +6,13 @@ import { Flow } from 'swap.swap'
 class BTC2ETH extends Flow {
 
   static getName() {
-    return `${constants.COINS.btc}2${constants.COINS.eth}`
+    return `${this.getFromName()}2${this.getToName()}`
+  }
+  static getFromName() {
+    return constants.COINS.btc
+  }
+  static getToName() {
+    return constants.COINS.eth
   }
 
   constructor(swap) {
