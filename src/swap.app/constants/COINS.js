@@ -1,6 +1,7 @@
 export default {
   eth: 'ETH',
   btc: 'BTC',
+  ltc: 'LTC',
   eos: 'EOS',
   nim: 'NIM',
   usdt: 'USDT',
