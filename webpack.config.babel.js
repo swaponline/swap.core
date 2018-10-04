@@ -11,7 +11,9 @@ const globals = {
 const webpackConfig = {
 
   mode: 'production',
-
+  node: {
+    fs: 'empty'
+  },
   entry: {
 	
     'auth': resolveSrcPath('swap.auth/index.js'),

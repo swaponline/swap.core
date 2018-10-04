@@ -8,9 +8,14 @@ export default (tokenName) => {
   class ETHTOKEN2USDT extends Flow {
 
     static getName() {
-      return `${tokenName.toUpperCase()}2${constants.COINS.usdt}`
+      return `${this.getFromName()}2${this.getToName()}`
     }
-
+    static getFromName() {
+      return tokenName.toUpperCase()
+    }
+    static getToName() {
+      return constants.COINS.usdt
+    }
     constructor(swap) {
       super(swap)
 
