@@ -35,6 +35,8 @@ export default (tokenName) => {
       this.ethTokenSwap = swap.ownerSwap
       this.btcSwap      = swap.participantSwap
 
+      this.allowFundBTCDirectly = false;
+      
       if (!this.ethTokenSwap) {
         throw new Error('BTC2ETH: "ethTokenSwap" of type object required')
       }
@@ -141,40 +143,48 @@ export default (tokenName) => {
             recipientPublicKey: participant.btc.publicKey,
             lockTime:           getLockTime(),
           }
+          if (flow.state.isBalanceEnough) {
+            await flow.btcSwap.fundScript({
+              scriptValues,
+              amount: sellAmount,
+            }, (hash) => {
+              btcScriptCreatingTransactionHash = hash
 
-          await flow.btcSwap.fundScript({
-            scriptValues,
-            amount: sellAmount,
-          }, (hash) => {
-            btcScriptCreatingTransactionHash = hash
-
-            flow.setState({
-              btcScriptCreatingTransactionHash: hash,
+              flow.setState({
+                btcScriptCreatingTransactionHash: hash,
+              })
             })
-          })
 
-          flow.swap.room.on('request btc script', () => {
+            flow.swap.room.on('request btc script', () => {
+              flow.swap.room.sendMessage({
+                event:  'create btc script',
+                data: {
+                  scriptValues,
+                  btcScriptCreatingTransactionHash,
+                }
+              })
+            })
+
             flow.swap.room.sendMessage({
-              event:  'create btc script',
+              event: 'create btc script',
               data: {
                 scriptValues,
                 btcScriptCreatingTransactionHash,
               }
             })
-          })
 
-          flow.swap.room.sendMessage({
-            event: 'create btc script',
-            data: {
-              scriptValues,
-              btcScriptCreatingTransactionHash,
-            }
-          })
-
-          flow.finishStep({
-            isBtcScriptFunded: true,
-            btcScriptValues: scriptValues,
-          }, {  step: 'lock-btc' })
+            flow.finishStep({
+              isBtcScriptFunded: true,
+              btcScriptValues: scriptValues,
+            }, {  step: 'lock-btc' })
+          } else {
+            const scriptData = flow.btcSwap.createScript(scriptValues)
+            flow.setState( {
+              scriptData : scriptData,
+              scriptBalance : 0,
+              scriptUnspendBlance : 0
+            } );
+          }
         },
 
         // 5. Wait participant creates ETH Contract
@@ -312,6 +322,65 @@ export default (tokenName) => {
       }, { step: 'submit-secret' })
     }
 
+    async checkScriptBalance() {
+      if (!this.state.isBalanceEnough) {
+        const { sellAmount } = this.swap
+
+        this.setState({
+          isBalanceFetching: true,
+          isBalanceEnough: false,
+        });
+        const balance = await this.btcSwap.fetchBalance(this.state.scriptData.scriptAddress);
+        this.setState({
+          scriptBalance : balance
+        });
+        const unspend = await this.btcSwap.fetchUnspents(this.state.scriptData.scriptAddress);
+        let unspendTotal = 0;
+        for (var i in unspend) {
+          if (!unspend.confirmations) {
+            unspendTotal = unspendTotal+unspend[i].amount;
+          }
+        };
+        const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance+unspendTotal+this.btcSwap.getTxFee());
+        this.setState( {
+          scriptUnspendBlance : unspendTotal,
+          isBalanceFetching : false,
+          isBalanceEnough: isEnoughMoney,
+        } );
+        if (isEnoughMoney) {
+          const flow = this;
+          const scriptValues = flow.state.btcScriptValues
+          const btcScriptCreatingTransactionHash = flow.state.scriptData.scriptAddress;
+          
+          flow.setState({
+            btcScriptCreatingTransactionHash: flow.state.scriptData.scriptAddress,
+          })
+
+          flow.swap.room.on('request btc script', () => {
+            flow.swap.room.sendMessage({
+              event:  'create btc script',
+              data: {
+                scriptValues,
+                btcScriptCreatingTransactionHash,
+              }
+            })
+          })
+
+          flow.swap.room.sendMessage({
+            event: 'create btc script',
+            data: {
+              scriptValues,
+              btcScriptCreatingTransactionHash,
+            }
+          })
+
+          flow.finishStep({
+            isBtcScriptFunded: true
+          })
+        }
+      }
+    }
+
     async syncBalance() {
       const { sellAmount } = this.swap
 
@@ -330,12 +399,20 @@ export default (tokenName) => {
         }, { step: 'sync-balance' })
       }
       else {
-        console.error(`Not enough money: ${balance} < ${sellAmount}`)
-        this.setState({
-          balance,
-          isBalanceFetching: false,
-          isBalanceEnough: false,
-        })
+        if (this.allowFundBTCDirectly) {
+          this.finishStep({
+            balance,
+            isBalanceFetching: false,
+            isBalanceEnough: false,
+          }, { step: 'sync-balance' })
+        } else {
+          console.error(`Not enough money: ${balance} < ${sellAmount}`)
+          this.setState({
+            balance,
+            isBalanceFetching: false,
+            isBalanceEnough: false,
+          })
+        }
       }
     }
 
