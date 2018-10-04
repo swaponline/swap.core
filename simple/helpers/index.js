@@ -10,7 +10,7 @@ const request = order => new Promise((resolve, reject) =>
     }
   })).then(order => {
     console.log('order accepted', order.id)
-    return new Swap(order)
+    return new Swap(order.id)
   })
 
 const subscribe = (orders, handler) => {
