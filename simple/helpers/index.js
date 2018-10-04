@@ -1,6 +1,7 @@
 import Swap from 'swap.swap'
 
 import on from './on'
+import checkService from './checkService'
 
 const request = order => new Promise((resolve, reject) =>
   order.sendRequest(accepted => {
@@ -12,6 +13,17 @@ const request = order => new Promise((resolve, reject) =>
     return new Swap(order)
   })
 
-const ready = room => on(room, 'ready')
+const subscribe = (orders, handler) => {
+  checkService(orders, 'orders')
 
-module.exports = { request, ready }
+  orders.on('new order', (order) => handler(order))
+  orders.on('new orders', (orders) => orders.map(handler))
+}
+
+const ready = room => {
+  checkService(room, 'room')
+
+  return on(room, 'ready')
+}
+
+module.exports = { request, ready, subscribe }

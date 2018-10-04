@@ -6,19 +6,29 @@ const configFactory = require('./config')
 
 const network = process.env.NETWORK
 
-module.exports = (settings) => new Promise(resolve => {
-  const getConfig = configFactory[network || 'testnet']
+let app
 
-  const config = getConfig({ contracts: {}, ...settings })
+module.exports = (settings) => {
+  if (app) return app
 
-  SwapApp.setup(config)
+  app = new Promise(resolve => {
+    const getConfig = configFactory[network || 'testnet']
 
-  const wallet = new Wallet(SwapApp, constants, config)
+    const config = getConfig({ contracts: {}, ...settings })
 
-  resolve({
-    wallet,
-    auth: SwapApp.services.auth,
-    room: SwapApp.services.room,
-    orders: SwapApp.services.orders,
+    SwapApp.setup(config)
+
+    const wallet = new Wallet(SwapApp, constants, config)
+
+    const { auth, room, orders } = SwapApp.services
+
+    resolve({
+      wallet,
+      auth,
+      room,
+      orders,
+    })
   })
-})
+
+  return app
+}

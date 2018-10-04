@@ -23,14 +23,22 @@ const common = require('./common')
 const setupLocalStorage = require('./setupLocalStorage')
 const { LocalStorage } = require('node-localstorage')
 
-module.exports = (config) => ({ account, contracts: { ETH, TOKEN } }) => {
+module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom }) => {
   config = {
     ...common,
     ...config,
+    ...custom,
+
+    swapAuth: {
+      ...common.swapAuth,
+      ...config.swapAuth,
+      ...custom.swapAuth,
+    },
 
     swapRoom: {
       ...common.swapRoom,
       ...config.swapRoom,
+      ...custom.swapRoom,
     },
   }
 
@@ -50,11 +58,13 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN } }) => {
       Ipfs,
       IpfsRoom,
       storage,
+      ...config.env,
     },
     services: [
       new SwapAuth({
         eth: account,
         btc: null,
+        ...config.swapAuth
       }),
       new SwapRoom(config.swapRoom),
       new SwapOrders(),
@@ -68,6 +78,7 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN } }) => {
         : null,
       new EthTokenSwap(config.noxonTokenSwap(TOKEN)),
       new EthTokenSwap(config.swapTokenSwap(TOKEN)),
+      ...(config.swaps || []),
       // config.network === 'mainnet'
       //   ? new BchSwap(config.bchSwap())
       //   : null,
@@ -84,6 +95,7 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN } }) => {
       USDT2ETHTOKEN(constants.COINS.noxon),
       ETHTOKEN2USDT(constants.COINS.swap),
       USDT2ETHTOKEN(constants.COINS.swap),
+      ...(config.flows || []),
       // ETH2BCH,
       // BCH2ETH,
     ],
