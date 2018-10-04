@@ -87,17 +87,8 @@ class SwapApp {
   _addFlow(Flow) {
     const flowName = Flow.getName()
 
-    if (!/^[A-Za-z]+2[A-Za-z]+$/.test(flowName)) {
-      throw new Error('SwapApp flow "_flowName" property should be "^[A-Za-z]+2[A-Za-z]+$" format')
-    }
-
-    const flowNameLeftPart = flowName.match(/^[^\d]+/)
-    const flowNameRightPart = flowName.match(/[^\d]+$/)
-
-    if (
-      !flowNameLeftPart || !flowNameRightPart
-      || !Object.values(constants.COINS).includes(flowNameLeftPart[0].toUpperCase())
-      || !Object.values(constants.COINS).includes(flowNameRightPart[0].toUpperCase())
+    if ( !Object.values(constants.COINS).includes( Flow.getFromName() )
+      || !Object.values(constants.COINS).includes( Flow.getToName() )
     ) {
       throw new Error(`SwapApp flow "_flowName" property should contain only: ${Object.values(constants.COINS)}. Got: "${flowName.toUpperCase()}"`)
     }

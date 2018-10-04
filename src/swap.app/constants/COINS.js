@@ -16,4 +16,5 @@ export default {
   lev: 'LEV',
   arn: 'ARN',
   gusd: 'GUSD',
+  kn: 'KN',
 }

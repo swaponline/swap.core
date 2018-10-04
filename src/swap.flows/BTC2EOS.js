@@ -4,9 +4,14 @@ import { Flow } from 'swap.swap'
 
 class BTC2EOS extends Flow {
   static getName() {
-    return `${constants.COINS.btc}2${constants.COINS.eos}`
+    return `${this.getFromName()}2${this.getToName()}`
   }
-
+  static getFromName() {
+    return constants.COINS.btc
+  }
+  static getToName() {
+    return constants.COINS.eos
+  }
   constructor(swap) {
     super(swap)
 
