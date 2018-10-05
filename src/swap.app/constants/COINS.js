@@ -17,4 +17,6 @@ export default {
   arn: 'ARN',
   gusd: 'GUSD',
   kn: 'KN',
+  bxb: 'BXB',
+  dcn: 'DCN',
 }
