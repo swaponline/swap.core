@@ -6,16 +6,18 @@ import Room from './Room'
 class Swap {
 
   constructor(id, order) {
-    this.id               = null
-    this.isMy             = null
-    this.owner            = null
-    this.participant      = null
-    this.buyCurrency      = null
-    this.sellCurrency     = null
-    this.buyAmount        = null
-    this.sellAmount       = null
-    this.ownerSwap        = null
-    this.participantSwap  = null
+    this.id                     = null
+    this.isMy                   = null
+    this.owner                  = null
+    this.participant            = null
+    this.buyCurrency            = null
+    this.sellCurrency           = null
+    this.buyAmount              = null
+    this.sellAmount             = null
+    this.ownerSwap              = null
+    this.participantSwap        = null
+    this.destinationBuyAddress  = null
+    this.destinationSellAddress = null
 
     let data = SwapApp.env.storage.getItem(`swap.${id}`)
 
@@ -60,9 +62,11 @@ class Swap {
       'sellCurrency',
       'buyAmount',
       'sellAmount',
+      'destinationBuyAddress',
+      'destinationSellAddress',
     )
 
-    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, ...rest } = data
+    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, destinationBuyAddress, destinationSellAddress, ...rest } = data
 
     const swap = {
       ...rest,
@@ -71,6 +75,8 @@ class Swap {
       sellCurrency: isMy ? sellCurrency : buyCurrency,
       buyAmount: isMy ? buyAmount : sellAmount,
       sellAmount: isMy ? sellAmount : buyAmount,
+      destinationBuyAddress: destinationBuyAddress,
+      destinationSellAddress: destinationSellAddress
     }
 
     if (!swap.participant && !isMy) {
@@ -91,6 +97,8 @@ class Swap {
       'sellCurrency',
       'buyAmount',
       'sellAmount',
+      'destinationBuyAddress',
+      'destinationSellAddress',
     )
   }
 
@@ -99,7 +107,17 @@ class Swap {
 
     SwapApp.env.storage.setItem(`swap.${this.id}`, data)
   }
-
+  
+  setDestinationBuyAddress(address) {
+    this.destinationBuyAddress = address;
+    this._saveState();
+  }
+  
+  setDestinationSellAddress(address) {
+    this.destinationSellAddress = address;
+    this._saveState();
+  }
+  
   update(values) {
     Object.keys(values).forEach((key) => {
       if (key === 'buyAmount' || key === 'sellAmount') {
