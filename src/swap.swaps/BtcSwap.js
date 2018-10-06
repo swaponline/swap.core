@@ -1,5 +1,5 @@
 import SwapApp, { SwapInterface, constants } from 'swap.app'
-
+import BigNumber from 'bignumber.js'
 
 class BtcSwap extends SwapInterface {
 
@@ -153,59 +153,7 @@ class BtcSwap extends SwapInterface {
       return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
     }
   }
-  /**
-   *
-   * @param {object} data
-   * @param {object} data.scriptValues
-   * @param {BigNumber} data.amount
-   * @param {function} handleTransactionHash
-   * @returns {Promise}
-   */
-  fundExistScript(data, handleTransactionHash) {
-    const { scriptAddress, amount } = data
-
-    return new Promise(async (resolve, reject) => {
-      try {
-        
-        const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
-        const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.btc.getAddress())
-
-        const fundValue     = amount.multipliedBy(1e8).integerValue().toNumber()
-        const feeValue      = this.getTxFee( true ) // TODO how to get this value
-        const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
-        const skipValue     = totalUnspent - fundValue - feeValue
-
-        if (totalUnspent < feeValue + fundValue) {
-          throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue} + ${fundValue}`)
-        }
-
-        unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout))
-        tx.addOutput(scriptAddress, fundValue)
-        tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), skipValue)
-        tx.inputs.forEach((input, index) => {
-          tx.sign(index, SwapApp.services.auth.accounts.btc)
-        })
-
-        const txRaw = tx.buildIncomplete()
-
-        if (typeof handleTransactionHash === 'function') {
-          handleTransactionHash(txRaw.getId())
-        }
-
-        try {
-          const result = await this.broadcastTx(txRaw.toHex())
-
-          resolve(result)
-        }
-        catch (err) {
-          reject(err)
-        }
-      }
-      catch (err) {
-        reject(err)
-      }
-    })
-  }
+  
   /**
    *
    * @param {object} data
