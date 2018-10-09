@@ -19,4 +19,8 @@ export default {
   kn: 'KN',
   bxb: 'BXB',
   dcn: 'DCN',
+  mbrs: 'MBRS',
+  sct: 'SCT',
+  shl: 'SHL',
+  bnty: 'BNTY',
 }
