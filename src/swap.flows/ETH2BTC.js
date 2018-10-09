@@ -272,14 +272,18 @@ class ETH2BTC extends Flow {
         isSignFetching: true,
       })
 
-      this.swap.room.once('request sign', () => {
+      this.swap.room.on('request sign', () => {
         this.swap.room.sendMessage({
           event: 'swap sign',
         })
 
         this.finishStep({
           isMeSigned: true,
-        }, { step: 'sign' })
+        }, { step: 'sign', silentError: true })
+      })
+
+      this.swap.room.sendMessage({
+        event: 'swap sign',
       })
 
       return true
