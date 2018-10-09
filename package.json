@@ -1,6 +1,6 @@
 {
   "name": "swap.core",
-  "version": "0.2.2",
+  "version": "0.2.3rc1",
   "description": "Swap Core",
   "homepage": "https://github.com/swaponline/swap.core",
   "author": "Pavel Ivanov <grammka@gmail.com> (https://github.com/pavelivanov)",
