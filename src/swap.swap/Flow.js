@@ -109,7 +109,7 @@ class Flow {
       const n_step = this.stepNumbers[step]
       console.log(`trying to finish step ${step} = ${n_step} when on step ${this.state.step}`)
 
-      if (step && this.state.step < n_step) {
+      if (step && this.state.step != n_step) {
         if (silentError) {
           console.error(`Cant finish step ${step} = ${n_step} when on step ${this.state.step}`)
           return
