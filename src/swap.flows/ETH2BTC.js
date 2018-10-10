@@ -276,15 +276,15 @@ class ETH2BTC extends Flow {
         this.swap.room.sendMessage({
           event: 'swap sign',
         })
-
-        this.finishStep({
-          isMeSigned: true,
-        }, { step: 'sign', silentError: true })
       })
 
       this.swap.room.sendMessage({
         event: 'swap sign',
       })
+
+      this.finishStep({
+        isMeSigned: true,
+      }, { step: 'sign', silentError: true })
 
       return true
     }
