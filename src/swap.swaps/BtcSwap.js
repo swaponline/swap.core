@@ -216,7 +216,7 @@ class BtcSwap extends SwapInterface {
 
       address = scriptAddress
     }
-    else {this.feeValue
+    else {
       throw new Error('Wrong data type')
     }
 
