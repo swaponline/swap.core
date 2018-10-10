@@ -24,4 +24,5 @@ export default {
   sct: 'SCT',
   shl: 'SHL',
   bnty: 'BNTY',
+  syc2: 'SYC2',
 }
