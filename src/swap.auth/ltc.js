@@ -18,8 +18,8 @@ const login = (_privateKey) => {
 
   account = new SwapApp.env.bitcoin.ECPair.fromWIF(privateKey, network)
 
-  account.__proto__.getPublicKey = () => account.getPublicKeyBuffer().toString('hex')
-  account.__proto__.getPrivateKey = () => privateKey
+  account.getPublicKey = () => account.getPublicKeyBuffer().toString('hex')
+  account.getPrivateKey = () => privateKey
 
   if (!_privateKey) {
     SwapApp.env.storage.setItem(storageKey, privateKey)
