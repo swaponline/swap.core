@@ -22,7 +22,9 @@ export default {
   dcn: 'DCN',
   mbrs: 'MBRS',
   sct: 'SCT',
-  shl: 'SHL',
+  nexo: 'NEXO',
   bnty: 'BNTY',
   syc2: 'SYC2',
+  pbl: 'PBL',
+  senc: 'SENC',
 }
