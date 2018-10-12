@@ -7,10 +7,10 @@ const login = (_privateKey) => {
   let account
 
   const network = (
-   SwapApp.isMainNet()
-     ? SwapApp.env.coininfo.litecoin.main
-     : SwapApp.env.coininfo.litecoin.test
- ).toBitcoinJS()
+    SwapApp.isMainNet()
+      ? SwapApp.env.coininfo.litecoin.main
+      : SwapApp.env.coininfo.litecoin.test
+  ).toBitcoinJS()
 
   if (!privateKey) {
     privateKey = SwapApp.env.bitcoin.ECPair.makeRandom({ network }).toWIF()
