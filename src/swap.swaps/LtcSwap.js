@@ -27,6 +27,7 @@ class LtcSwap extends SwapInterface {
     this.fetchBalance   = options.fetchBalance
     this.fetchUnspents  = options.fetchUnspents
     this.broadcastTx    = options.broadcastTx
+    this.getInfoTx      = options.getInfoTx
     this.feeValue       = options.feeValue || 100000
   }
 
@@ -221,7 +222,7 @@ class LtcSwap extends SwapInterface {
 
       address = scriptAddress
     }
-    else {this.feeValue
+    else {
       throw new Error('Wrong data type')
     }
 
@@ -311,6 +312,47 @@ class LtcSwap extends SwapInterface {
 
   /**
    *
+   * @param {number} repeat
+   * @param {function} action
+   * @param delay
+   * @returns {Promise<any>}
+   */
+  repeatToTheResult = (repeat, action, delay = 5000) =>
+    new Promise(async (resolve, reject) => {
+      let result = await action()
+
+      if (result === 0 || typeof result === 'undefined' || result === null) {
+        if (repeat > 0) {
+          repeat--
+          setTimeout(async () => {
+            result = await this.repeatToTheResult(repeat, action)
+            resolve(result)
+          }, delay)
+        }
+      } else {
+        resolve(result)
+      }
+    })
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.ownerAddress
+   * @param {BigNumber} data.expectedValue
+   * @returns {Promise.<string>}
+   */
+  async checkBalance(data) {
+    const { ownerAddress, expectedValue } = data
+    let balance = await this.repeatToTheResult(9, () => this.getBalance( ownerAddress ))
+
+
+    if (expectedValue.isGreaterThan(balance)) {
+      return `Expected value: ${expectedValue.toNumber()}, got: ${balance}`
+    }
+  }
+
+  /**
+   *
    * @param {object} data
    * @param {object} data.scriptValues
    * @param {string} data.secret
@@ -349,7 +391,15 @@ class LtcSwap extends SwapInterface {
   refund(data, handleTransactionHash) {
     return this.withdraw(data, handleTransactionHash, true)
   }
-}
 
+  /**
+   *
+   * @param {string} transactionHash
+   * @returns {Promise<any>}
+   */
+  getSecretFromTxhash = (transactionHash) =>
+    this.repeatToTheResult(9, () => this.getInfoTx(transactionHash)
+      .then(txResult => txResult.vin[0].scriptSig.asm.split(' ')[2]))
+}
 
 export default LtcSwap
