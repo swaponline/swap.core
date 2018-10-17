@@ -9,25 +9,29 @@ class LtcSwap extends SwapInterface {
    * @param options.fetchBalance
    * @param options.fetchUnspents
    * @param options.broadcastTx
+   * @param options.fetchTx
    */
   constructor(options) {
     super()
 
     if (typeof options.fetchBalance !== 'function') {
-      throw new Error('EthSwap: "fetchBalance" required')
+      throw new Error('LtcSwap: "fetchBalance" required')
     }
     if (typeof options.fetchUnspents !== 'function') {
-      throw new Error('EthSwap: "fetchUnspents" required')
+      throw new Error('LtcSwap: "fetchUnspents" required')
     }
     if (typeof options.broadcastTx !== 'function') {
-      throw new Error('EthSwap: "broadcastTx" required')
+      throw new Error('LtcSwap: "broadcastTx" required')
+    }
+    if (typeof options.fetchTx !== 'function') {
+      throw new Error('LtcSwap: "fetchTx" required')
     }
 
     this._swapName      = constants.COINS.ltc
     this.fetchBalance   = options.fetchBalance
     this.fetchUnspents  = options.fetchUnspents
     this.broadcastTx    = options.broadcastTx
-    this.getInfoTx      = options.getInfoTx
+    this.fetchTx      = options.fetchTx
     this.feeValue       = options.feeValue || 100000
   }
 
@@ -398,7 +402,7 @@ class LtcSwap extends SwapInterface {
    * @returns {Promise<any>}
    */
   getSecretFromTxhash = (transactionHash) =>
-    this.repeatToTheResult(9, () => this.getInfoTx(transactionHash)
+    this.repeatToTheResult(9, () => this.fetchTx(transactionHash)
       .then(txResult => txResult.vin[0].scriptSig.asm.split(' ')[2]))
 }
 
