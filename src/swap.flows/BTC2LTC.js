@@ -56,6 +56,8 @@ class BTC2LTC extends Flow {
 
       btcScriptVerified: false,
 
+      ltcScriptValues: null,
+
       isBalanceFetching: false,
       isBalanceEnough: false,
       balance: null,
@@ -203,7 +205,8 @@ class BTC2LTC extends Flow {
 
         const checkLtcBalance = () => {
           timer = setTimeout(async () => {
-            const balance = await flow.ltcSwap.getBalance(participant.ltc.address)
+            const { scriptAddress } = this.ltcSwap.createScript(flow.state.ltcScriptValues)
+            const balance = await flow.ltcSwap.getBalance(scriptAddress)
 
             console.log('Litecoin balance - ' + balance)
 
@@ -240,7 +243,6 @@ class BTC2LTC extends Flow {
         const { buyAmount, participant } = flow.swap
         let { secret, ltcScriptValues } = flow.state
 
-        console.log(ltcScriptValues)
         const data = {
           ownerAddress:   participant.ltc.address,
           secret:         flow.state.secret,

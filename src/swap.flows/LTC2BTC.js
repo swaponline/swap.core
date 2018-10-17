@@ -205,7 +205,7 @@ class LTC2BTC extends Flow {
           flow.setState({
             ltcSwapWithdrawTransactionHash,
           })
-          
+
           const secret = await flow.ltcSwap.getSecretFromTxhash(ltcSwapWithdrawTransactionHash)
 
           if (!flow.state.isLtcWithdrawn && secret) {
@@ -356,7 +356,8 @@ class LTC2BTC extends Flow {
     const { participant } = this.swap
 
     return this.ltcSwap.refund({
-      participantAddress: participant.ltc.address,
+      scriptValues: this.state.ltcScriptValues,
+      secret: this.state.secret,
     }, (hash) => {
       this.setState({
         refundTransactionHash: hash,
