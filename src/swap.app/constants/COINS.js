@@ -27,4 +27,5 @@ export default {
   syc2: 'SYC2',
   pbl: 'PBL',
   senc: 'SENC',
+  mth: 'MTH',
 }
