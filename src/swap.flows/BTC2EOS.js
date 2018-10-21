@@ -97,7 +97,7 @@ class BTC2EOS extends Flow {
         })
       },
       () => {
-        const { swapID, secret } = flow.state
+        const { secret } = flow.state
         const { participant: eosOwner } = flow.swap
 
         flow.eosSwap.withdraw({

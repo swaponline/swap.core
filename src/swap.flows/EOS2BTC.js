@@ -1,6 +1,8 @@
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
 class EOS2BTC extends Flow {
   static getName() {
     return `${this.getFromName()}2${this.getToName()}`
@@ -83,17 +85,17 @@ class EOS2BTC extends Flow {
         })
       },
       () => {
-        flow.needs().eosWithdraw().then(({ secret, eosWithdrawTx }) => {
-          // todo: if btc owner does not call eos withdraw then get secret from contract manually
-
-          flow.finishStep({ secret, eosWithdrawTx })
+        flow.needs().revealedSecret().then(secret => {
+          flow.finishStep({ secret })
+        })
+        flow.needs().eosWithdrawTx().then(eosWithdrawTx => {
+          flow.setState({ eosWithdrawTx })
         })
       },
       () => {
         const { secret, scriptValues } = flow.state
 
         // withdraw fails until funding transaction will get confirmed
-        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
         const withdraw = () => {
           return flow.btcSwap.withdraw({ scriptValues, secret }, null, null, 'sha256')
             .catch((error) => {
@@ -153,12 +155,32 @@ class EOS2BTC extends Flow {
           flow.swap.events.once(flow.steps.verifyScript, resolve)
         })
       },
-      eosWithdraw: () => {
+      revealedSecret: () => {
+        return new Promise(resolve => {
+          const { owner: eosOwnerData, participant: btcOwnerData } = flow.swap
+          const eosOwner = eosOwnerData.eos.address
+          const btcOwner = btcOwnerData.btc.address
+
+          const fetchSecret = async () => {
+            const swap = await this.eosSwap.findCurrentSwap({ eosOwner, btcOwner })
+            const { secret } = swap
+
+            return secret
+          }
+
+          return fetchSecret().then((secret) => {
+            if (secret == 0) {
+              console.log('Cannot fetch secret, try again in 5 sec...')
+              return sleep(5000).then(fetchSecret)
+            } else {
+              return secret
+            }
+          })
+        })
+      },
+      eosWithdrawTx: () => {
         return new Promise(resolve => {
           swap.room.once(flow.steps.eosWithdraw, resolve)
-          swap.room.sendMessage({
-            event: `request ${flow.steps.eosWithdraw}`
-          })
         })
       }
     }

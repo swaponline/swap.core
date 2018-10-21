@@ -43,15 +43,32 @@ class EosSwap extends SwapInterface {
     })
   }
 
-  findSwapID ({ btcOwner, eosOwner }) {
-    return this.getSwaps().then((swaps) => {
-      console.log('swaps', swaps)
+  findCurrentSwap({ btcOwner, eosOwner }) {
+    const encodedEosOwner = new BigNumber(this.eos.modules.format.encodeName(eosOwner, false))
 
-      const foundItem = swaps.rows.reverse().find((swap) => {
-        return swap.eosOwner == eosOwner && swap.btcOwner == btcOwner
+    return this.eos.getTableRows({
+      code: this.swapAccount,
+      scope: this.swapAccount,
+      table: 'swap',
+      json: true,
+      key_type: 'i64',
+      index_position: 2,
+      lower_bound: encodedEosOwner.toString(),
+      upper_bound: encodedEosOwner.plus(1).toString()
+    }).then((result) => {
+      const currentSwap = result.rows.find((swap) => {
+        return swap.eosOwner == eosOwner &&
+          swap.btcOwner == btcOwner &&
+          (swap.status == 0 || swap.status == 1)
       })
 
-      return foundItem ? foundItem.swapID : -1
+      return currentSwap
+    })
+  }
+
+  findSwapID({ btcOwner, eosOwner }) {
+    return this.findCurrentSwap({ btcOwner, eosOwner }).then((swap) => {
+      return swap.swapID
     })
   }
 
