@@ -3,7 +3,7 @@ import { Flow } from 'swap.swap'
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
-const actions = (flow) => {
+const handlers = (flow) => {
   return {
     openSwap: () => {
       const { secretHash } = flow.state
@@ -40,9 +40,9 @@ const listeners = (flow) => {
   return {
     btcScript: () => {
       return new Promise(resolve => {
-        flow.swap.room.once(flow.steps.createBtcScript, resolve)
+        flow.swap.room.once(flow.actions.createBtcScript, resolve)
         flow.swap.room.sendMessage({
-          event: `request ${flow.steps.createBtcScript}`
+          event: `request ${flow.actions.createBtcScript}`
         })
       })
     },
@@ -58,7 +58,7 @@ const listeners = (flow) => {
           return nowTime + btcLockTime
         }
 
-        const scriptCheckResult = await flow.btcSwap.checkScript(flow.state.btcScriptValues, {
+        const scriptCheckResult = await flow.btcSwap.checkScript(flow.state.scriptValues, {
           value: buyAmount,
           recipientPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
           lockTime: getLockTime()
@@ -97,13 +97,13 @@ const listeners = (flow) => {
     },
     eosWithdrawTx: () => {
       return new Promise(resolve => {
-        swap.room.once(flow.steps.eosWithdraw, resolve)
+        swap.room.once(flow.actions.eosWithdraw, resolve)
       })
     }
   }
 }
 
-const notifications = (flow) => {
+const notifiers = (flow) => {
   return {
     openSwap() {
       const { openTx, swapID } = flow.state
@@ -163,7 +163,7 @@ class EOS2BTC extends Flow {
       }
     }
 
-    this.steps = {
+    this.actions = {
       submitSecret: 'submit secret',
       createBtcScript: 'create btc script',
       verifyScript: 'verify script',
@@ -172,9 +172,9 @@ class EOS2BTC extends Flow {
       btcWithdraw: 'btc withdraw',
     }
 
-    this.act = actions(this)
+    this.act = handlers(this)
     this.needs = listeners(this)
-    this.notify = notifications(this)
+    this.notify = notifiers(this)
 
     this.listenNotifyRequests()
 
@@ -224,13 +224,13 @@ class EOS2BTC extends Flow {
   listenNotifyRequests() {
     const flow = this
 
-    flow.swap.room.on(`request ${flow.steps.openSwap}`, () => {
+    flow.swap.room.on(`request ${flow.actions.openSwap}`, () => {
       if (flow.state.openTx && flow.state.swapID) {
         flow.notify.openSwap()
       }
     })
 
-    flow.swap.room.on(`request ${flow.steps.btcWithdraw}`, () => {
+    flow.swap.room.on(`request ${flow.actions.btcWithdraw}`, () => {
       if (flow.state.btcWithdrawTx) {
         flow.notify.btcWithdraw()
       }

@@ -11,9 +11,25 @@ room.connection.hasPeer = jest.fn(peer => true)
 room.sendMessage = jest.fn()
 room.unsubscribe = jest.fn()
 room.sendConfirmation = jest.fn((peer, values) => {
+  const possibleSenderPeers = ['swaponlinBTC', 'swaponlinEOS', peer]
+
+  let fromPeer = null
+  switch (peer) {
+    case possibleSenderPeers[0]:
+      fromPeer = possibleSenderPeers[1]
+      break
+
+    case possibleSenderPeers[1]:
+      fromPeer = possibleSenderPeers[0]
+      break
+
+    default:
+      fromPeer = possibleSenderPeers[2]
+  }
+
   room.emit(values.event, {
     ...values.data, ...{
-      fromPeer: peer,
+      fromPeer,
       swapId: values.data.swapId
     }
   })
@@ -30,6 +46,16 @@ const eosMockProvider = () => {
     keyProvider: '5K7B6Pgwkv4Yydmw94Hk95uZnW2T4PMNRMKoJzAbfKPRQRkEcEm',
     verbose: true
   })
+}
+
+const accounts = {
+  eth: {
+    address: '0xdadadadadadadadadadadadadadadadadadadada',
+  },
+  btc: btcKey,
+  eos: {
+    address: 'swaponlinBTC'
+  }
 }
 
 const mockSwapApp = {
@@ -78,16 +104,18 @@ const mockSwapApp = {
       getItem: (key) => storage[key],
       setItem: (key, value) => storage[key] = value,
     },
-    eos: eosMockProvider()
+    eos: {
+      getInstance: () => {
+        return Promise.resolve(eosMockProvider())
+      }
+    }
   },
   services: {
     auth: {
-      accounts: {
-        eth: {
-          address: '0xdadadadadadadadadadadadadadadadadadadada',
-        },
-        btc: btcKey
-      }
+      getPublicData() {
+        return accounts
+      },
+      accounts: accounts
     },
     room,
   },

@@ -2,7 +2,7 @@ import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
-const actions = (flow) => {
+const handlers = (flow) => {
   return {
     createBtcScript: () => {
       const { sellAmount: amount, participant: eosOwner } = flow.swap
@@ -25,6 +25,8 @@ const actions = (flow) => {
       }
 
       const fundScript = async () => {
+        let createTx = null
+
         await flow.btcSwap.fundScript({
           scriptValues, amount
         }, (hash) => {
@@ -60,35 +62,35 @@ const listeners = (flow) => {
   return {
     secret: () => {
       return new Promise(resolve => {
-        flow.swap.events.once(flow.steps.submitSecret, resolve)
+        flow.swap.events.once(flow.actions.submitSecret, resolve)
       })
     },
     openSwap: () => {
       return new Promise(resolve => {
-        flow.swap.room.once(flow.steps.openSwap, resolve)
+        flow.swap.room.once(flow.actions.openSwap, resolve)
         flow.swap.room.sendMessage({
-          event: `request ${flow.steps.openSwap}`
+          event: `request ${flow.actions.openSwap}`
         })
       })
     },
     btcWithdraw: () => {
       return new Promise(resolve => {
-        flow.swap.room.once(flow.steps.btcWithdraw, resolve)
+        flow.swap.room.once(flow.actions.btcWithdraw, resolve)
         flow.swap.room.sendMessage({
-          event: `request ${flow.steps.btcWithdraw}`
+          event: `request ${flow.actions.btcWithdraw}`
         })
       })
     }
   }
 }
 
-const notifications = (flow) => {
+const notifiers = (flow) => {
   return {
     createBtcScript: () => {
       const {scriptValues, createTx} = flow.state
 
       flow.swap.room.sendMessage({
-        event: flow.steps.createBtcScript,
+        event: flow.actions.createBtcScript,
         data: {
           scriptValues, createTx
         }
@@ -98,7 +100,7 @@ const notifications = (flow) => {
       const {eosWithdrawTx, secret} = flow.state
 
       flow.swap.room.sendMessage({
-        event: flow.steps.eosWithdraw,
+        event: flow.actions.eosWithdraw,
         data: {
           eosWithdrawTx, secret
         }
@@ -142,7 +144,7 @@ class BTC2EOS extends Flow {
       }
     }
 
-    this.steps = {
+    this.actions = {
       submitSecret: 'submit secret',
       createBtcScript: 'create btc script',
       verifyScript: 'verify script',
@@ -151,9 +153,9 @@ class BTC2EOS extends Flow {
       btcWithdraw: 'btc withdraw',
     }
 
-    this.act = actions(this)
+    this.act = handlers(this)
     this.needs = listeners(this)
-    this.notify = notifications(this)
+    this.notify = notifiers(this)
 
     this.listenNotifyRequests()
 
@@ -211,13 +213,13 @@ class BTC2EOS extends Flow {
   listenNotifyRequests() {
     const flow = this
 
-    flow.swap.room.on(`request ${flow.steps.createBtcScript}`, () => {
+    flow.swap.room.on(`request ${flow.actions.createBtcScript}`, () => {
       if (flow.state.scriptValues && flow.state.createTx) {
         flow.send().btcScript()
       }
     })
 
-    flow.swap.room.on(`request ${flow.steps.eosWithdraw}`, () => {
+    flow.swap.room.on(`request ${flow.actions.eosWithdraw}`, () => {
       if (flow.state.eosWithdrawTx && flow.state.secret) {
         flow.send().eosWithdraw()
       }

@@ -30,27 +30,27 @@ SwapApp.swaps['EOS'] = new EosSwap({
   swapAccount,
   userAccountKey
 })
-SwapApp.services.env.storage.setItem(userAccountKey, 'userAccount')
+SwapApp.env.storage.setItem(userAccountKey, 'userAccount')
 
 const order = (type, { orderID, eosOwner, btcOwner }) => {
   let order = {
     'id': orderID,
     'isMy': true,
 
-    'owner': {
-      peer: 'Qmaaa',
-      eos: { address: eosOwner },
-      btc: { address: '1Kf1dtmZGUoy482yXeoUuhfAJVKyD9JpWS', publicKey: '0386fbd9bd29d36e07dff34bc09173fb3035fb418ffbcc13c6d06334c1ff2e5422' },
-    },
-    'participant': {
-      peer: 'Qmbbb',
-      eos: { address: btcOwner },
-      btc: { address: '1PdhGkf1spScMZtkAFGUaE7q7mX2X71Rr5', publicKey: '033a117cc4d164984c1e8fb58f39f08a17a2e615d77d8f7a35a7d9cdeb9e93ef4c' },
-    },
-
     'requests': [],
     'isRequested': true,
     'isProcessing': true
+  }
+
+  const eosOwnerData = {
+    peer: eosOwner,
+    eos: { address: eosOwner },
+    btc: { address: '1Kf1dtmZGUoy482yXeoUuhfAJVKyD9JpWS', publicKey: '0386fbd9bd29d36e07dff34bc09173fb3035fb418ffbcc13c6d06334c1ff2e5422' },
+  }
+  const btcOwnerData = {
+    peer: btcOwner,
+    eos: { address: btcOwner },
+    btc: { address: '1PdhGkf1spScMZtkAFGUaE7q7mX2X71Rr5', publicKey: '033a117cc4d164984c1e8fb58f39f08a17a2e615d77d8f7a35a7d9cdeb9e93ef4c' },
   }
 
   if (type === 'EOS2BTC') {
@@ -58,11 +58,17 @@ const order = (type, { orderID, eosOwner, btcOwner }) => {
     order.sellCurrency = 'EOS'
     order.buyAmount = '1'
     order.sellAmount = '10'
+
+    order.owner = eosOwnerData
+    order.participant = btcOwnerData
   } else if (type === 'BTC2EOS') {
     order.buyCurrency = 'EOS'
     order.sellCurrency = 'BTC'
     order.buyAmount = '10'
     order.sellAmount = '1'
+
+    order.owner = btcOwnerData
+    order.participant = eosOwnerData
   }
 
   return order
@@ -71,8 +77,8 @@ const order = (type, { orderID, eosOwner, btcOwner }) => {
 describe('successful swap between EOS and BTC', () => {
   jest.setTimeout(123123)
 
-  const eosOwner = 'swaponline11'
-  const btcOwner = 'swaponline12'
+  const eosOwner = 'swaponlinEOS'
+  const btcOwner = 'swaponlinBTC'
   const orderID = 'Qm-1231231'
   const btcAmount = 10
   const eosAmount = 100
@@ -96,18 +102,20 @@ describe('successful swap between EOS and BTC', () => {
     expect(swap.flow.state.step).toEqual(0)
     expect(swap.flow.state.isWaitingForOwner).toEqual(false)
 
-    expect(swap.room.peer).toEqual(eosOwnerSwap.participant.peer)
-    expect(swap.owner.eos.address).toEqual(eosOwner)
-    expect(swap.participant.eos.address).toEqual(btcOwner)
-
     if (type === 'EOS2BTC') {
       expect(swap.isMy).toEqual(true)
       expect(swap.buyCurrency).toEqual('BTC')
       expect(swap.sellCurrency).toEqual('EOS')
+      expect(swap.room.peer).toEqual(eosOwnerSwap.participant.peer)
+      expect(swap.owner.eos.address).toEqual(eosOwner)
+      expect(swap.participant.eos.address).toEqual(btcOwner)
     } else if (type === 'BTC2EOS') {
       expect(swap.isMy).toEqual(true)
       expect(swap.buyCurrency).toEqual('EOS')
       expect(swap.sellCurrency).toEqual('BTC')
+      expect(swap.room.peer).toEqual(btcOwnerSwap.participant.peer)
+      expect(swap.owner.eos.address).toEqual(btcOwner)
+      expect(swap.participant.eos.address).toEqual(eosOwner)
     }
   }
 
@@ -118,11 +126,11 @@ describe('successful swap between EOS and BTC', () => {
     'create btc script': {
       type: 'room'
     },
-    'open swap': {
-      type: 'room'
-    },
     'verify script': {
       type: 'EOS2BTC'
+    },
+    'open swap': {
+      type: 'room'
     },
     'eos withdraw': {
       type: 'room'
@@ -175,12 +183,10 @@ describe('successful swap between EOS and BTC', () => {
       }
     }
 
-    btcOwnerSwap.events.once('request submit secret', () => {
-      btcOwnerSwap.events.dispatch('submit secret', { secret, secretHash })
-    })
-
-    eosOwnerSwap.events.once('request verify script', () => {
-      eosOwnerSwap.events.dispatch('verify script', {})
+    SwapApp.services.room.once('request create btc script', () => {
+      setTimeout(() => {
+        btcOwnerSwap.events.dispatch('submit secret', { secret, secretHash })
+      })
     })
   })
 })
