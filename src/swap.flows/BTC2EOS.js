@@ -38,7 +38,6 @@ const actions = (flow) => {
         return { createTx, scriptValues }
       })
     },
-
     eosWithdraw: () => {
       const { secret } = flow.state
       const { participant: eosOwner } = flow.swap
@@ -48,7 +47,6 @@ const actions = (flow) => {
         secret
       })
     },
-
     refund: () => {
       return this.btcSwap.refund({
         scriptValues: flow.state.btcScriptValues,

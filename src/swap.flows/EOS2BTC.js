@@ -15,7 +15,6 @@ const actions = (flow) => {
         amount
       })
     },
-
     btcWithdraw: () => {
       const { secret, scriptValues } = flow.state
 
@@ -27,7 +26,6 @@ const actions = (flow) => {
           return sleep(5000).then(tryWithdraw)
         })
     },
-
     refund: () => {
       const { participant: btcOwner } = this.swap
 
@@ -49,8 +47,29 @@ const listeners = (flow) => {
       })
     },
     verifyScript: () => {
-      return new Promise(resolve => {
-        flow.swap.events.once(flow.steps.verifyScript, resolve)
+      return new Promise(async (resolve, reject) => {
+        const { buyAmount } = flow.swap
+
+        const getLockTime = () => {
+          const eosLockTime = flow.eosSwap.getLockPeriod()
+          const btcLockTime = eosLockTime * 2
+          const nowTime = Math.floor(Date.now() / 1000)
+
+          return nowTime + btcLockTime
+        }
+
+        const scriptCheckResult = await flow.btcSwap.checkScript(flow.state.btcScriptValues, {
+          value: buyAmount,
+          recipientPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
+          lockTime: getLockTime()
+        })
+
+        if (scriptCheckResult) {
+          console.log('Cannot verify btc script', scriptCheckResult)
+          reject(scriptCheckResult)
+        } else {
+          resolve()
+        }
       })
     },
     revealedSecret: () => {
