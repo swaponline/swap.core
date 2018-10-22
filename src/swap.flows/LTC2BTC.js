@@ -128,7 +128,7 @@ class LTC2BTC extends Flow {
 
       async () => {
         const { participant, buyAmount, sellAmount } = flow.swap
-        let ltcSwapCreatingTransactionHash
+        let ltcSwapCreationTransactionHash
 
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
@@ -158,9 +158,9 @@ class LTC2BTC extends Flow {
             scriptValues,
             amount: sellAmount,
           }, (hash) => {
-            ltcSwapCreatingTransactionHash = hash
+            ltcSwapCreationTransactionHash = hash
             flow.setState({
-              ltcSwapCreatingTransactionHash: hash,
+              ltcSwapCreationTransactionHash: hash,
             })
           })
         } catch (err) {
@@ -178,7 +178,7 @@ class LTC2BTC extends Flow {
             event: 'create ltc script',
             data: {
               scriptValues,
-              ltcSwapCreatingTransactionHash,
+              ltcSwapCreationTransactionHash,
             }
           })
         })
@@ -187,7 +187,7 @@ class LTC2BTC extends Flow {
           event: 'create ltc script',
           data: {
             scriptValues,
-            ltcSwapCreatingTransactionHash,
+            ltcSwapCreationTransactionHash,
           }
         })
 
@@ -350,6 +350,18 @@ class LTC2BTC extends Flow {
         isBalanceEnough: false,
       })
     }
+  }
+
+  getRefundTxHex = () => {
+    this.ltcSwap.getRefundHexTransaction({
+      scriptValues: this.state.ltcScriptValues,
+      secret: this.state.secret,
+    })
+      .then((txHex) => {
+        this.setState({
+          refundTxHex: txHex,
+        })
+      })
   }
 
   tryRefund() {
