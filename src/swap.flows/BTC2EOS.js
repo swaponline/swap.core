@@ -2,6 +2,113 @@ import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
+const actions = (flow) => {
+  return {
+    createBtcScript: () => {
+      const { sellAmount: amount, participant: eosOwner } = flow.swap
+
+      const getLockTime = () => {
+        const eosLockTime = flow.eosSwap.getLockPeriod()
+        const btcLockTime = eosLockTime * 2
+        const nowTime = Math.floor(Date.now() / 1000)
+
+        return nowTime + btcLockTime
+      }
+
+      const lockTime = getLockTime()
+
+      const scriptValues = {
+        secretHash: flow.state.secretHash,
+        ownerPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
+        recipientPublicKey: eosOwner.btc.publicKey,
+        lockTime: lockTime
+      }
+
+      const fundScript = async () => {
+        await flow.btcSwap.fundScript({
+          scriptValues, amount
+        }, (hash) => {
+          createTx = hash
+        }, 'sha256')
+
+        return createTx
+      }
+
+      return fundScript().then((createTx) => {
+        return { createTx, scriptValues }
+      })
+    },
+
+    eosWithdraw: () => {
+      const { secret } = flow.state
+      const { participant: eosOwner } = flow.swap
+
+      return flow.eosSwap.withdraw({
+        eosOwner: eosOwner.eos.address,
+        secret
+      })
+    },
+
+    refund: () => {
+      return this.btcSwap.refund({
+        scriptValues: flow.state.btcScriptValues,
+        secret: flow.state.secret,
+      })
+    }
+  }
+}
+
+const listeners = (flow) => {
+  return {
+    secret: () => {
+      return new Promise(resolve => {
+        flow.swap.events.once(flow.steps.submitSecret, resolve)
+      })
+    },
+    openSwap: () => {
+      return new Promise(resolve => {
+        flow.swap.room.once(flow.steps.openSwap, resolve)
+        flow.swap.room.sendMessage({
+          event: `request ${flow.steps.openSwap}`
+        })
+      })
+    },
+    btcWithdraw: () => {
+      return new Promise(resolve => {
+        flow.swap.room.once(flow.steps.btcWithdraw, resolve)
+        flow.swap.room.sendMessage({
+          event: `request ${flow.steps.btcWithdraw}`
+        })
+      })
+    }
+  }
+}
+
+const notifications = (flow) => {
+  return {
+    createBtcScript: () => {
+      const {scriptValues, createTx} = flow.state
+
+      flow.swap.room.sendMessage({
+        event: flow.steps.createBtcScript,
+        data: {
+          scriptValues, createTx
+        }
+      })
+    },
+    eosWithdraw: () => {
+      const {eosWithdrawTx, secret} = flow.state
+
+      flow.swap.room.sendMessage({
+        event: flow.steps.eosWithdraw,
+        data: {
+          eosWithdrawTx, secret
+        }
+      })
+    }
+  }
+}
+
 class BTC2EOS extends Flow {
   static getName() {
     return `${this.getFromName()}2${this.getToName()}`
@@ -46,7 +153,11 @@ class BTC2EOS extends Flow {
       btcWithdraw: 'btc withdraw',
     }
 
-    this.listenRequests()
+    this.act = actions(this)
+    this.needs = listeners(this)
+    this.notify = notifications(this)
+
+    this.listenNotifyRequests()
 
     super._persistSteps()
     super._persistState()
@@ -57,59 +168,31 @@ class BTC2EOS extends Flow {
 
     return [
       () => {
-        flow.needs().secret().then(({ secret, secretHash }) => {
+        flow.needs.secret().then(({ secret, secretHash }) => {
           this.finishStep({
             secret, secretHash
           })
         })
       },
       () => {
-        const { sellAmount: amount, participant: eosOwner } = flow.swap
-
-        const getLockTime = () => {
-          const eosLockTime = flow.eosSwap.getLockPeriod()
-          const btcLockTime = eosLockTime * 2
-          const nowTime = Math.floor(Date.now() / 1000)
-
-          return nowTime + btcLockTime
-        }
-
-        const lockTime = getLockTime()
-
-        const scriptValues = {
-          secretHash: flow.state.secretHash,
-          ownerPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
-          recipientPublicKey: eosOwner.btc.publicKey,
-          lockTime: lockTime
-        }
-
-        flow.btcSwap.fundScript({
-          scriptValues,
-          amount
-        }, (createTx) => {
+        flow.act.createBtcScript().then(({ scriptValues, createTx }) => {
           flow.finishStep({ scriptValues, createTx })
-          flow.send().btcScript()
-        }, 'sha256')
+          flow.notify.createBtcScript()
+        })
       },
       () => {
-        flow.needs().openSwap().then(({ openTx, swapID }) => {
+        flow.needs.openSwap().then(({ openTx, swapID }) => {
           flow.finishStep({ openTx, swapID })
         })
       },
       () => {
-        const { secret } = flow.state
-        const { participant: eosOwner } = flow.swap
-
-        flow.eosSwap.withdraw({
-          eosOwner: eosOwner.eos.address,
-          secret
-        }, (eosWithdrawTx) => {
+        flow.act.eosWithdraw().then(eosWithdrawTx => {
           flow.finishStep({ eosWithdrawTx })
-          flow.send().eosWithdraw()
+          flow.notify.eosWithdraw()
         })
       },
       () => {
-        flow.needs().btcWithdraw().then(({ btcWithdrawTx }) => {
+        flow.needs.btcWithdraw().then(({ btcWithdrawTx }) => {
           flow.finishStep({ btcWithdrawTx })
         })
       }
@@ -117,18 +200,17 @@ class BTC2EOS extends Flow {
   }
 
   tryRefund() {
-    return this.btcSwap.refund({
-      scriptValues: this.state.btcScriptValues,
-      secret: this.state.secret,
-    }, (hash) => {
-      this.setState({
+    const flow = this
+
+    return flow.act.refund().then((hash) => {
+      flow.setState({
         refundTransactionHash: hash,
-        isRefunded: true,
+        isRefunded: true
       })
     })
   }
 
-  listenRequests() {
+  listenNotifyRequests() {
     const flow = this
 
     flow.swap.room.on(`request ${flow.steps.createBtcScript}`, () => {
@@ -142,61 +224,6 @@ class BTC2EOS extends Flow {
         flow.send().eosWithdraw()
       }
     })
-  }
-
-  needs() {
-    const flow = this
-
-    return {
-      secret: () => {
-        return new Promise(resolve => {
-            flow.swap.events.once(flow.steps.submitSecret, resolve)
-        })
-      },
-      openSwap: () => {
-        return new Promise(resolve => {
-          flow.swap.room.once(flow.steps.openSwap, resolve)
-          flow.swap.room.sendMessage({
-            event: `request ${flow.steps.openSwap}`
-          })
-        })
-      },
-      btcWithdraw: () => {
-        return new Promise(resolve => {
-          flow.swap.room.once(flow.steps.btcWithdraw, resolve)
-          flow.swap.room.sendMessage({
-            event: `request ${flow.steps.btcWithdraw}`
-          })
-        })
-      }
-    }
-  }
-
-  send() {
-    const flow = this
-
-    return {
-      btcScript: () => {
-        const { scriptValues, createTx } = flow.state
-
-        flow.swap.room.sendMessage({
-          event: flow.steps.createBtcScript,
-          data: {
-            scriptValues, createTx
-          }
-        })
-      },
-      eosWithdraw: () => {
-        const { eosWithdrawTx, secret } = flow.state
-
-        flow.swap.room.sendMessage({
-          event: flow.steps.eosWithdraw,
-          data: {
-            eosWithdrawTx, secret
-          }
-        })
-      }
-    }
   }
 }
 
