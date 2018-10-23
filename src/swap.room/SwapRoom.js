@@ -204,7 +204,7 @@ class SwapRoom extends ServiceInterface {
   sendConfirmation(peer, message, callback = false, repeat = 9) {
 
     if (!this.connection) {
-      setTimeout(() => { this.sendConfirmation(message, callback) }, 1000)
+      setTimeout(() => { this.sendConfirmation(peer, message, callback, repeat) }, 1000)
       return
     }
 
