@@ -28,4 +28,7 @@ export default {
   pbl: 'PBL',
   senc: 'SENC',
   mth: 'MTH',
+  xnk: 'XNK',
+  xyo: 'XYO',
+  star: 'STAR',
 }
