@@ -31,4 +31,5 @@ export default {
   xnk: 'XNK',
   xyo: 'XYO',
   star: 'STAR',
+  loc: 'LOC',
 }
