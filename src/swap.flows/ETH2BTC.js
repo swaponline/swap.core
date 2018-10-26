@@ -181,7 +181,7 @@ class ETH2BTC extends Flow {
 
       // 6. Wait participant withdraw
 
-      () => {
+      async () => {
         flow.swap.room.once('ethWithdrawTxHash', async ({ ethSwapWithdrawTransactionHash }) => {
           flow.setState({
             ethSwapWithdrawTransactionHash,
@@ -200,6 +200,40 @@ class ETH2BTC extends Flow {
         flow.swap.room.sendMessage({
           event: 'request ethWithdrawTxHash',
         })
+
+        // If partner decides to scam and doesn't send ethWithdrawTxHash
+        // then we try to withdraw as in ETHTOKEN2USDT
+
+        const { participant } = flow.swap
+
+        const checkSecretExist = async () => {
+          try {
+            const secret = await flow.ethSwap.getSecret({
+              participantAddress: participant.eth.address,
+            })
+
+            if (secret) {
+              clearInterval(checkSecretTimer)
+
+              if (flow.state.secret && secret !== flow.state.secret) {
+                throw new Error(`Secret already exists and it differs! ${secret} ≠ ${flow.state.secret}`)
+              }
+
+              flow.finishStep({
+                secret,
+                isEthWithdrawn: true,
+              }, { step: 'wait-withdraw-eth' })
+            }
+          }
+          catch (err) { console.error(err) }
+        }
+
+        const checkSecretTimer = setInterval(checkSecretExist, 20 * 1000)
+
+        flow.swap.room.once('finish eth withdraw', () => {
+          checkSecretExist()
+        })
+
       },
 
       // 7. Withdraw
@@ -220,6 +254,8 @@ class ETH2BTC extends Flow {
             btcSwapWithdrawTransactionHash: hash,
           })
         })
+
+        
 
         flow.finishStep({
           isBtcWithdrawn: true,

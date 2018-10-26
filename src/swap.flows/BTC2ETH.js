@@ -255,6 +255,7 @@ class BTC2ETH extends Flow {
               ethSwapWithdrawTransactionHash: hash,
             })
 
+            // Spot where there was an a vulnerability
             flow.swap.room.sendMessage({
               event: 'ethWithdrawTxHash',
               data: {
@@ -274,6 +275,7 @@ class BTC2ETH extends Flow {
         }
 
         flow.swap.room.on('request ethWithdrawTxHash', () => {
+          // Spot where there was an a vulnerability
           flow.swap.room.sendMessage({
             event: 'ethWithdrawTxHash',
             data: {
