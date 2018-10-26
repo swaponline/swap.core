@@ -190,6 +190,7 @@ class ETH2BTC extends Flow {
           const secret = await flow.ethSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
 
           if (!flow.state.isEthWithdrawn && secret) {
+            console.log('got secret from tx', ethSwapWithdrawTransactionHash, secret)
             flow.finishStep({
               isEthWithdrawn: true,
               secret,
@@ -219,6 +220,7 @@ class ETH2BTC extends Flow {
                 throw new Error(`Secret already exists and it differs! ${secret} ≠ ${flow.state.secret}`)
               }
 
+              console.log('got secret from smart contract', secret)
               flow.finishStep({
                 secret,
                 isEthWithdrawn: true,
