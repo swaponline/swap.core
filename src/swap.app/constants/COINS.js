@@ -32,4 +32,9 @@ export default {
   xyo: 'XYO',
   star: 'STAR',
   loc: 'LOC',
+  key: 'KEY',
+  dai: 'DAI',
+  tnt: 'TNT',
+  avt: 'AVT',
+  hbt: 'HBT',
 }
