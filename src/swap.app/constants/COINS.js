@@ -37,4 +37,5 @@ export default {
   tnt: 'TNT',
   avt: 'AVT',
   hbt: 'HBT',
+  deb: 'DEB',
 }
