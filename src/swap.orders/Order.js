@@ -31,10 +31,11 @@ class Order {
     this.buyAmount      = null
     this.sellAmount     = null
 
-    this.collection     = parent
-    this.requests       = [] // income requests
-    this.isRequested    = false // outcome request status
-    this.isProcessing   = false // if swap isProcessing
+    this.collection       = parent
+    this.requests         = [] // income requests
+    this.isRequested      = false // outcome request status
+    this.isProcessing     = false // if swap isProcessing
+    this.isPartialClosure = false
 
     this._update({
       ...data,
