@@ -38,10 +38,4 @@ export default {
   avt: 'AVT',
   hbt: 'HBT',
   deb: 'DEB',
-  trn: 'TRN',
-  view: 'VIEW',
-  cs: 'CS',
-  pix: 'PIX',
-  dax: 'DAX',
-  data: 'DATA',
 }
