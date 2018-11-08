@@ -153,7 +153,7 @@ class BtcSwap extends SwapInterface {
       return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
     }
   }
-  
+
   /**
    *
    * @param {object} data

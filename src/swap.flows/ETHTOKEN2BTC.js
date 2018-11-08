@@ -79,11 +79,11 @@ export default (tokenName) => {
       super._persistSteps()
       this._persistState()
     }
-    
+
     _persistState() {
       super._persistState()
     }
-    
+
     _getSteps() {
       const flow = this
 
@@ -152,22 +152,22 @@ export default (tokenName) => {
           }
 
           const allowance = await flow.ethTokenSwap.checkAllowance(SwapApp.services.auth.getPublicData().eth.address)
-          
+
           if (allowance < sellAmount) {
             await flow.ethTokenSwap.approve({
               amount: sellAmount,
             })
           }
-          
+
           /* create contract and save this hash */
           let ethSwapCreationTransactionHash
           await flow.ethTokenSwap.create(swapData, async (hash) => {
             ethSwapCreationTransactionHash = hash;
           });
-          
+
           /* set Target wallet */
           //await flow.setTargetWalletDo();
-          
+
           /* send data to other side */
           flow.swap.room.sendMessage({
             event: 'create eth contract',
@@ -175,11 +175,11 @@ export default (tokenName) => {
               ethSwapCreationTransactionHash: ethSwapCreationTransactionHash,
             },
           })
-          
+
           flow.setState({
             ethSwapCreationTransactionHash: ethSwapCreationTransactionHash,
           })
-          
+
           flow.finishStep({
             isEthContractFunded: true,
           }, {step: 'lock-eth'})
@@ -214,7 +214,7 @@ export default (tokenName) => {
           const { participant } = flow.swap
 
           const checkSecretExist = async () => {
-            try { 
+            try {
               const secret = await flow.ethTokenSwap.getSecret({
                 participantAddress: participant.eth.address,
               })
@@ -312,7 +312,7 @@ export default (tokenName) => {
         })
       } else {
         if (this.state.isSignFetching || this.state.isMeSigned) return true;
-        
+
         this.setState({
           isSignFetching: true,
         })
@@ -326,7 +326,7 @@ export default (tokenName) => {
         this.swap.room.sendMessage({
           event: 'swap sign',
         })
-        
+
         this.finishStep({
           isMeSigned: true,
         }, { step: 'sign', silentError: true })
