@@ -35,6 +35,7 @@ const checkIncomeOrderFormat = (order) => {
     exchangeRate: util.typeforce.t.maybe(util.typeforce.isNumeric),
     isProcessing: '?Boolean',
     isRequested: '?Boolean',
+    isPartialClosure: '?Boolean',
   }
 
   const isValid = util.typeforce.check(format, order, true)
@@ -99,6 +100,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
         'sellAmount',
         'isRequested',
         'isProcessing',
+        'isPartialClosure',
       ))
 
       SwapApp.services.room.sendMessagePeer(peer,
@@ -248,6 +250,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
       'requests',
       'isRequested',
       'isProcessing',
+      'isPartialClosure',
     ))
 
     SwapApp.env.storage.setItem('myOrders', myOrders)
@@ -290,10 +293,11 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
           'sellAmount',
           'isRequested',
           'isProcessing',
+          'isPartialClosure'
         ),
       },
     })
-    
+
     return order
   }
 
@@ -310,6 +314,43 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
       },
     })
     this._saveMyOrders()
+  }
+
+  /**
+   *
+   * @param {String} event
+   * @param {String} peer
+   * @param {Object} data
+   * @param {function} callback
+   */
+  requestToPeer(event, peer, data, callback) {
+    SwapApp.services.room.sendMessagePeer(peer, {
+      event,
+      data,
+    })
+
+    if (!callback) {
+      return
+    }
+
+    SwapApp.services.room.on('accept request', function ({ fromPeer, orderId }) {
+      console.log('requestToPeer accept request', fromPeer)
+      if (peer === fromPeer) {
+        this.unsubscribe()
+
+        console.log('requestToPeer IF')
+
+        callback(orderId)
+      }
+    })
+
+    SwapApp.services.room.on('decline request', function ({ fromPeer }) {
+      if (peer === fromPeer) {
+        this.unsubscribe()
+
+        callback(false)
+      }
+    })
   }
 
   on(eventName, handler) {

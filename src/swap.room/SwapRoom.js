@@ -97,6 +97,7 @@ class SwapRoom extends ServiceInterface {
   }
 
   _handleNewMessage = (message) => {
+    console.log('message', message)
     const { from, data: rawData } = message
 
     if (from === this.peer) {
@@ -117,6 +118,8 @@ class SwapRoom extends ServiceInterface {
     if (!data) {
       return
     }
+
+    console.log('parsedData', parsedData)
 
     const recover = this._recoverMessage(data, sign)
 
@@ -251,6 +254,9 @@ class SwapRoom extends ServiceInterface {
       }
       return
     }
+
+    console.log('peer', peer)
+    console.log('message', message)
 
     const { data, event }  = message
     const sign = this._signMessage(data)

@@ -108,6 +108,7 @@ class EventAggregator {
     const event = this.getEvent(name)
 
     if (event) {
+      console.log('event', name, ...eventArgs)
       event.call(...eventArgs)
     }
   }
