@@ -107,17 +107,17 @@ class Swap {
 
     SwapApp.env.storage.setItem(`swap.${this.id}`, data)
   }
-  
+
   setDestinationBuyAddress(address) {
     this.destinationBuyAddress = address;
     this._saveState();
   }
-  
+
   setDestinationSellAddress(address) {
     this.destinationSellAddress = address;
     this._saveState();
   }
-  
+
   update(values) {
     Object.keys(values).forEach((key) => {
       if (key === 'buyAmount' || key === 'sellAmount') {

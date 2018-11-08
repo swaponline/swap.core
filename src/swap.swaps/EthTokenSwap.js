@@ -153,10 +153,10 @@ class EthTokenSwap extends SwapInterface {
 
     return new Promise(async (resolve, reject) => {
       const hash    = `0x${secretHash.replace(/^0x/, '')}`
-      
+
       const values  = (targetWallet && (targetWallet!==participantAddress)) ?
         [ hash , participantAddress, targetWallet , newAmount, this.tokenAddress ]
-        : 
+        :
         [ hash, participantAddress, newAmount, this.tokenAddress ]
 
       const params  = {
@@ -164,9 +164,9 @@ class EthTokenSwap extends SwapInterface {
         gas: this.gasLimit,
         gasPrice: this.gasPrice,
       }
-      
+
       const contractMethod = (targetWallet && (targetWallet!==participantAddress)) ? 'createSwapTarget' : 'createSwap'
-      
+
       try {
         console.log("Get gas fee");
         const gasFee = await this.contract.methods[contractMethod](...values).estimateGas(params)
@@ -289,7 +289,7 @@ class EthTokenSwap extends SwapInterface {
    * @param {function} handleTransactionHash
    */
   async setTargetWallet(participantAddress, newTargetWallet, handleTransactionHash) {
-    // --- 
+    // ---
   }
   async getTargetWallet(ownerAddress) {
     console.log('EthTokenSwap->getTargetWallet');
@@ -299,7 +299,7 @@ class EthTokenSwap extends SwapInterface {
           from: SwapApp.services.auth.accounts.eth.address,
         })
         console.log('EthTokenSwap->getTargetWallet',targetWallet);
-        
+
         resolve(targetWallet)
       }
       catch (err) {
