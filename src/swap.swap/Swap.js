@@ -75,8 +75,8 @@ class Swap {
       sellCurrency: isMy ? sellCurrency : buyCurrency,
       buyAmount: isMy ? buyAmount : sellAmount,
       sellAmount: isMy ? sellAmount : buyAmount,
-      destinationBuyAddress: destinationBuyAddress,
-      destinationSellAddress: destinationSellAddress
+      destinationBuyAddress: isMy ? destinationBuyAddress : destinationSellAddress,
+      destinationSellAddress: isMy ? destinationSellAddress : destinationBuyAddress
     }
 
     if (!swap.participant && !isMy) {

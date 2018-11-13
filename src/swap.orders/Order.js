@@ -36,7 +36,9 @@ class Order {
     this.isRequested      = false // outcome request status
     this.isProcessing     = false // if swap isProcessing
     this.isPartialClosure = false
-
+    this.destinationBuyAddress = null // (!my Buy==Sell)
+    this.destinationSellAddress = null// (!my Sell==Buy)
+    
     this._update({
       ...data,
       isMy: data.owner.peer === SwapApp.services.room.peer,
