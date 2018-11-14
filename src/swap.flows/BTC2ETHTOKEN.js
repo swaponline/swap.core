@@ -409,14 +409,21 @@ export default (tokenName) => {
       const balance = await this.btcSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
       const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
-      if (!isEnoughMoney) {
-        console.error(`Not enough money: ${balance} < ${sellAmount}`)
+      if (isEnoughMoney) {
+        this.finishStep({
+          balance,
+          isBalanceFetching: false,
+          isBalanceEnough: true,
+        }, { step: 'sync-balance' })
       }
-      this.finishStep({
-        balance,
-        isBalanceFetching: false,
-        isBalanceEnough: isEnoughMoney,
-      }, { step: 'sync-balance' })
+      else {
+        console.error(`Not enough money: ${balance} < ${sellAmount}`)
+        this.setState({
+          balance,
+          isBalanceFetching: false,
+          isBalanceEnough: false,
+        })
+      }
     }
 
     getRefundTxHex = () => {
