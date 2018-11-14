@@ -47,6 +47,20 @@ class Swap {
     }
 
     this.flow = new Flow(this)
+
+    const swap = this;
+
+    // Change destination address on run time
+    this.room.on('set destination buy address', function (data) {
+      console.log("Other side change destination buy address", data);
+      swap.destinationSellAddress = data.address;
+      swap._saveState();
+    });
+    this.room.on('set destination sell address', function (data) {
+      console.log("Other side change destination sell address", data);
+      swap.destinationBuyAddress = data.address;
+      swap._saveState();
+    });
   }
 
   _getDataFromOrder(order) {
@@ -111,11 +125,23 @@ class Swap {
   setDestinationBuyAddress(address) {
     this.destinationBuyAddress = address;
     this._saveState();
+    this.room.sendMessage({
+      event: 'set destination buy address',
+      data: {
+        address: address
+      }
+    });
   }
 
   setDestinationSellAddress(address) {
     this.destinationSellAddress = address;
     this._saveState();
+    this.room.sendMessage({
+      event: 'set destination sell address',
+      data: {
+        address: address
+      }
+    });
   }
 
   update(values) {
