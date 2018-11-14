@@ -44,7 +44,7 @@ export default {
   pix: 'PIX',
   gen: 'GEN',
   data: 'DATA',
-  eMTV: 'eMTV',
+  emtv: 'eMTV',
   gai: 'GAI',
-  CGcoin: 'CGcoin',
+  cgc: 'cgc',
 }
