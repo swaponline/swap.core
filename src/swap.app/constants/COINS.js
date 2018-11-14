@@ -42,7 +42,7 @@ export default {
   view: 'VIEW',
   cs: 'CS',
   pix: 'PIX',
-  dao: 'DAO',
+  gen: 'GEN',
   data: 'DATA',
   emtv: 'eMTV',
   gai: 'GAI',
