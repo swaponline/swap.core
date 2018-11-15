@@ -123,8 +123,10 @@ class Swap {
   }
 
   setDestinationBuyAddress(address) {
-    this.destinationBuyAddress = address;
-    this._saveState();
+    this.update({
+      destinationBuyAddress: address
+    });
+
     this.room.sendMessage({
       event: 'set destination buy address',
       data: {
@@ -134,8 +136,10 @@ class Swap {
   }
 
   setDestinationSellAddress(address) {
-    this.destinationSellAddress = address;
-    this._saveState();
+    this.update({
+      destinationSellAddress: address
+    });
+
     this.room.sendMessage({
       event: 'set destination sell address',
       data: {
