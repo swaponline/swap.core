@@ -1,6 +1,8 @@
 .DS_Store
 .idea
 
+.ipfs
+.storage
 node_modules
 
 *-lock.*
