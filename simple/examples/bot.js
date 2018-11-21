@@ -1,8 +1,3 @@
-# simple swap core
-
-Simplest usage:
-
-```javascript
 const swap = require('simple.swap.core')
 
 const { on } = swap.helpers
@@ -35,4 +30,3 @@ swap.setup().then(async ({ wallet, auth, room, orders }) => {
   orders.on('new orders', orders => orders.map(doSwap))
   orders.on('new order', doSwap)
 })
-```

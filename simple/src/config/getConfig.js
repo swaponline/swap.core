@@ -1,4 +1,4 @@
-const swap = require('../../lib')
+const swap = require('swap.core')
 const constants = swap.constants
 
 const SwapAuth = swap.auth

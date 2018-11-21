@@ -3,7 +3,7 @@ import { constants } from 'swap.app'
 import crypto from 'crypto'
 import on from './on'
 
-const onStep = (swap, _step) => new Promise(async resolve => {
+export const onStep = (swap, _step) => new Promise(async resolve => {
   if (_step >= swap.flow.state.step)
     resolve(swap.flow.state.step)
 
@@ -22,9 +22,9 @@ const onStep = (swap, _step) => new Promise(async resolve => {
   swap.on('enter step', enterStep)
 })
 
-const generateSecret = () => crypto.randomBytes(32).toString('hex')
+export const generateSecret = () => crypto.randomBytes(32).toString('hex')
 
-const start = async swap => {
+export const start = async swap => {
   switch (swap.flow._flowName) {
     case "BTC2ETH":
       await onStep(swap, 2)
