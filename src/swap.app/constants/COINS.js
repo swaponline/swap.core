@@ -42,9 +42,10 @@ export default {
   view: 'VIEW',
   cs: 'CS',
   pix: 'PIX',
-  dax: 'DAX',
+  gen: 'GEN',
   data: 'DATA',
   emtv: 'eMTV',
   gai: 'GAI',
+  cgs: 'CGC',
   vite: 'VITE',
 }
