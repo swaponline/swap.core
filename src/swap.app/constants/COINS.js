@@ -46,4 +46,5 @@ export default {
   data: 'DATA',
   emtv: 'eMTV',
   gai: 'GAI',
+  dov: 'DOV',
 }
