@@ -44,6 +44,7 @@ export default {
   pix: 'PIX',
   dax: 'DAX',
   data: 'DATA',
-  emtv: 'eMTV',
+  emtv: 'EMTV',
   gai: 'GAI',
+  xbx: 'XBX',
 }
