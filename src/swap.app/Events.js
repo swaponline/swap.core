@@ -108,7 +108,7 @@ class EventAggregator {
     const event = this.getEvent(name)
 
     if (event) {
-      console.log('event', name, ...eventArgs)
+      console.log('event', name)
       event.call(...eventArgs)
     }
   }
