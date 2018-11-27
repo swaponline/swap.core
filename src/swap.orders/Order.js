@@ -36,6 +36,12 @@ class Order {
     this.isRequested      = false // outcome request status
     this.isProcessing     = false // if swap isProcessing
     this.isPartial        = false
+
+    this.partialHandler   = {
+      buyAmount: () => false,
+      sellAmount: () => false,
+    }
+
     this.destinationBuyAddress = null // (!my Buy==Sell)
     this.destinationSellAddress = null// (!my Sell==Buy)
 
@@ -63,11 +69,14 @@ class Order {
       if (orderId === this.id) {
         this.requests.push({ participant, updatedOrder })
 
-        events.dispatch('new partial request', {
+        events.dispatch('new partial fulfilment request', {
           orderId,
           participant,
           updatedOrder,
         })
+
+        self._autoReplyToPartial('buyAmount', updatedOrder, participant)
+        self._autoReplyToPartial('sellAmount', updatedOrder, participant)
       }
     })
   }
@@ -83,6 +92,34 @@ class Order {
     this.collection._saveMyOrders()
 
     events.dispatch('swap update', this, values)
+  }
+
+  _autoReplyToPartial(changedKey, updatedOrder, participant) {
+    if (!this.isPartial) {
+      return
+    }
+
+    if (BigNumber(this[changedKey]).comparedTo(BigNumber(updatedOrder[changedKey])) == 0) {
+      return
+    }
+
+    const handler = this.partialHandler[changedKey]
+
+    if (typeof handler != 'function') {
+      return
+    }
+
+    if (!participant) return
+
+    const { peer } = participant
+
+    const newOrder = handler(updatedOrder, this)
+
+    if (!newOrder) {
+      self.declineRequestForPartial(participant.peer)
+    } else {
+      self.acceptRequestForPartial(newOrder, participant.peer)
+    }
   }
 
   /**
@@ -248,6 +285,14 @@ class Order {
         newOrderId,
       },
     })
+  }
+
+  setRequestHandlerForPartial(type, handler) {
+    if (type != 'buyAmount' || type != 'sellAmount') {
+      throw new Error(`Cant set request handler for changed key ${type}`)
+    }
+
+    this.partialHandler[type] = handler
   }
 
   acceptRequest(participantPeer) {
