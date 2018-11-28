@@ -36,6 +36,8 @@ const checkIncomeOrderFormat = (order) => {
     isProcessing: '?Boolean',
     isRequested: '?Boolean',
     isPartialClosure: '?Boolean',
+    destinationBuyAddress: util.typeforce.t.maybe('String'),
+    destinationSellAddress: util.typeforce.t.maybe('String'),
   }
 
   const isValid = util.typeforce.check(format, order, true)
@@ -101,6 +103,8 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
         'isRequested',
         'isProcessing',
         'isPartialClosure',
+        'destinationBuyAddress',
+        'destinationSellAddress',
       ))
 
       SwapApp.services.room.sendMessagePeer(peer,
@@ -251,6 +255,8 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
       'isRequested',
       'isProcessing',
       'isPartialClosure',
+      'destinationBuyAddress',
+      'destinationSellAddress',
     ))
 
     SwapApp.env.storage.setItem('myOrders', myOrders)
@@ -293,7 +299,9 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
           'sellAmount',
           'isRequested',
           'isProcessing',
-          'isPartialClosure'
+          'isPartialClosure',
+          'destinationBuyAddress',
+          'destinationSellAddress'
         ),
       },
     })
