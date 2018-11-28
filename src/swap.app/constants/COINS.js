@@ -48,4 +48,5 @@ export default {
   gai: 'GAI',
   mot: 'MOT',
   cgs: 'CGC',
+  vite: 'VITE',
 }
