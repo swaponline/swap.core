@@ -47,4 +47,5 @@ export default {
   emtv: 'EMTV',
   gai: 'GAI',
   cgs: 'CGC',
+  vite: 'VITE',
 }
