@@ -46,7 +46,9 @@ export default {
   data: 'DATA',
   emtv: 'EMTV',
   gai: 'GAI',
-  xbx: 'XBX',
-  cgs: 'CGC',
+  mot: 'MOT',
   vite: 'VITE',
+  cgs: 'CGC',
+  dov: 'DOV',
+  xbx: 'XBX',
 }
