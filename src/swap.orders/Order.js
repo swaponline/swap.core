@@ -1,4 +1,5 @@
 import SwapApp from 'swap.app'
+import BigNumber from 'bignumber.js'
 import events from './events'
 
 
@@ -67,16 +68,25 @@ class Order {
 
     SwapApp.services.room.on('request partial fulfilment', ({ orderId, participant, updatedOrder }) => {
       if (orderId === this.id) {
-        this.requests.push({ participant, updatedOrder })
+        const { buyAmount, sellAmount } = updatedOrder
+
+        const filteredUpdatedOrder = {
+          buyAmount,
+          sellAmount,
+        }
+
+        this.requests.push({ participant, updatedOrder: filteredUpdatedOrder })
 
         events.dispatch('new partial fulfilment request', {
           orderId,
           participant,
-          updatedOrder,
+          updatedOrder: filteredUpdatedOrder,
         })
 
-        self._autoReplyToPartial('buyAmount', updatedOrder, participant)
-        self._autoReplyToPartial('sellAmount', updatedOrder, participant)
+        console.log('filteredUpdatedOrder', filteredUpdatedOrder)
+
+        this._autoReplyToPartial('buyAmount', filteredUpdatedOrder, participant)
+        this._autoReplyToPartial('sellAmount', filteredUpdatedOrder, participant)
       }
     })
   }
@@ -99,7 +109,15 @@ class Order {
       return
     }
 
-    if (BigNumber(this[changedKey]).comparedTo(BigNumber(updatedOrder[changedKey])) == 0) {
+    if (!updatedOrder[changedKey]) {
+      return
+    }
+
+    console.log(changedKey, updatedOrder)
+    updatedOrder[changedKey] = BigNumber(updatedOrder[changedKey])
+
+    console.log(this[changedKey], updatedOrder)
+    if (this[changedKey].comparedTo(updatedOrder[changedKey]) == 0) {
       return
     }
 
@@ -115,10 +133,18 @@ class Order {
 
     const newOrder = handler(updatedOrder, this)
 
+    if (!newOrder) return
+
+    const { buyAmount, sellAmount } = newOrder
+
+    if (!buyAmount || !sellAmount) return
+
+    const newValues = { buyAmount, sellAmount }
+
     if (!newOrder) {
-      self.declineRequestForPartial(participant.peer)
+      this.declineRequestForPartial(participant.peer)
     } else {
-      self.acceptRequestForPartial(newOrder, participant.peer)
+      this.acceptRequestForPartial(newValues, participant.peer)
     }
   }
 
@@ -158,23 +184,28 @@ class Order {
       },
     })
 
-    SwapApp.services.room.on('accept partial fulfilment', function ({ orderId, newOrderId }) {
+    SwapApp.services.room.on('accept partial fulfilment', function ({ orderId, newOrderId, newOrder }) {
       if (orderId === self.id) {
         this.unsubscribe()
 
         // locate new order
         const newOrder = self.collection.getByKey(newOrderId)
 
+        if (!newOrder) {
+          console.error('Party created no order with id =', newOrderId)
+          return callback(null, false)
+        }
+
         // check that values match updatedOrder and old order
         const ok = newOrder.buyCurrency == self.buyCurrency
                 && newOrder.sellCurrency == self.sellCurrency
 
-        if (!ok) return callback(false)
+        if (!ok) return callback(newOrder, false)
 
         // if condition to check is not given,
         // we need logic on client app side
         if (typeof conditionHandler != 'function') {
-          return callback(newOrderId)
+          return callback(newOrder)
         }
 
         // else, we can start swap automatically
@@ -182,9 +213,9 @@ class Order {
 
         if (newOrderIsGood) {
           // request that new order
-          newOrder.sendRequest(callback)
+          newOrder.sendRequest(accepted => callback(newOrder, accepted))
         } else {
-          callback(false)
+          callback(newOrder, false)
         }
       }
     })
@@ -219,6 +250,8 @@ class Order {
     this.update({
       isRequested: true,
     })
+
+    const participant = SwapApp.services.auth.getPublicData()
 
     SwapApp.services.room.sendMessagePeer(this.owner.peer, {
       event: 'request swap',
@@ -257,15 +290,23 @@ class Order {
   }
 
   acceptRequestForPartial(newValues, participantPeer) {
-    const { buyCurrency, sellCurrency } = self
+    const { buyCurrency, sellCurrency } = this
     const { buyAmount, sellAmount } = newValues
 
-    const newOrder = self.collection.create({
+    const updatedRequests = this.requests.filter(({ participant: { peer } }) => {
+      return peer != participantPeer
+    })
+
+    this.update({
+      isRequested: false,
+      requests: updatedRequests,
+    })
+
+    const newOrder = this.collection.create({
       buyAmount,
       sellAmount,
       buyCurrency,
       sellCurrency,
-      isPartial: false,
     })
 
     SwapApp.services.room.sendMessagePeer(participantPeer, {
@@ -278,21 +319,32 @@ class Order {
   }
 
   declineRequestForPartial(participantPeer) {
+    // TODO this removes all requests, we need to remove only one referenced
+    const updatedRequests = this.requests.filter(({ participant: { peer } }) => {
+      return peer != participantPeer
+    })
+
+    this.update({
+      isRequested: false,
+      requests: updatedRequests,
+    })
+
     SwapApp.services.room.sendMessagePeer(participantPeer, {
       event: 'decline partial fulfilment',
       data: {
         orderId: this.id,
-        newOrderId,
       },
     })
   }
 
   setRequestHandlerForPartial(type, handler) {
-    if (type != 'buyAmount' || type != 'sellAmount') {
+    if (type != 'buyAmount' && type != 'sellAmount') {
       throw new Error(`Cant set request handler for changed key ${type}`)
     }
 
     this.partialHandler[type] = handler
+
+    return this
   }
 
   acceptRequest(participantPeer) {
