@@ -133,18 +133,12 @@ class Order {
 
     const newOrder = handler(updatedOrder, this)
 
-    if (!newOrder) return
-
-    const { buyAmount, sellAmount } = newOrder
-
-    if (!buyAmount || !sellAmount) return
-
-    const newValues = { buyAmount, sellAmount }
-
-    if (!newOrder) {
+    if (!newOrder || !newOrder.buyAmount || !newOrder.sellAmount) {
       this.declineRequestForPartial(participant.peer)
     } else {
-      this.acceptRequestForPartial(newValues, participant.peer)
+      const { buyAmount, sellAmount } = newOrder
+
+      this.acceptRequestForPartial({ buyAmount, sellAmount }, participant.peer)
     }
   }
 
