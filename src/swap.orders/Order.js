@@ -343,8 +343,11 @@ class Order {
    * @param {function} handler - function to be called on partial request to that order
    */
   setRequestHandlerForPartial(type, handler) {
+    if (!this.isMy) {
+      throw new Error(`RequestHandlerError: Not an owner`)
+    }
     if (type !== 'buyAmount' && type !== 'sellAmount') {
-      throw new Error(`Cant set request handler for changed key ${type}`)
+      throw new Error(`RequestHandlerError: Key = '${type}' is not in ['buyAmount','sellAmount']`)
     }
 
     this.partialHandler[type] = handler
