@@ -117,13 +117,13 @@ class Order {
     updatedOrder[changedKey] = BigNumber(updatedOrder[changedKey])
 
     console.log(this[changedKey], updatedOrder)
-    if (this[changedKey].comparedTo(updatedOrder[changedKey]) == 0) {
+    if (this[changedKey].comparedTo(updatedOrder[changedKey]) === 0) {
       return
     }
 
     const handler = this.partialHandler[changedKey]
 
-    if (typeof handler != 'function') {
+    if (typeof handler !== 'function') {
       return
     }
 
@@ -197,14 +197,14 @@ class Order {
         }
 
         // check that values match updatedOrder and old order
-        const ok = newOrder.buyCurrency == self.buyCurrency
-                && newOrder.sellCurrency == self.sellCurrency
+        const ok = newOrder.buyCurrency === self.buyCurrency
+                && newOrder.sellCurrency === self.sellCurrency
 
         if (!ok) return callback(newOrder, false)
 
         // if condition to check is not given,
         // we need logic on client app side
-        if (typeof conditionHandler != 'function') {
+        if (typeof conditionHandler !== 'function') {
           return callback(newOrder)
         }
 
@@ -294,7 +294,7 @@ class Order {
     const { buyAmount, sellAmount } = newValues
 
     const updatedRequests = this.requests.filter(({ participant: { peer } }) => {
-      return peer != participantPeer
+      return peer !== participantPeer
     })
 
     this.update({
@@ -321,7 +321,7 @@ class Order {
   declineRequestForPartial(participantPeer) {
     // TODO this removes all requests, we need to remove only one referenced
     const updatedRequests = this.requests.filter(({ participant: { peer } }) => {
-      return peer != participantPeer
+      return peer !== participantPeer
     })
 
     this.update({
@@ -338,7 +338,7 @@ class Order {
   }
 
   setRequestHandlerForPartial(type, handler) {
-    if (type != 'buyAmount' && type != 'sellAmount') {
+    if (type !== 'buyAmount' && type !== 'sellAmount') {
       throw new Error(`Cant set request handler for changed key ${type}`)
     }
 
