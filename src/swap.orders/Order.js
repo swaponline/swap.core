@@ -146,7 +146,8 @@ class Order {
    *
    * @param updatedOrder.buyAmount - optional String
    * @param updatedOrder.sellAmount - optional String
-   * @param callback - callback will receive updated order id
+   * @param callback - callback will receive updated order
+   * @param conditionHandler - autoreply to new order proposal
    */
   sendRequestForPartial(updatedOrder = {}, callback, conditionHandler) {
     if (!this.isPartial) {
@@ -283,6 +284,11 @@ class Order {
     })
   }
 
+  /**
+   *
+   * @param {Object} newValues - { buyAmount, sellAmount } - new order values
+   * @param {String} participantPeer - participant peer id
+   */
   acceptRequestForPartial(newValues, participantPeer) {
     const { buyCurrency, sellCurrency } = this
     const { buyAmount, sellAmount } = newValues
@@ -331,6 +337,11 @@ class Order {
     })
   }
 
+  /**
+   *
+   * @param {String} type - ['buyAmount','sellAmount']
+   * @param {function} handler - function to be called on partial request to that order
+   */
   setRequestHandlerForPartial(type, handler) {
     if (type !== 'buyAmount' && type !== 'sellAmount') {
       throw new Error(`Cant set request handler for changed key ${type}`)
