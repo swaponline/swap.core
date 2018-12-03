@@ -3,13 +3,16 @@ const ethereum = require('../instances/ethereum').localnet()
 
 const id = Math.random().toString().slice(2)
 
+const offset = process.env.OFFSET || Math.random().toString().slice(2)
+const ROOT_DIR = process.env.ROOT_DIR || '.'
+
 module.exports = {
   id,
   network: 'localnet',
-  storageDir: `./.storage/__localnet__${id}__`,
+  storageDir: `${ROOT_DIR}/storage/__localnet__${id}__`,
   swapRoom: {
     roomName: 'localnet.swap.online',
-    repo: `.ipfs/__localnet__${id}__`,
+    repo: `${ROOT_DIR}/.ipfs/__localnet__${id}__/${offset}`,
   },
   ethSwap: (contract) => ({
     address: contract.address,
