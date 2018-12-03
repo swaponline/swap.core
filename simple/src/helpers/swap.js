@@ -1,7 +1,10 @@
 import { constants } from 'swap.app'
+import Swap from 'swap.swap'
 
 import crypto from 'crypto'
 import on from './on'
+
+export const get = (id) => new Swap(id)
 
 export const onStep = (swap, _step) => new Promise(async resolve => {
   if (_step >= swap.flow.state.step)
@@ -43,4 +46,4 @@ export const start = async swap => {
   }
 }
 
-module.exports = { onStep, start }
+module.exports = { get, onStep, start }
