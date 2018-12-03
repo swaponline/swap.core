@@ -203,17 +203,22 @@ class EthTokenSwap extends SwapInterface {
     return new Promise(async (resolve, reject) => {
       let swap
 
+      console.log(`swaps[${ownerAddress}, ${participantAddress}]`)
+
       try {
         swap = await this.contract.methods.swaps(ownerAddress, participantAddress).call()
       }
       catch (err) {
         reject(err)
+        return
       }
 
       console.log('swapExists', swap)
 
-      const balance = parseInt(swap.balance)
-      resolve(balance)
+      const balance = swap && swap.balance ? parseInt(swap.balance) : 0
+      console.log(`resolve(${balance})`)
+
+      resolve(balance > 0)
     })
   }
 
