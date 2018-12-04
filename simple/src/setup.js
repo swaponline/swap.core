@@ -8,27 +8,25 @@ const network = process.env.NETWORK
 
 let app
 
-module.exports = (settings) => {
+module.exports = (settings => {
   if (app) return app
 
-  app = new Promise(resolve => {
-    const getConfig = configFactory[network || 'testnet']
+  const getConfig = configFactory[network || 'testnet']
 
-    const config = getConfig({ contracts: {}, ...settings })
+  const config = getConfig({ contracts: {}, ...settings })
 
-    SwapApp.setup(config)
+  SwapApp.setup(config)
 
-    const wallet = new Wallet(SwapApp, constants, config)
+  const wallet = new Wallet(SwapApp, constants, config)
 
-    const { auth, room, orders } = SwapApp.services
+  const { auth, room, orders } = SwapApp.services
 
-    resolve({
-      wallet,
-      auth,
-      room,
-      orders,
-    })
-  })
+  app = {
+    wallet,
+    auth,
+    room,
+    orders,
+  }
 
   return app
-}
+})()

@@ -1,9 +1,14 @@
-const swap = require('simple.swap.core')
+//const swap = require('simple.swap.core')
+const swap = require('./../src/index')
 
-const { on } = swap.helpers
-const { ready } = swap.helpers.room
-const { request, subscribe } = swap.helpers.orders
-const { onStep, start } = swap.helpers.swap
+const {
+  on: { onFinish },
+  room: { ready },
+  orders: { request, subscribe },
+  swap: { onStep, start },
+} = swap.helpers
+
+const { wallet, auth, room, orders } = swap.setup
 
 const doSwap = async order => {
   console.log('new order', order.id)
@@ -14,13 +19,13 @@ const doSwap = async order => {
 
     start(swap)
 
-    await on('finish', swap)
+    await onFinish(swap)
 
     console.log('finished swap', swap.id)
   }
 }
 
-swap.setup().then(async ({ wallet, auth, room, orders }) => {
+(async () => {
   const info = await wallet.getBalance()
   console.log('balance:', info)
 
@@ -29,4 +34,4 @@ swap.setup().then(async ({ wallet, auth, room, orders }) => {
 
   orders.on('new orders', orders => orders.map(doSwap))
   orders.on('new order', doSwap)
-})
+})()

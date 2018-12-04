@@ -1,6 +1,6 @@
 import Swap from 'swap.swap'
 
-import on from './on'
+import { on } from './on'
 import checkService from './checkService'
 
 export const ready = room => {
