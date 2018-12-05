@@ -37,7 +37,7 @@ const getValue = (swap, method, values) => {
 }
 
 
-(async () => {
+const _ = (async () => {
   console.clear()
   console.log('IPFS loading...')
 

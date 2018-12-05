@@ -6,7 +6,7 @@ const {
   on: { onFinish },
   room: { ready },
   orders: { request, subscribe },
-  swap: { onStep, start },
+  swap: { onStep, get, start },
 } = swap.helpers
 
 const { auth, room, wallet, orders } = swap.setup()
@@ -17,7 +17,7 @@ console.clear()
 console.log('IPFS loading...')
 console.log('REPL getting ready...')
 
-(async () => {
+const _ = (async () => {
   await ready(room)
 
   console.clear()
