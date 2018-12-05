@@ -152,20 +152,27 @@ export default (tokenName) => {
             targetWallet: flow.swap.destinationSellAddress
           }
 
+          debug('swap:flow')('fetching allowance')
           const allowance = await flow.ethTokenSwap.checkAllowance(SwapApp.services.auth.getPublicData().eth.address)
+          debug('swap:flow')('allowance', allowance)
 
           if (allowance < sellAmount) {
+            debug('swap:flow')('allowance < sellAmount', allowance, sellAmount)
             await flow.ethTokenSwap.approve({
               amount: sellAmount,
             })
           }
 
+
+          debug('swap:flow')('create swap', swapData)
           /* create contract and save this hash */
           let ethSwapCreationTransactionHash
           await flow.ethTokenSwap.create(swapData, async (hash) => {
+            debug('swap:flow')('create swap tx hash', hash)
             ethSwapCreationTransactionHash = hash;
           });
 
+          debug('swap:flow')('created swap!', ethSwapCreationTransactionHash)
           /* set Target wallet */
           //await flow.setTargetWalletDo();
 
