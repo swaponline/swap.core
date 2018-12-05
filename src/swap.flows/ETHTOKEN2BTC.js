@@ -153,7 +153,9 @@ export default (tokenName) => {
           }
 
           debug('swap.core:flow')('fetching allowance')
-          const allowance = await flow.ethTokenSwap.checkAllowance(SwapApp.services.auth.getPublicData().eth.address)
+          const allowance = await flow.ethTokenSwap.checkAllowance({
+            spender: SwapApp.services.auth.getPublicData().eth.address
+          })
           debug('swap.core:flow')('allowance', allowance)
 
           if (allowance < sellAmount) {
