@@ -116,7 +116,6 @@ class EthTokenSwap extends SwapInterface {
   /**
    *
    * @param {object} data
-   * @param {string} data.owner
    * @param {string} data.spender
    * @returns {Promise}
    */
