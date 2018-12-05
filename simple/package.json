@@ -1,0 +1,29 @@
+{
+  "name": "simple.swap.core",
+  "version": "0.1.6",
+  "description": "A wrapper around swap.core library",
+  "main": "index.js",
+  "scripts": {
+    "test": "node example.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/swaponline/swap.core.git"
+  },
+  "author": "Aleksey Bykhun",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/swaponline/swap.core/issues"
+  },
+  "homepage": "https://github.com/swaponline/swap.core#readme",
+  "dependencies": {
+    "app-module-path": "^2.2.0",
+    "babel-core": "^6.26.3",
+    "bignumber.js": "^7.2.1",
+    "bitcoinjs-lib": "^3.3.2",
+    "ipfs": "^0.32.3",
+    "ipfs-pubsub-room": "^1.4.0",
+    "request-promise-native": "^1.0.5",
+    "web3": "^1.0.0-beta.36"
+  }
+}
