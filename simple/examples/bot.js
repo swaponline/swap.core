@@ -6,22 +6,26 @@ const {
   room: { ready },
   orders: { request, subscribe },
   swap: { onStep, start },
+  history: { save, get, remove },
 } = swap.helpers
 
 const { wallet, auth, room, orders } = swap.setup
 
 const doSwap = async order => {
   console.log('new order', order.id)
-  if (order.buyAmount > 10) {
+  if (Number(order.buyAmount) > 0.01) {
     const swap = await request(order)
 
     console.log('starting swap', swap.flow._flowName, swap.id)
 
-    start(swap)
+    await start(swap)
+
+    save(swap)
 
     await onFinish(swap)
 
     console.log('finished swap', swap.id)
+    remove(swap)
   }
 }
 

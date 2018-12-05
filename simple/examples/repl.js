@@ -1,10 +1,15 @@
-const swap = require('simple.swap.core')
+//const swap = require('simple.swap.core')
+const swap = require('./../src/index')
 const repl = require('repl')
 
-const { on } = swap.helpers
-const { ready } = swap.helpers.room
-const { request, subscribe } = swap.helpers.orders
-const { get, onStep, start } = swap.helpers.swap
+const {
+  on: { onFinish },
+  room: { ready },
+  orders: { request, subscribe },
+  swap: { onStep, start },
+} = swap.helpers
+
+const { auth, room, wallet, orders } = swap.setup
 
 const swapID = process.argv[2]
 
@@ -12,7 +17,7 @@ console.clear()
 console.log('IPFS loading...')
 console.log('REPL getting ready...')
 
-swap.setup().then(async ({ auth, room, wallet, orders }) => {
+(async () => {
   await ready(room)
 
   console.clear()
@@ -30,4 +35,4 @@ swap.setup().then(async ({ auth, room, wallet, orders }) => {
   swap_repl.context.room = room
   swap_repl.context.wallet = wallet
   swap_repl.context.orders = orders
-})
+})()

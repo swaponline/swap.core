@@ -1,9 +1,13 @@
-const swap = require('simple.swap.core')
+//const swap = require('simple.swap.core')
+const swap = require('./../src/index')
 
-const { on } = swap.helpers
-const { ready } = swap.helpers.room
-const { request, subscribe } = swap.helpers.orders
-const { get, onStep, start } = swap.helpers.swap
+const {
+  room: { ready },
+  orders: { request, subscribe },
+  swap: { onStep, start, get },
+} = swap.helpers
+
+const { room } = swap.setup
 
 const swapID = process.argv[2]
 const method = process.argv[3]
@@ -32,10 +36,11 @@ const getValue = (swap, method, values) => {
   })
 }
 
-console.clear()
-console.log('IPFS loading...')
 
-swap.setup().then(async ({ room }) => {
+(async () => {
+  console.clear()
+  console.log('IPFS loading...')
+  
   await ready(room)
 
   console.clear()
@@ -55,4 +60,4 @@ swap.setup().then(async ({ room }) => {
     console.log(`swap.flow.${method}(${values}) =>`, value)
     process.exit(0)
   })
-})
+})()
