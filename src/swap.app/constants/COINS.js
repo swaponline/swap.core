@@ -51,4 +51,6 @@ export default {
   cgs: 'CGC',
   dov: 'DOV',
   xbx: 'XBX',
+  lif: 'LIF',
+  time: 'TIME',
 }
