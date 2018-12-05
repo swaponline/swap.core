@@ -1,3 +1,4 @@
+import debug from 'debug'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
@@ -22,7 +23,7 @@ const handlers = (flow) => {
 
       return tryWithdraw()
         .catch((error) => {
-          console.log('Cannot withdraw BTC, try again in 5 sec...')
+          debug('swap:flow')('Cannot withdraw BTC, try again in 5 sec...')
           return sleep(5000).then(tryWithdraw)
         })
     },
@@ -65,7 +66,7 @@ const listeners = (flow) => {
         })
 
         if (scriptCheckResult) {
-          console.log('Cannot verify btc script', scriptCheckResult)
+          debug('swap:flow')('Cannot verify btc script', scriptCheckResult)
           reject(scriptCheckResult)
         } else {
           resolve()
@@ -87,7 +88,7 @@ const listeners = (flow) => {
 
         return fetchSecret().then((secret) => {
           if (secret == 0) {
-            console.log('Cannot fetch secret, try again in 5 sec...')
+            debug('swap:flow')('Cannot fetch secret, try again in 5 sec...')
             return sleep(5000).then(fetchSecret)
           } else {
             return secret

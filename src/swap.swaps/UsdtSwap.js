@@ -1,3 +1,4 @@
+import debug from 'debug'
 import SwapApp, { SwapInterface, constants } from 'swap.app'
 
 const FEE_VALUE = 2000 // satoshis TODO how to get this value
@@ -89,7 +90,7 @@ class UsdtSwap extends SwapInterface {
   createScript(data) {
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
 
-    console.log('DATA', data)
+    debug('swap:swaps')('DATA', data)
 
     const script = SwapApp.env.bitcoin.script.compile([
 
@@ -158,7 +159,7 @@ class UsdtSwap extends SwapInterface {
       console.error(err)
       return `Can't get funding tx outputs ${fundingTxHash}`
     }
-    console.log(outputs)
+    debug('swap:swaps')(outputs)
 
     if (!outputs || outputs.length < 2) {
       return `Expected at least 2 outputs at funding tx ${fundingTxHash}, got: ${outputs}`
@@ -185,7 +186,7 @@ class UsdtSwap extends SwapInterface {
       const expectedOmniOutput = SwapApp.env.bitcoin.script.toASM(expectedOmniScript)
 
       if (expectedOmniOutput !== omniScript) {
-        console.log(expectedOmniOutput, omniScript)
+        debug('swap:swaps')(expectedOmniOutput, omniScript)
         return `Expected first output value: `
         + expectedOmniOutput
         + `, got: `
@@ -263,7 +264,7 @@ class UsdtSwap extends SwapInterface {
           recipientPublicKey,
           lockTime)
 
-        console.log('script address', scriptAddress)
+        debug('swap:swaps')('script address', scriptAddress)
         const keyPair = SwapApp.services.auth.accounts.btc
         const myBtcAddress = keyPair.getAddress()
 
@@ -272,7 +273,7 @@ class UsdtSwap extends SwapInterface {
 
 
         const unspents  = [ ...scriptUnspents, ...myUnspents ]
-        console.log('unspents', unspents)
+        debug('swap:swaps')('unspents', unspents)
         const fundValue = DUST
         const feeValue  = 5000
 
@@ -318,8 +319,8 @@ class UsdtSwap extends SwapInterface {
 
         const tx = txRaw
 
-        console.log('redeem tx hash', tx.getId())
-        console.log(`redeem tx hex ${tx.toHex()}`)
+        debug('swap:swaps')('redeem tx hash', tx.getId())
+        debug('swap:swaps')(`redeem tx hex ${tx.toHex()}`)
 
         if (typeof handleTransactionHash === 'function') {
           handleTransactionHash(tx.getId())

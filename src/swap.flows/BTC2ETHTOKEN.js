@@ -1,3 +1,4 @@
+import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
@@ -371,7 +372,7 @@ export default (tokenName) => {
     }
     createWorkBTCScript(secretHash) {
       if (this.state.btcScriptValues) {
-        console.log('BTC Script already generated',this.state.btcScriptValues);
+        debug('swap:flow')('BTC Script already generated', this.state.btcScriptValues);
         return;
       }
       const { participant } = this.swap
@@ -396,7 +397,7 @@ export default (tokenName) => {
     }
 
     async checkScriptBalance() {
-      console.log("BTC2ETHTOKEN checkScriptBalance - nothing do - empty :p - wait infinity loop");
+      debug('swap:flow')("BTC2ETHTOKEN checkScriptBalance - nothing do - empty :p - wait infinity loop");
     }
 
     async syncBalance() {

@@ -1,3 +1,4 @@
+import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto' // move to BtcSwap
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
@@ -112,7 +113,7 @@ class ETH2BTC extends Flow {
       // 3. Verify BTC Script
 
       () => {
-        console.log(`waiting verify btc script`)
+        debug('swap:flow')(`waiting verify btc script`)
         // this.verifyBtcScript()
       },
 
@@ -172,7 +173,7 @@ class ETH2BTC extends Flow {
             return console.error(err)
         }
 
-        console.log(`finish step`)
+        debug('swap:flow')(`finish step`)
 
         flow.finishStep({
           isEthContractFunded: true,
@@ -190,7 +191,7 @@ class ETH2BTC extends Flow {
           const secret = await flow.ethSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
 
           if (!flow.state.isEthWithdrawn && secret) {
-            console.log('got secret from tx', ethSwapWithdrawTransactionHash, secret)
+            debug('swap:flow')('got secret from tx', ethSwapWithdrawTransactionHash, secret)
             flow.finishStep({
               isEthWithdrawn: true,
               secret,
@@ -220,7 +221,7 @@ class ETH2BTC extends Flow {
                 throw new Error(`Secret already exists and it differs! ${secret} ≠ ${flow.state.secret}`)
               }
 
-              console.log('got secret from smart contract', secret)
+              debug('swap:flow')('got secret from smart contract', secret)
               flow.finishStep({
                 secret,
                 isEthWithdrawn: true,
@@ -257,7 +258,7 @@ class ETH2BTC extends Flow {
           })
         })
 
-        
+
 
         flow.finishStep({
           isBtcWithdrawn: true,
@@ -406,7 +407,7 @@ class ETH2BTC extends Flow {
     if (isBtcWithdrawn)
       console.warn(`Looks like money were already withdrawn, are you sure?`)
 
-    console.log(`WITHDRAW using secret = ${_secret}`)
+    debug('swap:flow')(`WITHDRAW using secret = ${_secret}`)
 
     const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
     if (secretHash != _secretHash)
@@ -415,7 +416,7 @@ class ETH2BTC extends Flow {
     const { scriptAddress } = this.btcSwap.createScript(btcScriptValues)
     const balance = await this.btcSwap.getBalance(scriptAddress)
 
-    console.log(`address=${scriptAddress}, balance=${balance}`)
+    debug('swap:flow')(`address=${scriptAddress}, balance=${balance}`)
 
     if (balance === 0) {
       this.finishStep({
@@ -428,12 +429,12 @@ class ETH2BTC extends Flow {
       scriptValues: btcScriptValues,
       secret: _secret,
     }, (hash) => {
-      console.log(`TX hash=${hash}`)
+      debug('swap:flow')(`TX hash=${hash}`)
       this.setState({
         btcSwapWithdrawTransactionHash: hash,
       })
     })
-    console.log(`TX withdraw sent: ${this.state.btcSwapWithdrawTransactionHash}`)
+    debug('swap:flow')(`TX withdraw sent: ${this.state.btcSwapWithdrawTransactionHash}`)
 
     this.finishStep({
       isBtcWithdrawn: true,

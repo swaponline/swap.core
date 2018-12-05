@@ -1,3 +1,4 @@
+import debug from 'debug'
 import SwapApp, {constants, SwapInterface} from 'swap.app'
 import BigNumber from 'bignumber.js'
 import InputDataDecoder from 'ethereum-input-data-decoder'
@@ -65,11 +66,11 @@ class EthSwap extends SwapInterface {
   async create(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount } = data
 
-    console.log('create before', this.gasPrice)
+    debug('swap:swaps')('create before', this.gasPrice)
 
     await this.updateGas()
 
-    console.log('create after', this.gasPrice)
+    debug('swap:swaps')('create after', this.gasPrice)
 
     const base = BigNumber(10).pow(18)
     const newAmount = new BigNumber(amount.toString()).times(base).integerValue().toNumber()
@@ -84,7 +85,7 @@ class EthSwap extends SwapInterface {
         gasPrice: this.gasPrice,
       }
 
-      console.log('params', params)
+      debug('swap:swaps')('params', params)
 
       const values = [ hash, participantAddress ]
 
@@ -148,7 +149,7 @@ class EthSwap extends SwapInterface {
         return
       }
 
-      console.log('swapExists', swap)
+      debug('swap:swaps')('swapExists', swap)
 
       const balance = swap ? parseInt(swap.balance) : 0
       resolve(balance > 0)
@@ -282,7 +283,7 @@ class EthSwap extends SwapInterface {
           from: SwapApp.services.auth.accounts.eth.address,
         })
 
-        console.log('secret ethswap.js', secret)
+        debug('swap:swaps')('secret ethswap.js', secret)
 
         const secretValue = secret && !/^0x0+/.test(secret) ? secret : null
 

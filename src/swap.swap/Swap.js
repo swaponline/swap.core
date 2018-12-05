@@ -1,3 +1,4 @@
+import debug from 'debug'
 import BigNumber from 'bignumber.js'
 import SwapApp, { Events, util,  } from 'swap.app'
 import Room from './Room'
@@ -50,13 +51,13 @@ class Swap {
 
     // Change destination address on run time
     this.room.on('set destination buy address', (data) => {
-      console.log("Other side change destination buy address", data);
+      debug('swap:swap')("Other side change destination buy address", data);
       this.update({
         destinationSellAddress: data.address
       })
     });
     this.room.on('set destination sell address', (data) => {
-      console.log("Other side change destination sell address", data);
+      debug('swap:swap')("Other side change destination sell address", data);
       this.update({
         destinationBuyAddress: data.address
       })

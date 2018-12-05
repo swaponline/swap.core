@@ -29,6 +29,7 @@
     "babel-runtime": "^6.26.0",
     "bignumber.js": "^7.2.1",
     "bitcoinjs-lib": "^3.3.2",
+    "debug": "^4.1.0",
     "eosjs": "^15.0.3",
     "ethereum-input-data-decoder": "0.0.12",
     "node-gyp": "^3.8.0",
