@@ -1,3 +1,4 @@
+import debug from 'debug'
 import BigNumber from 'bignumber.js'
 import SwapApp, { Collection, ServiceInterface, util, constants } from 'swap.app'
 import SwapRoom from 'swap.room'
@@ -43,7 +44,7 @@ const checkIncomeOrderFormat = (order) => {
   const isValid = util.typeforce.check(format, order, true)
 
   if (!isValid) {
-    console.log('Wrong income order format. Excepted:', format, 'got:', order)
+    debug('swap:orders')('Wrong income order format. Excepted:', format, 'got:', order)
   }
 
   return isValid
@@ -342,11 +343,11 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
     }
 
     SwapApp.services.room.on('accept request', function ({ fromPeer, orderId }) {
-      console.log('requestToPeer accept request', fromPeer)
+      debug('swap:orders')('requestToPeer accept request', fromPeer)
       if (peer === fromPeer) {
         this.unsubscribe()
 
-        console.log('requestToPeer IF')
+        debug('swap:orders')('requestToPeer IF')
 
         callback(orderId)
       }

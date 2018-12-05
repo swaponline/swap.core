@@ -1,3 +1,4 @@
+import debug from 'debug'
 import SwapApp, { constants, Events, ServiceInterface } from 'swap.app'
 
 
@@ -51,7 +52,7 @@ class SwapRoom extends ServiceInterface {
         })
       }))
       .on('error', (err) => {
-        console.log('IPFS error!', err)
+        debug('swap:room')('IPFS error!', err)
       })
   }
 
@@ -71,7 +72,7 @@ class SwapRoom extends ServiceInterface {
 
     this.roomName = this._config.roomName || defaultRoomName
 
-    console.log(`Using room: ${this.roomName}`)
+    debug('swap:room')(`Using room: ${this.roomName}`)
 
     this.connection = SwapApp.env.IpfsRoom(ipfsConnection, this.roomName, {
       pollInterval: 1000,
@@ -98,7 +99,7 @@ class SwapRoom extends ServiceInterface {
 
   _handleNewMessage = (message) => {
     const { from, data: rawData } = message
-    console.log('message from', from)
+    debug('swap:room')('message from', from)
 
     if (from === this.peer) {
       return
@@ -119,7 +120,7 @@ class SwapRoom extends ServiceInterface {
       return
     }
 
-    // console.log('parsedData', parsedData)
+    // debug('swap:room')('parsedData', parsedData)
 
     const recover = this._recoverMessage(data, sign)
 
@@ -255,8 +256,8 @@ class SwapRoom extends ServiceInterface {
       return
     }
 
-    console.log('sent message to peer', peer)
-    // console.log('message', message)
+    debug('swap:room')('sent message to peer', peer)
+    // debug('swap:room')('message', message)
 
     const { data, event }  = message
     const sign = this._signMessage(data)

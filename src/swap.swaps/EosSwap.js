@@ -1,3 +1,4 @@
+import debug from 'debug'
 import SwapApp, { SwapInterface, constants } from 'swap.app'
 
 const amountToUnits = amount =>
@@ -101,7 +102,7 @@ class EosSwap extends SwapInterface {
     const findSwapID = () => this.findSwapID({ btcOwner, eosOwner })
 
     const depositFunds = (swapID) => {
-      console.log('depositFunds', swapID)
+      debug('swap:swaps')('depositFunds', swapID)
 
       return this.eos.transaction({
         actions: [

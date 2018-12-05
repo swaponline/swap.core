@@ -1,3 +1,4 @@
+import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
@@ -94,14 +95,14 @@ export default (tokenName) => {
 
         () => {
           flow.swap.room.once('swap sign', () => {
-            console.log('swap sign!')
+            debug('swap:flow')('swap sign!')
             flow.finishStep({
               isParticipantSigned: true,
             }, { step: 'sign', silentError: true })
           })
 
           flow.swap.room.once('swap exists', () => {
-            console.log(`swap already exists`)
+            debug('swap:flow')(`swap already exists`)
           })
 
           // if I came late and he ALREADY send this, I request AGAIN
@@ -149,8 +150,8 @@ export default (tokenName) => {
             scriptValues = usdtScriptValues
           }
 
-          console.log('sellAmount', sellAmount)
-          console.log('scriptValues', scriptValues)
+          debug('swap:flow')('sellAmount', sellAmount)
+          debug('swap:flow')('scriptValues', scriptValues)
 
           let usdtFundingTransactionHash, usdtFunding
 
@@ -258,7 +259,7 @@ export default (tokenName) => {
 
           try {
             await flow.ethTokenSwap.withdraw(data, (hash) => {
-              console.log('withdraw tx hash', hash)
+              debug('swap:flow')('withdraw tx hash', hash)
 
               flow.setState({
                 ethSwapWithdrawTransactionHash: hash,

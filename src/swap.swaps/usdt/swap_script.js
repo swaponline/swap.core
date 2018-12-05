@@ -60,8 +60,6 @@ const createScript = (swap_secret_hash, Alice_pubkey, Bob_pubkey, locktime) => {
     bitcoin.opcodes.OP_ENDIF,
   ])
 
-  console.log(script)
-
   const scriptPubKey  = bitcoin.script.scriptHash.output.encode(bitcoin.crypto.hash160(script))
   const scriptAddress = bitcoin.address.fromOutputScript(scriptPubKey, net)
 
