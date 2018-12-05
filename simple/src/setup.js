@@ -22,6 +22,7 @@ module.exports = settings => {
   const { auth, room, orders } = SwapApp.services
 
   app = {
+    app: SwapApp,
     wallet,
     auth,
     room,
