@@ -5,3 +5,4 @@ storage
 src/
 examples/
 examples_local/
+tests/
