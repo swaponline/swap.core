@@ -8,7 +8,7 @@ const network = process.env.NETWORK
 
 let app
 
-module.exports = (settings => {
+module.exports = settings => {
   if (app) return app
 
   const getConfig = configFactory[network || 'testnet']
@@ -29,4 +29,4 @@ module.exports = (settings => {
   }
 
   return app
-})()
+}

@@ -9,7 +9,7 @@ const {
   history: { save, get, remove },
 } = swap.helpers
 
-const { wallet, auth, room, orders } = swap.setup
+const { wallet, auth, room, orders } = swap.setup()
 
 const doSwap = async order => {
   console.log('new order', order.id)

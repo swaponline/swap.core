@@ -9,7 +9,7 @@ const {
   swap: { onStep, start },
 } = swap.helpers
 
-const { auth, room, wallet, orders } = swap.setup
+const { auth, room, wallet, orders } = swap.setup()
 
 const swapID = process.argv[2]
 

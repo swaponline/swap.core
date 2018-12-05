@@ -7,7 +7,7 @@ const {
   swap: { onStep, start, get },
 } = swap.helpers
 
-const { room } = swap.setup
+const { room } = swap.setup()
 
 const swapID = process.argv[2]
 const method = process.argv[3]
@@ -40,7 +40,7 @@ const getValue = (swap, method, values) => {
 (async () => {
   console.clear()
   console.log('IPFS loading...')
-  
+
   await ready(room)
 
   console.clear()
