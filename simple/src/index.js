@@ -9,5 +9,6 @@ require('app-module-path').addPath(__dirname + '/../../swap.core/lib')
 
 const setup = require('./setup')
 const helpers = require('./helpers')
+const config = require('./config')
 
-module.exports = { setup, helpers }
+module.exports = { setup, helpers, config }
