@@ -95,14 +95,14 @@ export default (tokenName) => {
 
         () => {
           flow.swap.room.once('swap sign', () => {
-            debug('swap:flow')('swap sign!')
+            debug('swap.core:flow')('swap sign!')
             flow.finishStep({
               isParticipantSigned: true,
             }, { step: 'sign', silentError: true })
           })
 
           flow.swap.room.once('swap exists', () => {
-            debug('swap:flow')(`swap already exists`)
+            debug('swap.core:flow')(`swap already exists`)
           })
 
           // if I came late and he ALREADY send this, I request AGAIN
@@ -150,8 +150,8 @@ export default (tokenName) => {
             scriptValues = usdtScriptValues
           }
 
-          debug('swap:flow')('sellAmount', sellAmount)
-          debug('swap:flow')('scriptValues', scriptValues)
+          debug('swap.core:flow')('sellAmount', sellAmount)
+          debug('swap.core:flow')('scriptValues', scriptValues)
 
           let usdtFundingTransactionHash, usdtFunding
 
@@ -259,7 +259,7 @@ export default (tokenName) => {
 
           try {
             await flow.ethTokenSwap.withdraw(data, (hash) => {
-              debug('swap:flow')('withdraw tx hash', hash)
+              debug('swap.core:flow')('withdraw tx hash', hash)
 
               flow.setState({
                 ethSwapWithdrawTransactionHash: hash,

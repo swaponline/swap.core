@@ -23,7 +23,7 @@ const handlers = (flow) => {
 
       return tryWithdraw()
         .catch((error) => {
-          debug('swap:flow')('Cannot withdraw BTC, try again in 5 sec...')
+          debug('swap.core:flow')('Cannot withdraw BTC, try again in 5 sec...')
           return sleep(5000).then(tryWithdraw)
         })
     },
@@ -66,7 +66,7 @@ const listeners = (flow) => {
         })
 
         if (scriptCheckResult) {
-          debug('swap:flow')('Cannot verify btc script', scriptCheckResult)
+          debug('swap.core:flow')('Cannot verify btc script', scriptCheckResult)
           reject(scriptCheckResult)
         } else {
           resolve()
@@ -88,7 +88,7 @@ const listeners = (flow) => {
 
         return fetchSecret().then((secret) => {
           if (secret == 0) {
-            debug('swap:flow')('Cannot fetch secret, try again in 5 sec...')
+            debug('swap.core:flow')('Cannot fetch secret, try again in 5 sec...')
             return sleep(5000).then(fetchSecret)
           } else {
             return secret

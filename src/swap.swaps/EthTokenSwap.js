@@ -169,10 +169,10 @@ class EthTokenSwap extends SwapInterface {
       const contractMethod = (targetWallet && (targetWallet!==participantAddress)) ? 'createSwapTarget' : 'createSwap'
 
       try {
-        debug('swap:swaps')("Get gas fee");
+        debug('swap.core:swaps')("Get gas fee");
         const gasFee = await this.contract.methods[contractMethod](...values).estimateGas(params)
         params.gas = gasFee;
-        debug('swap:swaps')("EthTokenSwap -> create -> gasFee",gasFee);
+        debug('swap.core:swaps')("EthTokenSwap -> create -> gasFee",gasFee);
         const result = await this.contract.methods[contractMethod](...values).send(params)
           .on('transactionHash', (hash) => {
             if (typeof handleTransactionHash === 'function') {
@@ -182,7 +182,7 @@ class EthTokenSwap extends SwapInterface {
           .on('error', (err) => {
             reject(err)
           })
-        debug('swap:swaps')('result', result)
+        debug('swap.core:swaps')('result', result)
         resolve(result)
       }
       catch (err) {
@@ -204,7 +204,7 @@ class EthTokenSwap extends SwapInterface {
     return new Promise(async (resolve, reject) => {
       let swap
 
-      debug('swap:swaps')(`swaps[${ownerAddress}, ${participantAddress}]`)
+      debug('swap.core:swaps')(`swaps[${ownerAddress}, ${participantAddress}]`)
 
       try {
         swap = await this.contract.methods.swaps(ownerAddress, participantAddress).call()
@@ -214,10 +214,10 @@ class EthTokenSwap extends SwapInterface {
         return
       }
 
-      debug('swap:swaps')('swapExists', swap)
+      debug('swap.core:swaps')('swapExists', swap)
 
       const balance = swap && swap.balance ? parseInt(swap.balance) : 0
-      debug('swap:swaps')(`resolve(${balance})`)
+      debug('swap.core:swaps')(`resolve(${balance})`)
 
       resolve(balance > 0)
     })
@@ -268,7 +268,7 @@ class EthTokenSwap extends SwapInterface {
       catch (err) {
         reject(err)
       }
-      debug('swap:swaps')('balance', balance)
+      debug('swap.core:swaps')('balance', balance)
       resolve(balance)
     })
   }
@@ -298,13 +298,13 @@ class EthTokenSwap extends SwapInterface {
     // ---
   }
   async getTargetWallet(ownerAddress) {
-    debug('swap:swaps')('EthTokenSwap->getTargetWallet');
+    debug('swap.core:swaps')('EthTokenSwap->getTargetWallet');
     return new Promise(async (resolve, reject) => {
       try {
         const targetWallet = await this.contract.methods.getTargetWallet(ownerAddress).call({
           from: SwapApp.services.auth.accounts.eth.address,
         })
-        debug('swap:swaps')('EthTokenSwap->getTargetWallet',targetWallet);
+        debug('swap.core:swaps')('EthTokenSwap->getTargetWallet',targetWallet);
 
         resolve(targetWallet)
       }
@@ -337,7 +337,7 @@ class EthTokenSwap extends SwapInterface {
 
       try {
         const gasFee = await this.contract.methods.withdraw(_secret, ownerAddress).estimateGas(params);
-        debug('swap:swaps')("EthTokenSwap -> withdraw -> gasFee",gasFee);
+        debug('swap.core:swaps')("EthTokenSwap -> withdraw -> gasFee",gasFee);
         params.gas = gasFee;
         const result = await this.contract.methods.withdraw(_secret, ownerAddress).send(params)
           .on('transactionHash', (hash) => {

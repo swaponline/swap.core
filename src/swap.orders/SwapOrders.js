@@ -44,7 +44,7 @@ const checkIncomeOrderFormat = (order) => {
   const isValid = util.typeforce.check(format, order, true)
 
   if (!isValid) {
-    debug('swap:orders')('Wrong income order format. Excepted:', format, 'got:', order)
+    debug('swap.core:orders')('Wrong income order format. Excepted:', format, 'got:', order)
   }
 
   return isValid
@@ -343,11 +343,11 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
     }
 
     SwapApp.services.room.on('accept request', function ({ fromPeer, orderId }) {
-      debug('swap:orders')('requestToPeer accept request', fromPeer)
+      debug('swap.core:orders')('requestToPeer accept request', fromPeer)
       if (peer === fromPeer) {
         this.unsubscribe()
 
-        debug('swap:orders')('requestToPeer IF')
+        debug('swap.core:orders')('requestToPeer IF')
 
         callback(orderId)
       }

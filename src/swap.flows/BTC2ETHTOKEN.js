@@ -372,7 +372,7 @@ export default (tokenName) => {
     }
     createWorkBTCScript(secretHash) {
       if (this.state.btcScriptValues) {
-        debug('swap:flow')('BTC Script already generated', this.state.btcScriptValues);
+        debug('swap.core:flow')('BTC Script already generated', this.state.btcScriptValues);
         return;
       }
       const { participant } = this.swap
@@ -397,7 +397,7 @@ export default (tokenName) => {
     }
 
     async checkScriptBalance() {
-      debug('swap:flow')("BTC2ETHTOKEN checkScriptBalance - nothing do - empty :p - wait infinity loop");
+      debug('swap.core:flow')("BTC2ETHTOKEN checkScriptBalance - nothing do - empty :p - wait infinity loop");
     }
 
     async syncBalance() {

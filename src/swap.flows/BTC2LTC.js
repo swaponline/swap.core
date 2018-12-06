@@ -87,7 +87,7 @@ class BTC2LTC extends Flow {
     //   ownerAddress: this.swap.participant.ltc.address,
     // })
     //   .then((balance) => {
-    //     debug('swap:flow')('balance:', balance)
+    //     debug('swap.core:flow')('balance:', balance)
     //   })
   }
 
@@ -209,7 +209,7 @@ class BTC2LTC extends Flow {
             const { scriptAddress } = this.ltcSwap.createScript(flow.state.ltcScriptValues)
             const balance = await flow.ltcSwap.getBalance(scriptAddress)
 
-            debug('swap:flow')('Litecoin balance - ' + balance)
+            debug('swap.core:flow')('Litecoin balance - ' + balance)
 
             if (balance > 0) {
               if (!flow.state.isLtcScriptFunded) { // redundant condition but who cares :D

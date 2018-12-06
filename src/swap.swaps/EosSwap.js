@@ -102,7 +102,7 @@ class EosSwap extends SwapInterface {
     const findSwapID = () => this.findSwapID({ btcOwner, eosOwner })
 
     const depositFunds = (swapID) => {
-      debug('swap:swaps')('depositFunds', swapID)
+      debug('swap.core:swaps')('depositFunds', swapID)
 
       return this.eos.transaction({
         actions: [

@@ -85,7 +85,7 @@ class LTC2ETH extends Flow {
     //   ownerAddress: this.swap.participant.eth.address,
     // })
     //   .then((balance) => {
-    //     debug('swap:flow')('balance:', balance)
+    //     debug('swap.core:flow')('balance:', balance)
     //   })
   }
 
