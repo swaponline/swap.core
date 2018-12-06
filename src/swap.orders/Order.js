@@ -48,13 +48,17 @@ class Order {
   }
 
   _onMount() {
-    SwapApp.services.room.on('request swap', ({ orderId, participant }) => {
+    SwapApp.services.room.on('request swap', ({ orderId, participant, participantMetadata }) => {
       if (orderId === this.id && !this.requests.find(({ peer }) => peer === participant.peer)) {
-        this.requests.push(participant)
+        const reputation = SwapApp.env.swapsExplorer && typeof SwapApp.env.swapsExplorer.getVerifiedReputation === 'function' ?
+          SwapApp.env.swapsExplorer.getVerifiedReputation(participantMetadata) : 0
+
+        this.requests.push({ ...participant, reputation })
 
         events.dispatch('new order request', {
           orderId,
           participant,
+          participantMetadata,
         })
       }
     })
@@ -77,7 +81,7 @@ class Order {
    *
    * @param callback - awaiting for response - accept / decline
    */
-  sendRequest(callback) {
+  sendRequest(callback, participantMetadata) {
     const self = this
 
     if (SwapApp.services.room.peer === this.owner.peer) {
@@ -100,8 +104,8 @@ class Order {
       event: 'request swap',
       data: {
         orderId: this.id,
-        // TODO why do we send this info?
         participant,
+        participantMetadata, // seller can verify reputation of participant before he will accept request
       },
     })
 
