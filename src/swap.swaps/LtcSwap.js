@@ -91,7 +91,7 @@ class LtcSwap extends SwapInterface {
 
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
 
-    debug('swap:swaps')('DATA', data)
+    debug('swap.core:swaps')('DATA', data)
 
     const script = SwapApp.env.bitcoin.script.compile([
 
@@ -369,7 +369,7 @@ class LtcSwap extends SwapInterface {
     return new Promise(async (resolve, reject) => {
       try {
         const txRaw = await this.getWithdrawRawTransaction(data, isRefund, hashName)
-        debug('swap:swaps')('raw tx withdraw', txRaw.toHex())
+        debug('swap.core:swaps')('raw tx withdraw', txRaw.toHex())
 
         if (typeof handleTransactionHash === 'function') {
           handleTransactionHash(txRaw.getId())

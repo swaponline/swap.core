@@ -90,7 +90,7 @@ class UsdtSwap extends SwapInterface {
   createScript(data) {
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
 
-    debug('swap:swaps')('DATA', data)
+    debug('swap.core:swaps')('DATA', data)
 
     const script = SwapApp.env.bitcoin.script.compile([
 
@@ -159,7 +159,7 @@ class UsdtSwap extends SwapInterface {
       console.error(err)
       return `Can't get funding tx outputs ${fundingTxHash}`
     }
-    debug('swap:swaps')(outputs)
+    debug('swap.core:swaps')(outputs)
 
     if (!outputs || outputs.length < 2) {
       return `Expected at least 2 outputs at funding tx ${fundingTxHash}, got: ${outputs}`
@@ -186,7 +186,7 @@ class UsdtSwap extends SwapInterface {
       const expectedOmniOutput = SwapApp.env.bitcoin.script.toASM(expectedOmniScript)
 
       if (expectedOmniOutput !== omniScript) {
-        debug('swap:swaps')(expectedOmniOutput, omniScript)
+        debug('swap.core:swaps')(expectedOmniOutput, omniScript)
         return `Expected first output value: `
         + expectedOmniOutput
         + `, got: `
@@ -264,7 +264,7 @@ class UsdtSwap extends SwapInterface {
           recipientPublicKey,
           lockTime)
 
-        debug('swap:swaps')('script address', scriptAddress)
+        debug('swap.core:swaps')('script address', scriptAddress)
         const keyPair = SwapApp.services.auth.accounts.btc
         const myBtcAddress = keyPair.getAddress()
 
@@ -273,7 +273,7 @@ class UsdtSwap extends SwapInterface {
 
 
         const unspents  = [ ...scriptUnspents, ...myUnspents ]
-        debug('swap:swaps')('unspents', unspents)
+        debug('swap.core:swaps')('unspents', unspents)
         const fundValue = DUST
         const feeValue  = 5000
 
@@ -319,8 +319,8 @@ class UsdtSwap extends SwapInterface {
 
         const tx = txRaw
 
-        debug('swap:swaps')('redeem tx hash', tx.getId())
-        debug('swap:swaps')(`redeem tx hex ${tx.toHex()}`)
+        debug('swap.core:swaps')('redeem tx hash', tx.getId())
+        debug('swap.core:swaps')(`redeem tx hex ${tx.toHex()}`)
 
         if (typeof handleTransactionHash === 'function') {
           handleTransactionHash(tx.getId())

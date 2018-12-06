@@ -113,7 +113,7 @@ class ETH2LTC extends Flow {
       // 3. Verify LTC Script
 
       () => {
-        debug('swap:flow')(`waiting verify ltc script`)
+        debug('swap.core:flow')(`waiting verify ltc script`)
         // this.verifyLtcScript()
       },
 
@@ -173,7 +173,7 @@ class ETH2LTC extends Flow {
             return console.error(err)
         }
 
-        debug('swap:flow')(`finish step`)
+        debug('swap.core:flow')(`finish step`)
 
         flow.finishStep({
           isEthContractFunded: true,
@@ -365,7 +365,7 @@ class ETH2LTC extends Flow {
     if (isLtcWithdrawn)
       console.warn(`Looks like money were already withdrawn, are you sure?`)
 
-    debug('swap:flow')(`WITHDRAW using secret = ${_secret}`)
+    debug('swap.core:flow')(`WITHDRAW using secret = ${_secret}`)
 
     const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
     if (secretHash != _secretHash)
@@ -374,7 +374,7 @@ class ETH2LTC extends Flow {
     const { scriptAddress } = this.ltcSwap.createScript(ltcScriptValues)
     const balance = await this.ltcSwap.getBalance(scriptAddress)
 
-    debug('swap:flow')(`address=${scriptAddress}, balance=${balance}`)
+    debug('swap.core:flow')(`address=${scriptAddress}, balance=${balance}`)
 
     if (balance === 0) {
       this.finishStep({
@@ -387,12 +387,12 @@ class ETH2LTC extends Flow {
       scriptValues: ltcScriptValues,
       secret: _secret,
     }, (hash) => {
-      debug('swap:flow')(`TX hash=${hash}`)
+      debug('swap.core:flow')(`TX hash=${hash}`)
       this.setState({
         ltcSwapWithdrawTransactionHash: hash,
       })
     })
-    debug('swap:flow')(`TX withdraw sent: ${this.state.ltcSwapWithdrawTransactionHash}`)
+    debug('swap.core:flow')(`TX withdraw sent: ${this.state.ltcSwapWithdrawTransactionHash}`)
 
     this.finishStep({
       isLtcWithdrawn: true,

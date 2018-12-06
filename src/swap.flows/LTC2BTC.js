@@ -114,7 +114,7 @@ class LTC2BTC extends Flow {
       // 3. Verify BTC Script
 
       () => {
-        debug('swap:flow')(`waiting verify btc script`)
+        debug('swap.core:flow')(`waiting verify btc script`)
         // this.verifyBtcScript()
       },
 
@@ -122,7 +122,7 @@ class LTC2BTC extends Flow {
 
       () => {
         this.syncBalance()
-        debug('swap:flow')(this)
+        debug('swap.core:flow')(this)
       },
 
       // 5. Create LTC Script
@@ -402,7 +402,7 @@ class LTC2BTC extends Flow {
     if (isBtcWithdrawn)
       console.warn(`Looks like money were already withdrawn, are you sure?`)
 
-    debug('swap:flow')(`WITHDRAW using secret = ${_secret}`)
+    debug('swap.core:flow')(`WITHDRAW using secret = ${_secret}`)
 
     const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
     if (secretHash != _secretHash)
@@ -411,7 +411,7 @@ class LTC2BTC extends Flow {
     const { scriptAddress } = this.btcSwap.createScript(btcScriptValues)
     const balance = await this.btcSwap.getBalance(scriptAddress)
 
-    debug('swap:flow')(`address=${scriptAddress}, balance=${balance}`)
+    debug('swap.core:flow')(`address=${scriptAddress}, balance=${balance}`)
 
     if (balance === 0) {
       this.finishStep({
@@ -424,12 +424,12 @@ class LTC2BTC extends Flow {
       scriptValues: btcScriptValues,
       secret: _secret,
     }, (hash) => {
-      debug('swap:flow')(`TX hash=${hash}`)
+      debug('swap.core:flow')(`TX hash=${hash}`)
       this.setState({
         btcSwapWithdrawTransactionHash: hash,
       })
     })
-    debug('swap:flow')(`TX withdraw sent: ${this.state.btcSwapWithdrawTransactionHash}`)
+    debug('swap.core:flow')(`TX withdraw sent: ${this.state.btcSwapWithdrawTransactionHash}`)
 
     this.finishStep({
       isBtcWithdrawn: true,

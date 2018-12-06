@@ -101,13 +101,13 @@ class Flow {
     SwapApp.env.storage.setItem(`flow.${this.swap.id}`, this.state)
   }
   finishStep(data, constraints) {
-    debug('swap:swap')(`on step ${this.state.step}, constraints =`, constraints)
+    debug('swap.core:swap')(`on step ${this.state.step}, constraints =`, constraints)
 
     if (constraints) {
       const { step, silentError } = constraints
 
       const n_step = this.stepNumbers[step]
-      debug('swap:swap')(`trying to finish step ${step} = ${n_step} when on step ${this.state.step}`)
+      debug('swap.core:swap')(`trying to finish step ${step} = ${n_step} when on step ${this.state.step}`)
 
       if (step && this.state.step != n_step) {
         if (silentError) {
@@ -120,7 +120,7 @@ class Flow {
       }
     }
 
-    debug('swap:swap')(`proceed to step ${this.state.step+1}, data=`, data)
+    debug('swap.core:swap')(`proceed to step ${this.state.step+1}, data=`, data)
 
     this.goNextStep(data)
   }
