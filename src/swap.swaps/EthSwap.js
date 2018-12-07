@@ -30,7 +30,7 @@ class EthSwap extends SwapInterface {
     this.abi            = options.abi
 
     this._swapName      = constants.COINS.eth
-    this.gasLimit       = options.gasLimit || 1e5
+    this.gasLimit       = options.gasLimit || 2e5
     this.gasPrice       = options.gasPrice || 2e9
     this.fetchBalance   = options.fetchBalance
   }
@@ -63,7 +63,7 @@ class EthSwap extends SwapInterface {
    * @returns {Promise}
    */
   async create(data, handleTransactionHash) {
-    const { secretHash, participantAddress, amount } = data
+    const { secretHash, participantAddress, amount, targetWallet } = data
 
     console.log('create before', this.gasPrice)
 
@@ -86,9 +86,19 @@ class EthSwap extends SwapInterface {
 
       console.log('params', params)
 
-      const values = [ hash, participantAddress ]
+      const values  = (targetWallet && (targetWallet!==participantAddress)) ?
+        [ hash , participantAddress, targetWallet ]
+        :
+        [ hash, participantAddress ]
 
-      const receipt = await this.contract.methods.createSwap(...values).send(params)
+      const contractMethod = (targetWallet && (targetWallet!==participantAddress)) ? 'createSwapTarget' : 'createSwap'
+
+      //console.log("Get gas fee");
+      //const gasFee = await this.contract.methods[contractMethod](...values).estimateGas(params)
+      //params.gas = gasFee;
+      //console.log("EthSwap -> create -> gasFee",gasFee);
+        
+      const receipt = await this.contract.methods[contractMethod](...values).send(params)
         .on('transactionHash', (hash) => {
           if (typeof handleTransactionHash === 'function') {
             handleTransactionHash(hash)
@@ -145,7 +155,6 @@ class EthSwap extends SwapInterface {
       }
       catch (err) {
         reject(err)
-        return
       }
 
       console.log('swapExists', swap)
@@ -198,6 +207,22 @@ class EthSwap extends SwapInterface {
     }
   }
 
+  async getTargetWallet(ownerAddress) {
+    console.log('EthSwap->getTargetWallet');
+    return new Promise(async (resolve, reject) => {
+      try {
+        const targetWallet = await this.contract.methods.getTargetWallet(ownerAddress).call({
+          from: SwapApp.services.auth.accounts.eth.address,
+        })
+        console.log('EthSwap->getTargetWallet',targetWallet);
+
+        resolve(targetWallet)
+      }
+      catch (err) {
+        reject(err)
+      }
+    })
+  }
   /**
    *
    * @param {object} data
@@ -219,6 +244,10 @@ class EthSwap extends SwapInterface {
         gas: this.gasLimit,
         gasPrice: this.gasPrice,
       }
+
+      const gasFee = await this.contract.methods.withdraw(_secret, ownerAddress).estimateGas(params);
+      console.log("EthSwap -> withdraw -> gasFee",gasFee);
+      params.gas = gasFee;
 
       const receipt = await this.contract.methods.withdraw(_secret, ownerAddress).send(params)
         .on('transactionHash', (hash) => {

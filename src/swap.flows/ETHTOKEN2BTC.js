@@ -256,6 +256,7 @@ export default (tokenName) => {
           await flow.btcSwap.withdraw({
             scriptValues: flow.state.btcScriptValues,
             secret,
+            destinationAddress: flow.swap.destinationBuyAddress,
           }, (hash) => {
             flow.setState({
               btcSwapWithdrawTransactionHash: hash,

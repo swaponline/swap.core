@@ -248,6 +248,8 @@ class BtcSwap extends SwapInterface {
 
     const { script, scriptAddress } = this.createScript(scriptValues, hashName)
 
+    const destinationAddress = (data.destinationAddress) ? data.destinationAddress : false
+
     const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
     const unspents      = await this.fetchUnspents(scriptAddress)
     const feeValue      = this.feeValue // TODO how to get this value
@@ -262,7 +264,7 @@ class BtcSwap extends SwapInterface {
     }
 
     unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
-    tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
+    tx.addOutput((destinationAddress) ? destinationAddress : SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
 
     const txRaw = tx.buildIncomplete()
 

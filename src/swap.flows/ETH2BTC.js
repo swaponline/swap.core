@@ -147,6 +147,7 @@ class ETH2BTC extends Flow {
           participantAddress:   participant.eth.address,
           secretHash:           flow.state.secretHash,
           amount:               sellAmount,
+          targetWallet:         flow.swap.destinationSellAddress,
         }
 
         try {
@@ -248,9 +249,11 @@ class ETH2BTC extends Flow {
           return
         }
 
+        console.log("Debug - destination address....")
         await flow.btcSwap.withdraw({
           scriptValues: flow.state.btcScriptValues,
           secret,
+          destinationAddress: flow.swap.destinationBuyAddress,
         }, (hash) => {
           flow.setState({
             btcSwapWithdrawTransactionHash: hash,
