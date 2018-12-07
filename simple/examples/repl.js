@@ -24,6 +24,12 @@ const _ = (async () => {
   console.log('Swap id =', swapID)
   console.log()
 
+  const [ peer, id ] = swapID.split('-')
+
+  if (peer !== room.peer) {
+    console.log(`Peers do not match:`, peer, room.peer)
+  }
+
   const swap = get(swapID)
 
   console.log(`swap.flow.state =`, swap.flow.state)
