@@ -12,7 +12,6 @@ const _ORDER = {
   sellAmount: "1",
 }
 
-beforeAll(done => app.services.room.once('ready', done))
 beforeAll(() => orders.getMyOrders().map(({ id }) => orders.remove(id)))
 
 afterAll(done => require('rimraf')('.storage', done))
@@ -23,11 +22,11 @@ test('check app loaded', () => {
   expect(app.isLocalNet()).toBe(false)
 })
 
-test('sets the right type of room', () => {
+xtest('sets the right type of room', () => {
   expect(app.services.room.roomName).toBe('swap.core.tests.swap.online')
 })
 
-test('create an order', async () => {
+xtest('create an order', async () => {
   orders.remove()
   orders.create(_ORDER)
 
@@ -35,7 +34,7 @@ test('create an order', async () => {
     .filter(({ isMy }) => isMy)
     .map(({ buyCurrency, sellCurrency, buyAmount, sellAmount }) => ({ buyCurrency, sellCurrency, buyAmount, sellAmount }))
 
-  expect(myOrders.length).toBeGreaterThanOrEqual(1)
+  expect(myOrders.length).toEqual(1)
 
   const { buyCurrency, sellCurrency, buyAmount, sellAmount } = myOrders[0]
 
