@@ -1,6 +1,7 @@
 import app from './setupSwapApp'
 
 jest.unmock('swap.app')
+jest.setTimeout(30000)
 
 const orders = app.services.orders
 
