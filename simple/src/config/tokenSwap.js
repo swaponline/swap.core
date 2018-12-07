@@ -1,7 +1,14 @@
 const swap = require('swap.core')
 const { EthTokenSwap } = swap.swaps
 
+const ethereum = require('../instances/ethereum')
 const ERC20 = require('./ERC20')
+
+const eth = {
+  mainnet: ethereum.mainnet(),
+  testnet: ethereum.testnet(),
+  localnet: ethereum.localnet(),
+}
 
 const SwapContract = {
   mainnet: {
@@ -22,5 +29,5 @@ module.exports = ({ network, name, decimals, tokenAddress }) => (contract = {}) 
   tokenAbi: ERC20,
   address: contract.address || SwapContract[network].address,
   abi: contract.abi || SwapContract[network].abi,
-  fetchBalance: (address) => ethereum.fetchTokenBalance(address, tokenAddress, decimals),
+  fetchBalance: (address) => eth[network].fetchTokenBalance(address, tokenAddress, decimals),
 })
