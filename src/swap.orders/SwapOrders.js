@@ -36,7 +36,7 @@ const checkIncomeOrderFormat = (order) => {
     exchangeRate: util.typeforce.t.maybe(util.typeforce.isNumeric),
     isProcessing: '?Boolean',
     isRequested: '?Boolean',
-    isPartialClosure: '?Boolean',
+    isPartial: '?Boolean',
     destinationBuyAddress: util.typeforce.t.maybe('String'),
     destinationSellAddress: util.typeforce.t.maybe('String'),
   }
@@ -103,7 +103,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
         'sellAmount',
         'isRequested',
         'isProcessing',
-        'isPartialClosure',
+        'isPartial',
         'destinationBuyAddress',
         'destinationSellAddress',
       ))
@@ -255,7 +255,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
       'requests',
       'isRequested',
       'isProcessing',
-      'isPartialClosure',
+      'isPartial',
       'destinationBuyAddress',
       'destinationSellAddress',
     ))
@@ -300,7 +300,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
           'sellAmount',
           'isRequested',
           'isProcessing',
-          'isPartialClosure',
+          'isPartial',
           'destinationBuyAddress',
           'destinationSellAddress'
         ),
