@@ -30,7 +30,7 @@ class EthSwap extends SwapInterface {
     this.abi            = options.abi
 
     this._swapName      = constants.COINS.eth
-    this.gasLimit       = options.gasLimit || 2e5
+    this.gasLimit       = options.gasLimit || 3e5
     this.gasPrice       = options.gasPrice || 2e9
     this.fetchBalance   = options.fetchBalance
   }
@@ -91,24 +91,45 @@ class EthSwap extends SwapInterface {
         :
         [ hash, participantAddress ]
 
-      const contractMethod = (targetWallet && (targetWallet!==participantAddress)) ? 'createSwapTarget' : 'createSwap'
+      if (targetWallet && (targetWallet!==participantAddress)) {
+        const contractMethod = (targetWallet && (targetWallet!==participantAddress)) ? 'createSwapTarget' : 'createSwap'
+        console.log(values);
+        console.log(contractMethod, "Get gas fee");
+        const gasFee = await this.contract.methods.createSwapTarget(...values).estimateGas(params)
+        params.gas = gasFee;
+        console.log("EthSwap -> create -> gasFee",gasFee);
+          
+        const receipt = await this.contract.methods.createSwapTarget(...values).send(params)
+          .on('transactionHash', (hash) => {
+            if (typeof handleTransactionHash === 'function') {
+              handleTransactionHash(hash)
+            }
+          })
+          .on('error', (err) => {
+            reject(err)
+          })
 
-      //console.log("Get gas fee");
-      //const gasFee = await this.contract.methods[contractMethod](...values).estimateGas(params)
-      //params.gas = gasFee;
-      //console.log("EthSwap -> create -> gasFee",gasFee);
-        
-      const receipt = await this.contract.methods[contractMethod](...values).send(params)
-        .on('transactionHash', (hash) => {
-          if (typeof handleTransactionHash === 'function') {
-            handleTransactionHash(hash)
-          }
-        })
-        .on('error', (err) => {
-          reject(err)
-        })
+        resolve(receipt)
+      } else {
+        const contractMethod = (targetWallet && (targetWallet!==participantAddress)) ? 'createSwapTarget' : 'createSwap'
+        console.log(values);
+        console.log(contractMethod, "Get gas fee");
+        const gasFee = await this.contract.methods.createSwap(...values).estimateGas(params)
+        params.gas = gasFee;
+        console.log("EthSwap -> create -> gasFee",gasFee);
+          
+        const receipt = await this.contract.methods.createSwap(...values).send(params)
+          .on('transactionHash', (hash) => {
+            if (typeof handleTransactionHash === 'function') {
+              handleTransactionHash(hash)
+            }
+          })
+          .on('error', (err) => {
+            reject(err)
+          })
 
-      resolve(receipt)
+        resolve(receipt)
+      }
     })
   }
 
@@ -159,8 +180,8 @@ class EthSwap extends SwapInterface {
 
       console.log('swapExists', swap)
 
-      const balance = swap ? parseInt(swap.balance) : 0
-      resolve(balance > 0)
+      const balance = parseInt(swap.balance)
+      resolve(balance)
     })
   }
 
@@ -210,18 +231,32 @@ class EthSwap extends SwapInterface {
   async getTargetWallet(ownerAddress) {
     console.log('EthSwap->getTargetWallet');
     return new Promise(async (resolve, reject) => {
-      try {
-        const targetWallet = await this.contract.methods.getTargetWallet(ownerAddress).call({
-          from: SwapApp.services.auth.accounts.eth.address,
-        })
-        console.log('EthSwap->getTargetWallet',targetWallet);
-
-        resolve(targetWallet)
-      }
-      catch (err) {
-        reject(err)
-      }
+      resolve( await this.repeatGetTargetWallet(ownerAddress, 9) )
     })
+  }
+  async repeatGetTargetWallet(ownerAddress , repeatCount) {
+      const address = await (
+        new Promise(async (resolve, reject) => {
+          setTimeout(async () => {
+            try {
+              const targetWallet = await this.contract.methods.getTargetWallet(ownerAddress).call({
+                from: SwapApp.services.auth.accounts.eth.address,
+              })
+
+              resolve(targetWallet)
+            }
+            catch (err) {
+              reject(err)
+            }
+          }, 1000 )
+        })
+      );
+      if (address === '0x0000000000000000000000000000000000000000') {
+        if (repeatCount>0) {
+          return await this.repeatGetTargetWallet( ownerAddress, (repeatCount-1) )
+        }
+      }
+      return address
   }
   /**
    *
