@@ -1,4 +1,5 @@
 import Swap from 'swap.swap'
+import debug from 'debug'
 
 import checkService from './checkService'
 
@@ -10,7 +11,7 @@ export const request = order =>
       }
     })
   ).then(order => {
-    console.log('order accepted', order.id)
+    debug('swap.core:simple:orders')('order accepted', order.id)
     return new Swap(order.id)
   })
 

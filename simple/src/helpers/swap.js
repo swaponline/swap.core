@@ -1,5 +1,6 @@
 import { constants } from 'swap.app'
 import Swap from 'swap.swap'
+import debug from 'debug'
 
 import crypto from 'crypto'
 import on from './on'
@@ -10,10 +11,10 @@ export const onStep = (swap, _step) => new Promise(async resolve => {
   if (_step <= swap.flow.state.step)
     resolve(swap.flow.state.step)
 
-  console.log('begin waiting step =', _step, 'on', swap.id)
+  debug('swap.core:simple:swap')('begin waiting step =', _step, 'on', swap.id)
 
   const enterStep = step => {
-    console.log('waiting for', _step, 'now on', step)
+    debug('swap.core:simple:swap')('waiting for', _step, 'now on', step)
 
     if (step === _step) {
       resolve(step)

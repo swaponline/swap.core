@@ -1,4 +1,5 @@
 const request = require('request-promise-native')
+const debug = require('debug')
 
 const Web3 = require('web3')
 
@@ -32,7 +33,7 @@ class Ethereum {
       .then((wei) => {
         let balance = Number(this.core.utils.fromWei(wei))
 
-        console.log('ETH Balance:', balance)
+        debug('swap.core:ethereum')('ETH Balance:', balance)
 
         return balance
       })
