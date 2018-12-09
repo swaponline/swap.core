@@ -3,9 +3,10 @@ import Swap from 'swap.swap'
 import debug from 'debug'
 
 import crypto from 'crypto'
+import history from './history'
 import on from './on'
 
-export const get = (id) => new Swap(id)
+export const get = id => new Swap(id)
 
 export const onStep = (swap, _step) => new Promise(async resolve => {
   if (_step <= swap.flow.state.step)
@@ -49,4 +50,30 @@ export const start = swap =>
     resolve()
   })
 
-module.exports = { get, onStep, start }
+export const refund = swapID =>
+  new Promise(async resolve => {
+    debug('swap.core:simple:swap')('Swap id =', swapID)
+    const swap = get(swapID)
+
+    if (swap.flow.state.isRefunded) {
+      debug('swap.core:simple:swap')('This swap is refunded. Removing from history')
+      history.remove(swap)
+    } else {
+      debug('swap.core:simple:swap')('Refunding...')
+
+      try {
+        await swap.flow.tryRefund()
+      } catch (error) {
+        debug('swap.core:simple:swap')('Can not refund this swap. Try it later')
+        swap.flow.state.isRefunded = false
+      }
+
+      if (swap.flow.state.isRefunded) {
+        debug('swap.core:simple:swap')('This swap is refunded. Removing from history')
+        history.remove(swap)
+      }
+      resolve()
+    }
+  })
+
+module.exports = { get, onStep, start, refund }

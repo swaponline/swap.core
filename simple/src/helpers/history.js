@@ -1,7 +1,7 @@
 import swap from 'swap.core'
 import debug from 'debug'
 
-const saveToHistory = (_swap) => {
+export const save = (_swap) => {
   const storage = swap.app.env.storage
 
   const history = storage.getItem('history') || []
@@ -24,7 +24,7 @@ const saveToHistory = (_swap) => {
   }
 }
 
-const removeFromHistory = (_swap) => {
+export const remove = (_swap) => {
   const storage = swap.app.env.storage
 
   const history = storage.getItem('history') || []
@@ -47,7 +47,7 @@ const removeFromHistory = (_swap) => {
   }
 }
 
-const getSwaps = () => {
+export const getAll = () => {
   const storage = swap.app.env.storage
 
   const history = storage.getItem('history') || []
@@ -57,14 +57,4 @@ const getSwaps = () => {
   return history
 }
 
-const save = (swap) => saveToHistory(swap)
-const remove = (swap) => removeFromHistory(swap)
-const get = () => getSwaps()
-
-const history = {
-  save,
-  get,
-  remove,
-}
-
-export default history
+module.exports = { save, getAll, remove }

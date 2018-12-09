@@ -5,6 +5,7 @@ import * as orders from './orders'
 import * as room from './room'
 import * as swap from './swap'
 import * as history from './history'
+import * as filter from './filter'
 
 export default {
   room,
@@ -14,8 +15,10 @@ export default {
   swap,
 
   on,
-  
+
   history,
+
+  filter,
 
   checkService,
 }
