@@ -52,6 +52,7 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
   const bitcoin = btc[config.network]().core
 
   const tokens = (config.ERC20TOKENS || [])
+    .map(_token => ({ network: config.network, ..._token }))
     .filter(_token => _token.network === config.network)
 
   return {

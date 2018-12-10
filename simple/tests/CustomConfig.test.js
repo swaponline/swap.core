@@ -11,7 +11,6 @@ const {
 const { app, room } = swap.setup({
   ERC20TOKENS: [
     {
-      network: 'testnet',
       name: 'BTRM',
       decimals: 18,
       tokenAddress: '0x14a52cf6B4F68431bd5D9524E4fcD6F41ce4ADe9'
