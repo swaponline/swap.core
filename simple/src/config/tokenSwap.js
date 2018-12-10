@@ -23,6 +23,7 @@ const SwapContract = {
 }
 
 module.exports = ({ network, name, decimals, tokenAddress }) => (contract = {}) => ({
+  network,
   name,
   decimals,
   tokenAddress: tokenAddress || contract.tokenAddress,
