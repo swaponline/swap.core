@@ -249,13 +249,15 @@ class BTC2ETH extends Flow {
           return
         }
 
-        const targetWallet = await flow.ethSwap.getTargetWallet( participant.eth.address );
-        const needTargetWallet = (flow.swap.destinationBuyAddress) ? flow.swap.destinationBuyAddress : SwapApp.services.auth.accounts.eth.address;
+        if (flow.ethSwap.hasTargetWallet()) {
+          const targetWallet = await flow.ethSwap.getTargetWallet( participant.eth.address );
+          const needTargetWallet = (flow.swap.destinationBuyAddress) ? flow.swap.destinationBuyAddress : SwapApp.services.auth.accounts.eth.address;
 
-        if (targetWallet != needTargetWallet) {
-          console.error("Destination address for ether dismatch with needed (Needed, Getted). Stop swap now!",needTargetWallet,targetWallet);
-          flow.swap.events.dispatch('address for ether invalid', { needed : needTargetWallet, getted : targetWallet });
-          return
+          if (targetWallet != needTargetWallet) {
+            console.error("Destination address for ether dismatch with needed (Needed, Getted). Stop swap now!",needTargetWallet,targetWallet);
+            flow.swap.events.dispatch('address for ether invalid', { needed : needTargetWallet, getted : targetWallet });
+            return
+          }
         }
 
         try {

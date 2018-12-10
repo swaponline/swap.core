@@ -58,6 +58,7 @@ class EthSwap extends SwapInterface {
    * @param {object} data
    * @param {string} data.secretHash
    * @param {string} data.participantAddress
+   * @param {string} data.targetWallet
    * @param {number} data.amount
    * @param {function} handleTransactionHash
    * @returns {Promise}
@@ -86,50 +87,31 @@ class EthSwap extends SwapInterface {
 
       console.log('params', params)
 
-      const values  = (targetWallet && (targetWallet!==participantAddress)) ?
+      const hasTargetWalletFeature = (this.contract.methods.createSwapTarget) ? true : false
+      const values  = (targetWallet && (targetWallet!==participantAddress) && hasTargetWalletFeature) ?
         [ hash , participantAddress, targetWallet ]
         :
         [ hash, participantAddress ]
 
-      if (targetWallet && (targetWallet!==participantAddress)) {
-        const contractMethod = (targetWallet && (targetWallet!==participantAddress)) ? 'createSwapTarget' : 'createSwap'
-        console.log(values);
-        console.log(contractMethod, "Get gas fee");
-        const gasFee = await this.contract.methods.createSwapTarget(...values).estimateGas(params)
-        params.gas = gasFee;
-        console.log("EthSwap -> create -> gasFee",gasFee);
-          
-        const receipt = await this.contract.methods.createSwapTarget(...values).send(params)
-          .on('transactionHash', (hash) => {
-            if (typeof handleTransactionHash === 'function') {
-              handleTransactionHash(hash)
-            }
-          })
-          .on('error', (err) => {
-            reject(err)
-          })
+      
+      const contractMethod = (targetWallet && (targetWallet!==participantAddress) && hasTargetWalletFeature) ? 'createSwapTarget' : 'createSwap'
 
-        resolve(receipt)
-      } else {
-        const contractMethod = (targetWallet && (targetWallet!==participantAddress)) ? 'createSwapTarget' : 'createSwap'
-        console.log(values);
-        console.log(contractMethod, "Get gas fee");
-        const gasFee = await this.contract.methods.createSwap(...values).estimateGas(params)
-        params.gas = gasFee;
-        console.log("EthSwap -> create -> gasFee",gasFee);
-          
-        const receipt = await this.contract.methods.createSwap(...values).send(params)
-          .on('transactionHash', (hash) => {
-            if (typeof handleTransactionHash === 'function') {
-              handleTransactionHash(hash)
-            }
-          })
-          .on('error', (err) => {
-            reject(err)
-          })
+      console.log("EthSwap -> create -> contract method", contractMethod)
+      const gasFee = await this.contract.methods[contractMethod](...values).estimateGas(params)
+      params.gas = gasFee
+      console.log("EthSwap -> create -> gasFee",gasFee)
+        
+      const receipt = await this.contract.methods[contractMethod](...values).send(params)
+        .on('transactionHash', (hash) => {
+          if (typeof handleTransactionHash === 'function') {
+            handleTransactionHash(hash)
+          }
+        })
+        .on('error', (err) => {
+          reject(err)
+        })
 
-        resolve(receipt)
-      }
+      resolve(receipt)
     })
   }
 
@@ -228,12 +210,32 @@ class EthSwap extends SwapInterface {
     }
   }
 
+  /**
+   *
+   * @returns {boolean}
+   */
+  hasTargetWallet() {
+    return (this.contract.methods.getTargetWallet) ? true : false
+  }
+
+  /**
+   *
+   * @param {string} ownerAddress
+   * @returns {Promise.<string>}
+   */
   async getTargetWallet(ownerAddress) {
     console.log('EthSwap->getTargetWallet');
     return new Promise(async (resolve, reject) => {
       resolve( await this.repeatGetTargetWallet(ownerAddress, 9) )
     })
   }
+
+  /**
+   *
+   * @param {string} ownerAddress
+   * @param {number} repeatCount
+   * @returns {string}
+   */
   async repeatGetTargetWallet(ownerAddress , repeatCount) {
       const address = await (
         new Promise(async (resolve, reject) => {
@@ -258,6 +260,7 @@ class EthSwap extends SwapInterface {
       }
       return address
   }
+
   /**
    *
    * @param {object} data
