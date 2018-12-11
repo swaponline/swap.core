@@ -215,7 +215,7 @@ class EthSwap extends SwapInterface {
    * @returns {boolean}
    */
   hasTargetWallet() {
-    return (this.contract.methods.getTargetWallet) ? true : false
+    return !!this.contract.methods.getTargetWallet
   }
 
   /**
