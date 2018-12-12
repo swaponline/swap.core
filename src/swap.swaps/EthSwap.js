@@ -159,12 +159,13 @@ class EthSwap extends SwapInterface {
       }
       catch (err) {
         reject(err)
+        return
       }
 
       console.log('swapExists', swap)
 
-      const balance = parseInt(swap.balance)
-      resolve(balance)
+      const balance = swap ? parseInt(swap.balance) : 0
+      resolve(balance > 0)
     })
   }
 
