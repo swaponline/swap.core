@@ -4,8 +4,10 @@ const debug = require('debug')
 const Web3 = require('web3')
 
 const WEB3_PROVIDERS = {
+  // mainnet: new Web3.providers.HttpProvider(`https://mainnet.infura.io/JCnK5ifEPH9qcQkX0Ahl`),
+  // testnet: new Web3.providers.HttpProvider(`https://rinkeby.infura.io/JCnK5ifEPH9qcQkX0Ahl`),
   mainnet: new Web3.providers.HttpProvider(`http://95.216.187.87:8545`),
-  testnet: new Web3.providers.HttpProvider(`https://rinkeby.infura.io/JCnK5ifEPH9qcQkX0Ahl`),
+  testnet: new Web3.providers.HttpProvider(`http://95.216.187.87:9545`),
   localnet: new Web3.providers.HttpProvider(`http://localhost:7545`),
 }
 
@@ -14,7 +16,7 @@ const TEN = new BigNumber(10)
 
 class Ethereum {
 
-  constructor(_network = 'testnet') {
+  constructor(_network = 'testnet', _customProvider) {
     const _provider = WEB3_PROVIDERS[_network]
 
     if (typeof web3 !== 'undefined') {
