@@ -87,21 +87,22 @@ class EthSwap extends SwapInterface {
 
       console.log('params', params)
 
-      const hasTargetWalletFeature = (this.contract.methods.createSwapTarget) ? true : false
-      const values  = (targetWallet && (targetWallet!==participantAddress) && hasTargetWalletFeature) ?
+      const values  = (targetWallet && (targetWallet!==participantAddress) && this.hasTargetWalletFeature()) ?
         [ hash , participantAddress, targetWallet ]
         :
         [ hash, participantAddress ]
 
       
-      const contractMethod = (targetWallet && (targetWallet!==participantAddress) && hasTargetWalletFeature) ? 'createSwapTarget' : 'createSwap'
+      const contractMethod = (targetWallet && (targetWallet!==participantAddress) && this.hasTargetWalletFeature()) ? 
+        this.contract.methods.createSwapTarget
+        :
+        this.contract.methods.createSwap
 
-      console.log("EthSwap -> create -> contract method", contractMethod)
-      const gasFee = await this.contract.methods[contractMethod](...values).estimateGas(params)
+      const gasFee = await contractMethod(...values).estimateGas(params)
       params.gas = gasFee
       console.log("EthSwap -> create -> gasFee",gasFee)
-        
-      const receipt = await this.contract.methods[contractMethod](...values).send(params)
+
+      const receipt = await contractMethod(...values).send(params)
         .on('transactionHash', (hash) => {
           if (typeof handleTransactionHash === 'function') {
             handleTransactionHash(hash)
