@@ -4,7 +4,7 @@ const debug = require('debug')
 const Web3 = require('web3')
 
 const WEB3_PROVIDERS = {
-  mainnet: new Web3.providers.HttpProvider(`https://mainnet.infura.io/JCnK5ifEPH9qcQkX0Ahl`),
+  mainnet: new Web3.providers.HttpProvider(`http://95.216.187.87:8545`),
   testnet: new Web3.providers.HttpProvider(`https://rinkeby.infura.io/JCnK5ifEPH9qcQkX0Ahl`),
   localnet: new Web3.providers.HttpProvider(`http://localhost:7545`),
 }
