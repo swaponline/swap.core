@@ -293,11 +293,11 @@ class EthTokenSwap extends SwapInterface {
     new Promise(async (resolve, reject) => {
       let result = await action()
 
-      if (result === 0 || typeof result === 'undefined' || result === null) {
-        if (repeat > 0) {
-          repeat--
+      if (result === 0 || typeof result === 'undefined' || result === null || result === '0x0000000000000000000000000000000000000000') {
+        if (repeat > 0 || repeat === -1) {
+          if (repeat !== -1) repeat--
           setTimeout(async () => {
-            result = await this.repeatToTheResult(repeat, action)
+            result = await this.repeatToTheResult(repeat, action, delay)
             resolve(result)
           }, delay)
         }
@@ -347,43 +347,36 @@ class EthTokenSwap extends SwapInterface {
       return `Expected value: ${expectedValue.toNumber()}, got: ${balance}`
     }
   }
+
   /**
-   * @param {string} participantAddress
-   * @param {string} newTargetWallet
-   * @param {function} handleTransactionHash
+   *
+   * @param {string} ownerAddress
+   * @returns {Promise.<string>}
    */
-  async setTargetWallet(participantAddress, newTargetWallet, handleTransactionHash) {
-    // ---
-  }
   async getTargetWallet(ownerAddress) {
     console.log('EthTokenSwap->getTargetWallet');
-    return new Promise(async (resolve, reject) => {
-      resolve( await this.repeatGetTargetWallet(ownerAddress, 9) )
-    })
+    let address = await this.repeatToTheResult(-1, () => this.getTargetWalletPromise(ownerAddress))
+    return address
   }
-  async repeatGetTargetWallet(ownerAddress , repeatCount) {
-      const address = await (
-        new Promise(async (resolve, reject) => {
-          setTimeout(async () => {
-            try {
-              const targetWallet = await this.contract.methods.getTargetWallet(ownerAddress).call({
-                from: SwapApp.services.auth.accounts.eth.address,
-              })
 
-              resolve(targetWallet)
-            }
-            catch (err) {
-              reject(err)
-            }
-          }, 1000 )
+  /**
+   *
+   * @param {string} ownerAddress
+   * @returns {string}
+   */
+  async getTargetWalletPromise(ownerAddress) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const targetWallet = await this.contract.methods.getTargetWallet(ownerAddress).call({
+          from: SwapApp.services.auth.accounts.eth.address,
         })
-      );
-      if (address === '0x0000000000000000000000000000000000000000') {
-        if (repeatCount>0) {
-          return await this.repeatGetTargetWallet( ownerAddress, (repeatCount-1) )
-        }
+
+        resolve(targetWallet)
       }
-      return address
+      catch (err) {
+        reject(err)
+      }
+    });
   }
   /**
    *
