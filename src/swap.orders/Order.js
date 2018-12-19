@@ -220,7 +220,7 @@ class Order {
         this.unsubscribe()
 
         // TODO think about preventing user from sent requests every N seconds
-        callback(false)
+        callback(null, false)
       }
     })
   }
