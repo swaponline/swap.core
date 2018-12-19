@@ -43,8 +43,7 @@ class Order {
       sellAmount: () => false,
     }
 
-    this.destinationBuyAddress = null // (!my Buy==Sell)
-    this.destinationSellAddress = null// (!my Sell==Buy)
+    this.destination = null
 
     this._update({
       ...data,
@@ -55,13 +54,14 @@ class Order {
   }
 
   _onMount() {
-    SwapApp.services.room.on('request swap', ({ orderId, participant }) => {
+    SwapApp.services.room.on('request swap', ({ orderId, participant, destination }) => {
       if (orderId === this.id && !this.requests.find(({ participant: { peer } }) => peer === participant.peer)) {
-        this.requests.push({ participant, isPartial: false })
+        this.requests.push({ participant, destination, isPartial: false })
 
         events.dispatch('new order request', {
           orderId,
           participant,
+          destination,
         })
       }
     })
@@ -149,7 +149,7 @@ class Order {
    * @param callback - callback will receive updated order
    * @param conditionHandler - autoreply to new order proposal
    */
-  sendRequestForPartial(updatedOrder = {}, callback, conditionHandler) {
+  sendRequestForPartial(updatedOrder = {}, destination = {}, callback, conditionHandler) {
     if (!this.isPartial) {
       throw new Error(`Cant request partial fulfilment for order ${this.id}`)
     }
@@ -208,7 +208,7 @@ class Order {
 
         if (newOrderIsGood) {
           // request that new order
-          newOrder.sendRequest(accepted => callback(newOrder, accepted))
+          newOrder.sendRequest(accepted => callback(newOrder, accepted), destination)
         } else {
           callback(newOrder, false)
         }
@@ -229,7 +229,7 @@ class Order {
    *
    * @param callback - awaiting for response - accept / decline
    */
-  sendRequest(callback) {
+  sendRequest(callback, destination = {}) {
     const self = this
 
     if (SwapApp.services.room.peer === this.owner.peer) {
@@ -247,6 +247,7 @@ class Order {
     })
 
     const participant = SwapApp.services.auth.getPublicData()
+    const { address } = destination
 
     SwapApp.services.room.sendMessagePeer(this.owner.peer, {
       event: 'request swap',
@@ -254,6 +255,7 @@ class Order {
         orderId: this.id,
         // TODO why do we send this info?
         participant,
+        destination,
       },
     })
 
@@ -264,6 +266,10 @@ class Order {
         self.update({
           isProcessing: true,
           isRequested: false,
+          destination: {
+            ...self.destination,
+            participantAddress: address,
+          },
         })
 
         callback(true)
@@ -356,12 +362,17 @@ class Order {
   }
 
   acceptRequest(participantPeer) {
-    const { participant } = this.requests.find(({ participant: { peer } }) => peer === participantPeer)
+    const { participant, destination } = this.requests.find(({ participant: { peer } }) => peer === participantPeer)
+    const { address } = destination
 
     this.update({
       isRequested: false,
       isProcessing: true,
       participant,
+      destination: {
+        ...this.destination,
+        participantAddress: address,
+      },
       requests: [],
     })
 

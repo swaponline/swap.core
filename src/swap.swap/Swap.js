@@ -77,11 +77,11 @@ class Swap {
       'sellCurrency',
       'buyAmount',
       'sellAmount',
-      'destinationBuyAddress',
-      'destinationSellAddress',
+      'destination',
     )
 
-    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, destinationBuyAddress, destinationSellAddress, ...rest } = data
+    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, destination, ...rest } = data
+    const { ownerAddress, participantAddress } = destination
 
     const swap = {
       ...rest,
@@ -90,8 +90,8 @@ class Swap {
       sellCurrency: isMy ? sellCurrency : buyCurrency,
       buyAmount: isMy ? buyAmount : sellAmount,
       sellAmount: isMy ? sellAmount : buyAmount,
-      destinationBuyAddress: isMy ? destinationBuyAddress : destinationSellAddress,
-      destinationSellAddress: isMy ? destinationSellAddress : destinationBuyAddress
+      destinationBuyAddress: isMy ? ownerAddress : participantAddress,
+      destinationSellAddress: isMy ? participantAddress : ownerAddress,
     }
 
     if (!swap.participant && !isMy) {
