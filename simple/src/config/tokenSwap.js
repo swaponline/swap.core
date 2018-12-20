@@ -28,6 +28,7 @@ module.exports = ({ network, name, decimals, tokenAddress }) => (contract = {}) 
   decimals,
   tokenAddress: tokenAddress || contract.tokenAddress,
   tokenAbi: ERC20,
+  gasLimit: 3e5,
   address: contract.address || SwapContract[network].address,
   abi: contract.abi || SwapContract[network].abi,
   fetchBalance: (address) => eth[network].fetchTokenBalance(address, tokenAddress, decimals),
