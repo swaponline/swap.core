@@ -19,7 +19,7 @@ const isCoinName = (value) => Object.values(constants.COINS).map((v) => v.toLowe
 const isCoinAddress = {
   [constants.COINS.eos]: '?String',
   [constants.COINS.eth]: (value) => typeof value === 'string' && /^0x[A-Fa-f0-9]{40}$/.test(value),
-  [constants.COINS.btc]: (value) => typeof value === 'string' && /^[A-Za-z0-9]{34}$/.test(value),
+  [constants.COINS.btc]: (value) => typeof value === 'string' && /^[A-Za-z0-9]{35}$/.test(value),
   [constants.COINS.ltc]: (value) => typeof value === 'string' && /^[A-Za-z0-9]{34}$/.test(value),
   [constants.COINS.nim]: (value) => typeof value === 'string' && /^0x[A-Fa-f0-9]{40}$/.test(value),
   [constants.COINS.noxon]: (value) => typeof value === 'string' && /^0x[A-Fa-f0-9]{40}$/.test(value),
