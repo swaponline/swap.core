@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
@@ -15,22 +16,27 @@ const transactionHandlers = (flow) => ({
       amount,
     })
   },
-  btcWithdraw: () => {
+  btcWithdraw: async () => {
     const { secret, scriptValues } = flow.state
 
-    const tryWithdraw = () => flow.btcSwap.withdraw({ scriptValues, secret }, null, null, 'sha256')
+    let btcWithdrawTx = null
+    while (!btcWithdrawTx) {
+      console.log('try withdraw btc...')
+      try {
+        btcWithdrawTx = await flow.btcSwap.withdraw({ scriptValues, secret }, null, null, 'sha256')
+      } catch (err) {
+        console.error(err)
+        await sleep(5000)
+      }
+    }
 
-    return tryWithdraw()
-      .catch((error) => {
-        console.error('Cannot withdraw BTC, try again in 5 sec...')
-        return sleep(5000).then(tryWithdraw)
-      })
+    return btcWithdrawTx.txid
   },
   refund: () => {
-    const { participant: btcOwner } = this.swap
+    const { participant: { eos: { address } } } = flow.swap
 
     return flow.eosSwap.refund({
-      btcOwner,
+      btcOwner: address,
     })
   },
 })
@@ -42,52 +48,53 @@ const pullHandlers = (flow) => ({
       event: `request ${flow.actions.createBtcScript}`,
     })
   }),
-  verifyScript: () => {
-    const { buyAmount } = flow.swap
+  verifyScript: async () => {
+    const { buyAmount: value } = flow.swap
+    const { scriptValues } = flow.state
+    const recipientPublicKey = SwapApp.services.auth.accounts.btc.getPublicKey()
 
-    const getLockTime = () => {
-      const eosLockTime = flow.eosSwap.getLockPeriod()
-      const nowTime = Math.floor(Date.now() / 1000)
+    const eosLockPeriod = flow.eosSwap.getLockPeriod()
+    const now = Math.floor(Date.now() / 1000)
+    const lockTime = now + eosLockPeriod
 
-      return nowTime + eosLockTime
-    }
+    let errorMessage = true
+    while (errorMessage) {
+      console.log('try verify script...')
+      errorMessage = await flow.btcSwap.checkScript(scriptValues, {
+        value,
+        recipientPublicKey,
+        lockTime,
+      }, 'sha256')
 
-    const checkScript = () => flow.btcSwap.checkScript(flow.state.scriptValues, {
-      value: buyAmount,
-      recipientPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
-      lockTime: getLockTime(),
-    }, 'sha256')
-
-    return checkScript().then((errorMessage) => {
       if (errorMessage) {
-        console.error(errorMessage, 'try again 5 sec...')
-        return sleep(5000).then(checkScript)
+        console.error(errorMessage)
+        await sleep(5000)
       }
-    })
+    }
   },
-  revealedSecret: () => new Promise(resolve => {
+  revealedSecret: async () => {
     const { owner: eosOwnerData, participant: btcOwnerData } = flow.swap
     const eosOwner = eosOwnerData.eos.address
-    const btcOwner = btcOwnerData.btc.address
+    const btcOwner = btcOwnerData.eos.address
 
-    const fetchSecret = async () => {
-      const swap = await this.eosSwap.findCurrentSwap({ eosOwner, btcOwner })
-      const { secret } = swap
-
-      return secret
+    let secret = null
+    while (!secret) {
+      console.log('try fetch secret...')
+      secret = await flow.eosSwap.fetchSecret({ eosOwner, btcOwner })
+      if (!secret) {
+        await sleep(5000)
+      }
     }
 
-    return fetchSecret().then((secret) => {
-      if (secret === 0) {
-        console.error('Cannot fetch secret, try again in 5 sec...')
-        return sleep(5000).then(fetchSecret)
-      }
-      return secret
-
-    })
-  }),
+    return secret
+  },
   eosWithdrawTx: () => new Promise(resolve => {
-    flow.swap.room.once(flow.actions.eosWithdraw, resolve)
+    flow.swap.room.once(flow.actions.eosWithdraw, ({ eosWithdrawTx, secret }) => {
+      resolve(eosWithdrawTx)
+    })
+    flow.swap.room.sendMessage({
+      event: `request ${flow.actions.eosWithdrawTx}`,
+    })
   }),
 })
 
@@ -146,6 +153,9 @@ class EOS2BTC extends Flow {
         openTx: null,
         eosWithdrawTx: null,
         btcWithdrawTx: null,
+
+        eosRefundTx: null,
+        btcRefundTx: null,
       },
     }
 
@@ -199,8 +209,8 @@ class EOS2BTC extends Flow {
         })
       },
       () => {
-        flow.transact.btcWithdraw().then(({ txid }) => {
-          flow.finishStep({ btcWithdrawTx: txid })
+        flow.transact.btcWithdraw().then((btcWithdrawTx) => {
+          flow.finishStep({ btcWithdrawTx })
           flow.push.btcWithdraw()
         })
       },
@@ -210,7 +220,7 @@ class EOS2BTC extends Flow {
   tryRefund() {
     const flow = this
 
-    return flow.act.refund().then((eosRefundTx) => {
+    return flow.transact.refund().then((eosRefundTx) => {
       flow.setState({ eosRefundTx })
     })
   }

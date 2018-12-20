@@ -46,11 +46,22 @@ const transactionHandlers = (flow) => ({
       secret,
     })
   },
-  refund: () => this.btcSwap.refund({
-    scriptValues: flow.state.btcScriptValues,
-    secret: flow.state.secret,
+  refund: () => {
+    const { secret, scriptValues } = flow.state
 
-  }),
+    return new Promise(async (resolve, reject) => {
+      try {
+        await flow.btcSwap.refund({
+          scriptValues,
+          secret,
+        }, (btcRefundTx) => {
+          resolve(btcRefundTx)
+        }, 'sha256')
+      } catch (err) {
+        console.error(`refund failed: ${err.message}`)
+      }
+    })
+  },
 })
 
 const pullHandlers = (flow) => ({
@@ -126,6 +137,9 @@ class BTC2EOS extends Flow {
         openTx: null,
         eosWithdrawTx: null,
         btcWithdrawTx: null,
+
+        eosRefundTx: null,
+        btcRefundTx: null,
       },
     }
 
@@ -175,7 +189,7 @@ class BTC2EOS extends Flow {
         })
       },
       () => {
-        flow.pull.btcWithdraw().then((btcWithdrawTx) => {
+        flow.pull.btcWithdraw().then(({ btcWithdrawTx }) => {
           flow.finishStep({ btcWithdrawTx })
         })
       },
@@ -185,11 +199,8 @@ class BTC2EOS extends Flow {
   tryRefund() {
     const flow = this
 
-    return flow.transact.btcRefund().then((hash) => {
-      flow.setState({
-        refundTransactionHash: hash,
-        isRefunded: true,
-      })
+    return flow.transact.refund().then((btcRefundTx) => {
+      flow.setState({ btcRefundTx })
     })
   }
 
