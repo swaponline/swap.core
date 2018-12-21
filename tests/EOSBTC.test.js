@@ -153,7 +153,7 @@ describe('successful swap between EOS and BTC', () => {
     checkSwapInstance('BTC2EOS', btcOwnerSwap)
   })
 
-  test('flow', (done) => {
+  xtest('flow', (done) => {
     let confirmedEvents = 0
     const eventNames = Object.keys(expectedEvents)
 

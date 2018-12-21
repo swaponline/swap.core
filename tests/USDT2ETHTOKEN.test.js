@@ -65,6 +65,7 @@ beforeAll(() => {
   SwapApp.swaps['SWAP'] = new EthTokenSwap({
     name: 'SWAP',
     fetchBalance: jest.fn(),
+    decimals: 18,
     address: '0xABABABABABABABABABABABABABA',
     abi: [],
     tokenAddress: '0x5111AFDacdac',

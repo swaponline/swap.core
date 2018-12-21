@@ -1,3 +1,4 @@
+import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto' // move to BtcSwap
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
@@ -159,20 +160,20 @@ export default (tokenName) => {
             amount:               sellAmount,
           }
 
-          console.log('approve')
+          debug('swap.core:flow')('approve')
 
           await flow.ethTokenSwap.approve({
             amount: sellAmount,
           }, hash => {
-            console.log('approve tx hash', hash)
+            debug('swap.core:flow')('approve tx hash', hash)
           })
 
-          console.log('create swap')
+          debug('swap.core:flow')('create swap')
 
           await flow.ethTokenSwap.create(swapData, (hash) => {
             ethSwapCreationTransactionHash = hash
 
-            console.log('create swap tx hash', hash)
+            debug('swap.core:flow')('create swap tx hash', hash)
 
             flow.setState({
               ethSwapCreationTransactionHash: hash,
@@ -243,7 +244,7 @@ export default (tokenName) => {
               secret,
               amount: buyAmount,
             }, (hash) => {
-              console.log('withdraw tx hash', hash)
+              debug('swap.core:flow')('withdraw tx hash', hash)
 
               flow.setState({
                 usdtSwapWithdrawTransactionHash: hash,
@@ -384,7 +385,7 @@ export default (tokenName) => {
       if (isBtcWithdrawn)
         console.warn(`Looks like money were already withdrawn, are you sure?`)
 
-      console.log(`WITHDRAW using secret = ${_secret}`)
+      debug('swap.core:flow')(`WITHDRAW using secret = ${_secret}`)
 
       const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
 
@@ -395,7 +396,7 @@ export default (tokenName) => {
 
       const balance = await this.usdtSwap.getBalance(scriptAddress)
 
-      console.log(`address=${scriptAddress}, balance=${balance}`)
+      debug('swap.core:flow')(`address=${scriptAddress}, balance=${balance}`)
 
       if (balance === 0) {
         flow.finishStep({
@@ -409,13 +410,13 @@ export default (tokenName) => {
         scriptValues: usdtScriptValues,
         secret: _secret,
       }, (hash) => {
-        console.log(`TX hash=${hash}`)
+        debug('swap.core:flow')(`TX hash=${hash}`)
         this.setState({
           usdtSwapWithdrawTransactionHash: hash,
         })
       })
 
-      console.log(`TX withdraw sent: ${this.state.usdtSwapWithdrawTransactionHash}`)
+      debug('swap.core:flow')(`TX withdraw sent: ${this.state.usdtSwapWithdrawTransactionHash}`)
 
       this.finishStep({
         isBtcWithdrawn: true,
@@ -429,7 +430,7 @@ export default (tokenName) => {
       secret = 'c0809ce9f484fdcdfb2d5aabd609768ce0374ee97a1a5618ce4cd3f16c00a078'
 
       try {
-        console.log('TRYING REFUND!')
+        debug('swap.core:flow')('TRYING REFUND!')
 
         try {
           await this.ethTokenSwap.refund({
@@ -440,7 +441,7 @@ export default (tokenName) => {
             })
           })
 
-          console.log('SUCCESS REFUND!')
+          debug('swap.core:flow')('SUCCESS REFUND!')
           return
         }
         catch (err) {
@@ -465,7 +466,7 @@ export default (tokenName) => {
         }
       }
 
-      console.log('TRYING WITHDRAW!')
+      debug('swap.core:flow')('TRYING WITHDRAW!')
 
       try {
         await this.usdtSwap.withdraw({
@@ -477,7 +478,7 @@ export default (tokenName) => {
           })
         })
 
-        console.log('SUCCESS WITHDRAW!')
+        debug('swap.core:flow')('SUCCESS WITHDRAW!')
       }
       catch (err) {
         console.error('WITHDRAW FAILED!', err)
