@@ -29,7 +29,7 @@ export const onStep = (swap, _step) => new Promise(async resolve => {
 
 export const generateSecret = () => crypto.randomBytes(32).toString('hex')
 
-export const start = swap =>
+export const start = (swap) =>
   new Promise(async resolve => {
     switch (swap.flow._flowName) {
       case "BTC2ETH":
@@ -50,14 +50,14 @@ export const start = swap =>
     resolve()
   })
 
-export const refund = swapID =>
+export const refund = (swapID) =>
   new Promise(async resolve => {
     debug('swap.core:simple:swap')('Swap id =', swapID)
     const swap = get(swapID)
 
     if (swap.flow.state.isRefunded) {
-      debug('swap.core:simple:swap')('This swap is refunded. Removing from history')
-      history.remove(swap)
+      debug('swap.core:simple:swap')('This swap is refunded')
+      resolve(true)
     } else {
       debug('swap.core:simple:swap')('Refunding...')
 
@@ -69,10 +69,10 @@ export const refund = swapID =>
       }
 
       if (swap.flow.state.isRefunded) {
-        debug('swap.core:simple:swap')('This swap is refunded. Removing from history')
-        history.remove(swap)
+        debug('swap.core:simple:swap')('This swap is refunded')
+        resolve(true)
       }
-      resolve()
+      resolve(false)
     }
   })
 

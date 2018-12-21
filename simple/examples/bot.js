@@ -6,7 +6,7 @@ const {
   room: { ready },
   orders: { request, subscribe },
   swap: { onStep, start },
-  history: { save, get, remove },
+  history: { saveInProgress, removeInProgress, saveFinished },
 } = swap.helpers
 
 const { wallet, auth, room, orders } = swap.setup()
@@ -20,12 +20,13 @@ const doSwap = async order => {
 
     await start(swap)
 
-    save(swap)
+    saveInProgress(swap.id)
 
     await onFinish(swap)
 
     console.log('finished swap', swap.id)
-    remove(swap)
+    removeInProgress(swap.id)
+    saveFinished(swap.id)
   }
 }
 

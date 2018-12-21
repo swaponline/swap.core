@@ -73,7 +73,7 @@ const {
   room: { ready },
   orders: { request, subscribe },
   swap: { onStep, get, start, refund },
-  history: { getAll, remove },
+  history: { getAllInProgress, removeInProgress, saveFinished },
   filter: { hash2id, secret2id },
 } = swap.helpers
 
@@ -88,18 +88,26 @@ const _ = (async () => {
 
   console.clear()
 
-  const swapHisory = getAll()
+  const swapHisory = getAllInProgress()
   const keyType = Object.keys(options)[0]
   const key = options[keyType]
   let swapID = null
+  let refundResult = false
 
   switch (keyType) {
 
     case KEY_ID[0]:
       console.log('Key type is ID')
 
-      if (swapHisory.includes(key)) {
-        await refund(key)
+      swapID = key
+
+      if (swapHisory.includes(swapID)) {
+        refundResult = await refund(swapID)
+
+        if (refundResult) {
+          removeInProgress(swapID)
+          saveFinished(swapID)
+        }
       } else {
         console.log('This swap does not exist in history.')
       }
@@ -113,7 +121,12 @@ const _ = (async () => {
       swapID = await hash2id(key)
 
       if (swapID) {
-        await refund(swapID)
+        refundResult = await refund(swapID)
+
+        if (refundResult) {
+          removeInProgress(swapID)
+          saveFinished(swapID)
+        }
       }
 
       process.exit(0)
@@ -125,7 +138,12 @@ const _ = (async () => {
       swapID = await secret2id(key)
 
       if (swapID) {
-        await refund(swapID)
+        refundResult = await refund(swapID)
+
+        if (refundResult) {
+          removeInProgress(swapID)
+          saveFinished(swapID)
+        }
       }
 
       process.exit(0)
@@ -135,7 +153,14 @@ const _ = (async () => {
       console.log('Key type is ALL', '\n')
 
       for (let a = 0; a < swapHisory.length; a++) {
-        await refund(swapHisory[a])
+        swapID = swapHisory[a]
+
+        refundResult = await refund(swapID)
+
+        if (refundResult) {
+          removeInProgress(swapID)
+          saveFinished(swapID)
+        }
       }
 
       process.exit(0)
@@ -148,6 +173,6 @@ const _ = (async () => {
       break
   }
 
-  console.log()
+  process.exit(0)
 
 })()
