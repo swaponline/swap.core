@@ -161,6 +161,7 @@ class BtcSwap extends SwapInterface {
    * @param {object} data.scriptValues
    * @param {BigNumber} data.amount
    * @param {function} handleTransactionHash
+   * @param {string} hashName
    * @returns {Promise}
    */
   fundScript(data, handleTransactionHash, hashName) {
@@ -321,6 +322,7 @@ class BtcSwap extends SwapInterface {
    * @param {string} data.secret
    * @param {function} handleTransactionHash
    * @param {boolean} isRefund
+   * @param {string} hashName
    * @returns {Promise}
    */
   withdraw(data, handleTransactionHash, isRefund, hashName) {
@@ -349,10 +351,11 @@ class BtcSwap extends SwapInterface {
    * @param {object} data.scriptValues
    * @param {string} data.secret
    * @param {function} handleTransactionHash
+   * @param {string} hashName
    * @returns {Promise}
    */
-  refund(data, handleTransactionHash) {
-    return this.withdraw(data, handleTransactionHash, true)
+  refund(data, handleTransactionHash, hashName) {
+    return this.withdraw(data, handleTransactionHash, true, hashName)
   }
 }
 

@@ -1,133 +1,126 @@
 import debug from 'debug'
+/* eslint-disable no-await-in-loop */
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
+
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
-const handlers = (flow) => {
-  return {
-    openSwap: () => {
-      const { secretHash } = flow.state
-      const { sellAmount: amount, participant } = flow.swap
+const transactionHandlers = (flow) => ({
+  openSwap: () => {
+    const { secretHash } = flow.state
+    const { sellAmount: amount, participant } = flow.swap
 
-      return flow.eosSwap.open({
-        btcOwner: participant.eos.address,
-        secretHash,
-        amount
-      })
-    },
-    btcWithdraw: () => {
-      const { secret, scriptValues } = flow.state
+    return flow.eosSwap.open({
+      btcOwner: participant.eos.address,
+      secretHash,
+      amount,
+    })
+  },
+  btcWithdraw: async () => {
+    const { secret, scriptValues } = flow.state
 
-      const tryWithdraw = () => flow.btcSwap.withdraw({ scriptValues, secret }, null, null, 'sha256')
-
-      return tryWithdraw()
-        .catch((error) => {
-          debug('swap.core:flow')('Cannot withdraw BTC, try again in 5 sec...')
-          return sleep(5000).then(tryWithdraw)
-        })
-    },
-    refund: () => {
-      const { participant: btcOwner } = this.swap
-
-      return flow.eosSwap.refund({
-        btcOwner
-      })
+    let btcWithdrawTx = null
+    while (!btcWithdrawTx) {
+      debug('swap.core:flow')('try withdraw btc...')
+      try {
+        btcWithdrawTx = await flow.btcSwap.withdraw({ scriptValues, secret }, null, null, 'sha256')
+      } catch (err) {
+        console.error(err)
+        await sleep(5000)
+      }
     }
-  }
-}
 
-const listeners = (flow) => {
-  return {
-    btcScript: () => {
-      return new Promise(resolve => {
-        flow.swap.room.once(flow.actions.createBtcScript, resolve)
-        flow.swap.room.sendMessage({
-          event: `request ${flow.actions.createBtcScript}`
-        })
-      })
-    },
-    verifyScript: () => {
-      return new Promise(async (resolve, reject) => {
-        const { buyAmount } = flow.swap
+    return btcWithdrawTx.txid
+  },
+  refund: () => {
+    const { participant: { eos: { address } } } = flow.swap
 
-        const getLockTime = () => {
-          const eosLockTime = flow.eosSwap.getLockPeriod()
-          const btcLockTime = eosLockTime * 2
-          const nowTime = Math.floor(Date.now() / 1000)
+    return flow.eosSwap.refund({
+      btcOwner: address,
+    })
+  },
+})
 
-          return nowTime + btcLockTime
-        }
+const pullHandlers = (flow) => ({
+  btcScript: () => new Promise(resolve => {
+    flow.swap.room.once(flow.actions.createBtcScript, resolve)
+    flow.swap.room.sendMessage({
+      event: `request ${flow.actions.createBtcScript}`,
+    })
+  }),
+  verifyScript: async () => {
+    const { buyAmount: value } = flow.swap
+    const { scriptValues } = flow.state
+    const recipientPublicKey = SwapApp.services.auth.accounts.btc.getPublicKey()
 
-        const scriptCheckResult = await flow.btcSwap.checkScript(flow.state.scriptValues, {
-          value: buyAmount,
-          recipientPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
-          lockTime: getLockTime()
-        })
+    const eosLockPeriod = flow.eosSwap.getLockPeriod()
+    const now = Math.floor(Date.now() / 1000)
+    const lockTime = now + eosLockPeriod
 
-        if (scriptCheckResult) {
-          debug('swap.core:flow')('Cannot verify btc script', scriptCheckResult)
-          reject(scriptCheckResult)
-        } else {
-          resolve()
-        }
-      })
-    },
-    revealedSecret: () => {
-      return new Promise(resolve => {
-        const { owner: eosOwnerData, participant: btcOwnerData } = flow.swap
-        const eosOwner = eosOwnerData.eos.address
-        const btcOwner = btcOwnerData.btc.address
+    let errorMessage = true
+    while (errorMessage) {
+      debug('swap.core:flow')('try verify script...')
+      errorMessage = await flow.btcSwap.checkScript(scriptValues, {
+        value,
+        recipientPublicKey,
+        lockTime,
+      }, 'sha256')
 
-        const fetchSecret = async () => {
-          const swap = await this.eosSwap.findCurrentSwap({ eosOwner, btcOwner })
-          const { secret } = swap
-
-          return secret
-        }
-
-        return fetchSecret().then((secret) => {
-          if (secret == 0) {
-            debug('swap.core:flow')('Cannot fetch secret, try again in 5 sec...')
-            return sleep(5000).then(fetchSecret)
-          } else {
-            return secret
-          }
-        })
-      })
-    },
-    eosWithdrawTx: () => {
-      return new Promise(resolve => {
-        swap.room.once(flow.actions.eosWithdraw, resolve)
-      })
+      if (errorMessage) {
+        console.error(errorMessage)
+        await sleep(5000)
+      }
     }
-  }
-}
+  },
+  revealedSecret: async () => {
+    const { owner: eosOwnerData, participant: btcOwnerData } = flow.swap
+    const eosOwner = eosOwnerData.eos.address
+    const btcOwner = btcOwnerData.eos.address
 
-const notifiers = (flow) => {
-  return {
-    openSwap() {
-      const { openTx, swapID } = flow.state
-
-      flow.swap.room.sendMessage({
-        event: 'open swap',
-        data: {
-          openTx, swapID
-        }
-      })
-    },
-    btcWithdraw() {
-      const { btcWithdrawTx } = flow.state
-
-      flow.swap.room.sendMessage({
-        event: 'btc withdraw',
-        data: {
-          btcWithdrawTx
-        }
-      })
+    let secret = null
+    while (!secret) {
+      debug('swap.core:flow')('try fetch secret...')
+      secret = await flow.eosSwap.fetchSecret({ eosOwner, btcOwner })
+      if (!secret) {
+        await sleep(5000)
+      }
     }
-  }
-}
+
+    return secret
+  },
+  eosWithdrawTx: () => new Promise(resolve => {
+    flow.swap.room.once(flow.actions.eosWithdraw, ({ eosWithdrawTx, secret }) => {
+      resolve(eosWithdrawTx)
+    })
+    flow.swap.room.sendMessage({
+      event: `request ${flow.actions.eosWithdrawTx}`,
+    })
+  }),
+})
+
+const pushHandlers = (flow) => ({
+  openSwap() {
+    const { openTx, swapID } = flow.state
+
+    flow.swap.room.sendMessage({
+      event: flow.actions.openSwap,
+      data: {
+        openTx, swapID,
+      },
+    })
+  },
+  btcWithdraw() {
+    const { btcWithdrawTx } = flow.state
+
+    flow.swap.room.sendMessage({
+      event: flow.actions.btcWithdraw,
+      data: {
+        btcWithdrawTx,
+      },
+    })
+  },
+})
 
 class EOS2BTC extends Flow {
   static getName() {
@@ -160,8 +153,11 @@ class EOS2BTC extends Flow {
         createTx: null,
         openTx: null,
         eosWithdrawTx: null,
-        btcWithdrawTx: null
-      }
+        btcWithdrawTx: null,
+
+        eosRefundTx: null,
+        btcRefundTx: null,
+      },
     }
 
     this.actions = {
@@ -173,11 +169,11 @@ class EOS2BTC extends Flow {
       btcWithdraw: 'btc withdraw',
     }
 
-    this.act = handlers(this)
-    this.needs = listeners(this)
-    this.notify = notifiers(this)
+    this.transact = transactionHandlers(this)
+    this.pull = pullHandlers(this)
+    this.push = pushHandlers(this)
 
-    this.listenNotifyRequests()
+    this.listenRequests()
 
     super._persistSteps()
     super._persistState()
@@ -188,61 +184,61 @@ class EOS2BTC extends Flow {
 
     return [
       () => {
-        flow.needs.btcScript().then(({ scriptValues, createTx }) => {
+        flow.pull.btcScript().then(({ scriptValues, createTx }) => {
           const { secretHash } = scriptValues
 
           flow.finishStep({ scriptValues, secretHash, createTx })
         })
       },
       () => {
-        flow.needs.verifyScript().then(() => {
+        flow.pull.verifyScript().then(() => {
           flow.finishStep()
         })
       },
       () => {
-        flow.act.openSwap().then(({ openTx, swapID }) => {
+        flow.transact.openSwap().then(({ openTx, swapID }) => {
           flow.finishStep({ openTx, swapID })
-          flow.notify.openSwap()
+          flow.push.openSwap()
         })
       },
       () => {
-        flow.needs.revealedSecret().then(secret => {
+        flow.pull.revealedSecret().then(secret => {
           flow.finishStep({ secret })
         })
-        flow.needs.eosWithdrawTx().then(eosWithdrawTx => {
+        flow.pull.eosWithdrawTx().then(eosWithdrawTx => {
           flow.setState({ eosWithdrawTx })
         })
       },
       () => {
-        flow.act.btcWithdraw().then(({ txid }) => {
-          flow.finishStep({ btcWithdrawTx: txid })
-          flow.notify.btcWithdraw()
+        flow.transact.btcWithdraw().then((btcWithdrawTx) => {
+          flow.finishStep({ btcWithdrawTx })
+          flow.push.btcWithdraw()
         })
-      }
+      },
     ]
-  }
-
-  listenNotifyRequests() {
-    const flow = this
-
-    flow.swap.room.on(`request ${flow.actions.openSwap}`, () => {
-      if (flow.state.openTx && flow.state.swapID) {
-        flow.notify.openSwap()
-      }
-    })
-
-    flow.swap.room.on(`request ${flow.actions.btcWithdraw}`, () => {
-      if (flow.state.btcWithdrawTx) {
-        flow.notify.btcWithdraw()
-      }
-    })
   }
 
   tryRefund() {
     const flow = this
 
-    return flow.act.refund().then((eosRefundTx) => {
+    return flow.transact.refund().then((eosRefundTx) => {
       flow.setState({ eosRefundTx })
+    })
+  }
+
+  listenRequests() {
+    const flow = this
+
+    flow.swap.room.on(`request ${flow.actions.openSwap}`, () => {
+      if (flow.state.openTx && flow.state.swapID) {
+        flow.push.openSwap()
+      }
+    })
+
+    flow.swap.room.on(`request ${flow.actions.btcWithdraw}`, () => {
+      if (flow.state.btcWithdrawTx) {
+        flow.push.btcWithdraw()
+      }
     })
   }
 }
