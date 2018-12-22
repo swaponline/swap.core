@@ -39,6 +39,7 @@ const order = (type, { orderID, eosOwner, btcOwner }) => {
     'requests': [],
     'isRequested': true,
     'isProcessing': true,
+    'destination': {},
   }
 
   const eosOwnerData = {
