@@ -50,6 +50,7 @@ export default (tokenName) => {
         isSignFetching: false,
         isMeSigned: false,
 
+        targetWallet : null,
         secretHash: null,
         btcScriptValues: null,
 
@@ -147,41 +148,37 @@ export default (tokenName) => {
             participantAddress: participant.eth.address,
             secretHash: flow.state.secretHash,
             amount: sellAmount,
+            targetWallet: flow.swap.destinationSellAddress
           }
 
           const allowance = await flow.ethTokenSwap.checkAllowance(SwapApp.services.auth.getPublicData().eth.address)
 
-          if (allowance >= sellAmount) {
-            await this.ethTokenSwap.create(swapData, (hash) => {
-              flow.swap.room.sendMessage({
-                event: 'create eth contract',
-                data: {
-                  ethSwapCreationTransactionHash: hash,
-                },
-              })
-
-              flow.setState({
-                ethSwapCreationTransactionHash: hash,
-              })
-            })
-          } else {
+          if (allowance < sellAmount) {
             await flow.ethTokenSwap.approve({
               amount: sellAmount,
             })
-
-            await this.ethTokenSwap.create(swapData, (hash) => {
-              flow.swap.room.sendMessage({
-                event: 'create eth contract',
-                data: {
-                  ethSwapCreationTransactionHash: hash,
-                },
-              })
-
-              flow.setState({
-                ethSwapCreationTransactionHash: hash,
-              })
-            })
           }
+
+          /* create contract and save this hash */
+          let ethSwapCreationTransactionHash
+          await flow.ethTokenSwap.create(swapData, async (hash) => {
+            ethSwapCreationTransactionHash = hash;
+          });
+
+          /* set Target wallet */
+          //await flow.setTargetWalletDo();
+
+          /* send data to other side */
+          flow.swap.room.sendMessage({
+            event: 'create eth contract',
+            data: {
+              ethSwapCreationTransactionHash: ethSwapCreationTransactionHash,
+            },
+          })
+
+          flow.setState({
+            ethSwapCreationTransactionHash: ethSwapCreationTransactionHash,
+          })
 
           flow.finishStep({
             isEthContractFunded: true,
@@ -217,7 +214,7 @@ export default (tokenName) => {
           const { participant } = flow.swap
 
           const checkSecretExist = async () => {
-            try { 
+            try {
               const secret = await flow.ethTokenSwap.getSecret({
                 participantAddress: participant.eth.address,
               })
@@ -314,6 +311,8 @@ export default (tokenName) => {
           isSwapExist: true,
         })
       } else {
+        if (this.state.isSignFetching || this.state.isMeSigned) return true;
+
         this.setState({
           isSignFetching: true,
         })
@@ -327,7 +326,7 @@ export default (tokenName) => {
         this.swap.room.sendMessage({
           event: 'swap sign',
         })
-        
+
         this.finishStep({
           isMeSigned: true,
         }, { step: 'sign', silentError: true })

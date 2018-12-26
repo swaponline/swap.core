@@ -6,16 +6,18 @@ import Room from './Room'
 class Swap {
 
   constructor(id, order) {
-    this.id               = null
-    this.isMy             = null
-    this.owner            = null
-    this.participant      = null
-    this.buyCurrency      = null
-    this.sellCurrency     = null
-    this.buyAmount        = null
-    this.sellAmount       = null
-    this.ownerSwap        = null
-    this.participantSwap  = null
+    this.id                     = null
+    this.isMy                   = null
+    this.owner                  = null
+    this.participant            = null
+    this.buyCurrency            = null
+    this.sellCurrency           = null
+    this.buyAmount              = null
+    this.sellAmount             = null
+    this.ownerSwap              = null
+    this.participantSwap        = null
+    this.destinationBuyAddress  = null
+    this.destinationSellAddress = null
 
     let data = SwapApp.env.storage.getItem(`swap.${id}`)
 
@@ -45,6 +47,20 @@ class Swap {
     }
 
     this.flow = new Flow(this)
+
+    // Change destination address on run time
+    this.room.on('set destination buy address', (data) => {
+      console.log("Other side change destination buy address", data);
+      this.update({
+        destinationSellAddress: data.address
+      })
+    });
+    this.room.on('set destination sell address', (data) => {
+      console.log("Other side change destination sell address", data);
+      this.update({
+        destinationBuyAddress: data.address
+      })
+    });
   }
 
   _getDataFromOrder(order) {
@@ -60,9 +76,11 @@ class Swap {
       'sellCurrency',
       'buyAmount',
       'sellAmount',
+      'destinationBuyAddress',
+      'destinationSellAddress',
     )
 
-    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, ...rest } = data
+    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, destinationBuyAddress, destinationSellAddress, ...rest } = data
 
     const swap = {
       ...rest,
@@ -71,6 +89,8 @@ class Swap {
       sellCurrency: isMy ? sellCurrency : buyCurrency,
       buyAmount: isMy ? buyAmount : sellAmount,
       sellAmount: isMy ? sellAmount : buyAmount,
+      destinationBuyAddress: isMy ? destinationBuyAddress : destinationSellAddress,
+      destinationSellAddress: isMy ? destinationSellAddress : destinationBuyAddress
     }
 
     if (!swap.participant && !isMy) {
@@ -91,6 +111,8 @@ class Swap {
       'sellCurrency',
       'buyAmount',
       'sellAmount',
+      'destinationBuyAddress',
+      'destinationSellAddress',
     )
   }
 
@@ -98,6 +120,32 @@ class Swap {
     const data = this._pullRequiredData(this)
 
     SwapApp.env.storage.setItem(`swap.${this.id}`, data)
+  }
+
+  setDestinationBuyAddress(address) {
+    this.update({
+      destinationBuyAddress: address
+    });
+
+    this.room.sendMessage({
+      event: 'set destination buy address',
+      data: {
+        address: address
+      }
+    });
+  }
+
+  setDestinationSellAddress(address) {
+    this.update({
+      destinationSellAddress: address
+    });
+
+    this.room.sendMessage({
+      event: 'set destination sell address',
+      data: {
+        address: address
+      }
+    });
   }
 
   update(values) {

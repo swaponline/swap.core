@@ -99,7 +99,6 @@ class Flow {
   _saveState() {
     SwapApp.env.storage.setItem(`flow.${this.swap.id}`, this.state)
   }
-
   finishStep(data, constraints) {
     console.log(`on step ${this.state.step}, constraints =`, constraints)
 
