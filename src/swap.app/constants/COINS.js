@@ -54,4 +54,5 @@ export default {
   time: 'TIME',
   mth: 'MTH',
   zcn: 'ZCN',
+  cbt: 'CBT',
 }
