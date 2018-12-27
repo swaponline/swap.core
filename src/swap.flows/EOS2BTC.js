@@ -1,5 +1,5 @@
-import debug from 'debug'
 /* eslint-disable no-await-in-loop */
+import debug from 'debug'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
