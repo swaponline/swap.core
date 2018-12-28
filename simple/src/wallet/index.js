@@ -60,19 +60,19 @@ class Wallet {
     }))
   }
 
-  async getBalance() {
-    const currencies = Object.values(this.constants.COINS)
+  fetchBalance(symbol) {
     const data = this.auth.getPublicData()
+    const account = symbol == 'BTC' || symbol == 'BCH' || symbol == 'USDT' ? data.btc : data.eth
+    const instance = this.swapApp.swaps[symbol]
 
-    const fetch = currencies.map(
-      symbol => {
-        const account = symbol == 'BTC' || symbol == 'BCH' || symbol == 'USDT' ? data.btc : data.eth
-        const instance = this.swapApp.swaps[symbol]
+    return instance ? instance.fetchBalance(account.address) : '-'
+  }
 
-        return instance ? instance.fetchBalance(account.address) : '-'
-      })
+  async getBalance(symbols) {
+    const currencies = symbols || Object.values(this.constants.COINS)
 
-    const values = await Promise.all( fetch )
+    const values = await Promise.all(
+      currencies.map(symbol => this.fetchBalance(symbol)))
 
     return values.map((value, index) => ({
       symbol: currencies[index],
