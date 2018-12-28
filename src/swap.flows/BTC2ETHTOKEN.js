@@ -2,6 +2,7 @@ import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
+import { BigNumber } from 'bignumber.js'
 
 
 export default (tokenName) => {
@@ -192,17 +193,18 @@ export default (tokenName) => {
                   return summ + (!txData.confirmations) ? txData.amount : 0;
                 } , 0 );
 
-                const balance = await this.btcSwap.getBalance(flow.state.scriptAddress);
+                const balanceSatoshi = await this.btcSwap.getBalance(flow.state.scriptAddress);
 
-                const balanceSatoshi = BigInt(balance*1e8);
+                const balance = BigNumber(balanceSatoshi).dividedBy(1e8);
 
                 flow.setState({
-                  scriptBalance : balance,
+                  scriptBalance : Number(balance),
                   scriptUnconfirmedBalance : unconfirmedTotal
                 });
-                const balanceOnScript = balanceSatoshi + unconfirmedTotalSatoshi + BigInt(this.btcSwap.getTxFee( true ) );
+                const balanceOnScript = BigInt(balanceSatoshi) + unconfirmedTotalSatoshi + BigInt(this.btcSwap.getTxFee( true ) );
                 const isEnoughMoney = sellAmount.multipliedBy(1e8).isLessThanOrEqualTo( balanceOnScript );
 
+                console.log(balanceOnScript)
                 if (isEnoughMoney) {
                   onBTCFuncSuccess(txID)
                 } else {
