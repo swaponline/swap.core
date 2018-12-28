@@ -1,3 +1,4 @@
+import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto' // move to BtcSwap
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
@@ -151,20 +152,29 @@ export default (tokenName) => {
             targetWallet: flow.swap.destinationSellAddress
           }
 
-          const allowance = await flow.ethTokenSwap.checkAllowance(SwapApp.services.auth.getPublicData().eth.address)
+          debug('swap.core:flow')('fetching allowance')
+          const allowance = await flow.ethTokenSwap.checkAllowance({
+            spender: SwapApp.services.auth.getPublicData().eth.address
+          })
+          debug('swap.core:flow')('allowance', allowance)
 
           if (allowance < sellAmount) {
+            debug('swap.core:flow')('allowance < sellAmount', allowance, sellAmount)
             await flow.ethTokenSwap.approve({
               amount: sellAmount,
             })
           }
 
+
+          debug('swap.core:flow')('create swap', swapData)
           /* create contract and save this hash */
           let ethSwapCreationTransactionHash
           await flow.ethTokenSwap.create(swapData, async (hash) => {
+            debug('swap.core:flow')('create swap tx hash', hash)
             ethSwapCreationTransactionHash = hash;
           });
 
+          debug('swap.core:flow')('created swap!', ethSwapCreationTransactionHash)
           /* set Target wallet */
           //await flow.setTargetWalletDo();
 
@@ -196,7 +206,7 @@ export default (tokenName) => {
             const secret = await flow.ethTokenSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
 
             if (!flow.state.isEthWithdrawn && secret) {
-              console.log('got secret from tx', ethSwapWithdrawTransactionHash, secret)
+              debug('swap.core:flow')('got secret from tx', ethSwapWithdrawTransactionHash, secret)
               flow.finishStep({
                 isEthWithdrawn: true,
                 secret,
@@ -226,7 +236,7 @@ export default (tokenName) => {
                   throw new Error(`Secret already exists and it differs! ${secret} ≠ ${flow.state.secret}`)
                 }
 
-                console.log('got secret from smart contract', secret)
+                debug('swap.core:flow')('got secret from smart contract', secret)
                 flow.finishStep({
                   secret,
                   isEthWithdrawn: true,
@@ -413,7 +423,7 @@ export default (tokenName) => {
       if (isBtcWithdrawn)
         console.warn(`Looks like money were already withdrawn, are you sure?`)
 
-      console.log(`WITHDRAW using secret = ${_secret}`)
+      debug('swap.core:flow')(`WITHDRAW using secret = ${_secret}`)
 
       const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
 
@@ -423,7 +433,7 @@ export default (tokenName) => {
       const {scriptAddress} = this.btcSwap.createScript(btcScriptValues)
       const balance = await this.btcSwap.getBalance(scriptAddress)
 
-      console.log(`address=${scriptAddress}, balance=${balance}`)
+      debug('swap.core:flow')(`address=${scriptAddress}, balance=${balance}`)
 
       if (balance === 0) {
         this.finishStep({

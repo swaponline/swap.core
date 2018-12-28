@@ -1,6 +1,7 @@
 const bitcoin = require('bitcoinjs-lib')
 const request = require('request-promise-native')
 const BigNumber = require('bignumber.js')
+const debug = require('debug')
 
 // const BITPAY = isMain ? `https://insight.bitpay.com/api` : `https://test-insight.bitpay.com/api`
 const BITPAY = false ? `https://insight.bitpay.com/api` : `https://test-insight.swap.online/insight-api`
@@ -10,9 +11,9 @@ const filterError = (error) => {
   const { name, code, statusCode, options } = error
 
   if (name == 'StatusCodeError' && statusCode == 525)
-    console.error(`BITPAY refuse:`, options.method, options.uri)
+    debug('swap.core:bitcoin')('Error:', `BITPAY refuse:`, options.method, options.uri)
   else
-    console.error(code, name, statusCode, options)
+    debug('swap.core:bitcoin')('Error:', code, name, statusCode, options)
 
   throw error
 }
@@ -64,7 +65,7 @@ class Bitcoin {
     return request.get(`${this.root}/addr/${address}`)
       .then(( json ) => {
         const balance = JSON.parse(json).balance
-        console.log('BTC Balance:', balance)
+        debug('swap.core:bitcoin')('BTC Balance:', balance)
 
         return balance
       })
@@ -117,9 +118,9 @@ class Bitcoin {
           return 0
         }
 
-        console.log('Omni Balance:', findById[0].value)
-        console.log('Omni Balance pending:', findById[0].pendingpos)
-        console.log('Omni Balance pending:', findById[0].pendingneg)
+        debug('swap.core:bitcoin')('Omni Balance:', findById[0].value)
+        debug('swap.core:bitcoin')('Omni Balance pending:', findById[0].pendingpos)
+        debug('swap.core:bitcoin')('Omni Balance pending:', findById[0].pendingneg)
 
         const usdsatoshis = BigNumber(findById[0].value)
 
@@ -129,7 +130,7 @@ class Bitcoin {
           return 0
         }
       })
-      .catch(error => console.error(error))
+      .catch(error => debug('swap.core:bitcoin')('Error:', error))
   }
 
   async sendTransaction({ account, to, value }, handleTransactionHash) {
@@ -162,10 +163,10 @@ class Bitcoin {
 
     if (typeof handleTransactionHash === 'function') {
       handleTransactionHash(txRaw.getId())
-      console.log('tx id', txRaw.getId())
+      debug('swap.core:bitcoin')('tx id', txRaw.getId())
     }
 
-    console.log('raw tx = ', txRaw.toHex())
+    debug('swap.core:bitcoin')('raw tx = ', txRaw.toHex())
 
     const result = await this.broadcastTx(txRaw.toHex())
 

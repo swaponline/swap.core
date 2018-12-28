@@ -1,10 +1,13 @@
 const request = require('request-promise-native')
+const debug = require('debug')
 
 const Web3 = require('web3')
 
 const WEB3_PROVIDERS = {
-  mainnet: new Web3.providers.HttpProvider(`https://mainnet.infura.io/JCnK5ifEPH9qcQkX0Ahl`),
-  testnet: new Web3.providers.HttpProvider(`https://rinkeby.infura.io/JCnK5ifEPH9qcQkX0Ahl`),
+  // mainnet: new Web3.providers.HttpProvider(`https://mainnet.infura.io/JCnK5ifEPH9qcQkX0Ahl`),
+  // testnet: new Web3.providers.HttpProvider(`https://rinkeby.infura.io/JCnK5ifEPH9qcQkX0Ahl`),
+  testnet: new Web3.providers.HttpProvider(`https://tgeth.swaponline.site`),
+  mainnet: new Web3.providers.HttpProvider(`https://geth.swaponline.site`),
   localnet: new Web3.providers.HttpProvider(`http://localhost:7545`),
 }
 
@@ -13,7 +16,7 @@ const TEN = new BigNumber(10)
 
 class Ethereum {
 
-  constructor(_network = 'testnet') {
+  constructor(_network = 'testnet', _customProvider) {
     const _provider = WEB3_PROVIDERS[_network]
 
     if (typeof web3 !== 'undefined') {
@@ -32,7 +35,7 @@ class Ethereum {
       .then((wei) => {
         let balance = Number(this.core.utils.fromWei(wei))
 
-        console.log('ETH Balance:', balance)
+        debug('swap.core:ethereum')('ETH Balance:', balance)
 
         return balance
       })

@@ -1,8 +1,8 @@
 const { bitcoin, ethereum } = require('../instances')
+const debug = require('debug')('swap.core:simple:wallet')
 
-const isMain = false
-const BLOCKCHAININFO = isMain ? `https://blockchain.info` : `https://testnet.blockchain.info`
-const ETHERSCANIO = isMain ? `https://etherscan.io` : `https://rinkeby.etherscan.io`
+const BLOCKCHAININFO = isMain => isMain ? `https://blockchain.info` : `https://testnet.blockchain.info`
+const ETHERSCANIO = isMain => isMain ? `https://etherscan.io` : `https://rinkeby.etherscan.io`
 
 class Wallet {
   constructor(app, constants, config) {
@@ -13,6 +13,7 @@ class Wallet {
     this.swapApp = app
     this.constants = constants
     this.auth = app.services.auth
+    this.balances = {}
   }
 
   async withdraw(from, to, value) {
@@ -26,11 +27,37 @@ class Wallet {
         return Promise.reject('not implemented')
     }
   }
+
   async getBalanceBySymbol(symbol) {
 
-    let balances = await this.getBalance()
+    if(!this.balances[symbol]) {
+      debug('updating balance', Date())
+      let balances = await this.getBalance()
+      balances.map(x => this.balances[x.symbol] = x)
+    }
 
-    return balances.find(x => x.symbol === symbol)
+    return this.balances[symbol]
+  }
+
+  async getData() {
+    const currencies = Object.values(this.constants.COINS)
+    const data = this.auth.getPublicData()
+    let addresses = [];
+    const fetch = currencies.map(
+      symbol => {
+        const account = symbol == 'BTC' || symbol == 'BCH' || symbol == 'USDT' ? data.btc : data.eth
+        const instance = this.swapApp.swaps[symbol]
+        addresses[symbol] = account.address;
+        return instance ? instance.fetchBalance(account.address) : '-'
+      })
+
+    const values = await Promise.all( fetch )
+
+    return values.map((value, index) => ({
+      symbol: currencies[index],
+      amount: value,
+      address: addresses[currencies[index]]
+    }))
   }
 
   async getBalance() {
@@ -65,8 +92,8 @@ class Wallet {
       id: this.id,
       network: this.network,
       mainnet: this.swapApp.isMainNet(),
-      'etherscan.io': `${ETHERSCANIO}/address/${this.auth.accounts.eth.address}`,
-      'blockchain.info': `${BLOCKCHAININFO}/address/${this.auth.accounts.btc.getAddress()}`,
+      'etherscan.io': `${ETHERSCANIO(this.swapApp.isMainNet())}/address/${this.auth.accounts.eth.address}`,
+      'blockchain.info': `${BLOCKCHAININFO(this.swapApp.isMainNet())}/address/${this.auth.accounts.btc.getAddress()}`,
       room: this.swapApp.services.room.roomName,
       ...this.auth.getPublicData(),
     }
