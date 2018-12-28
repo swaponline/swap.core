@@ -1,4 +1,4 @@
-const swap = require('../../lib')
+const swap = require('swap.core')
 const constants = swap.constants
 
 const SwapAuth = swap.auth
@@ -19,6 +19,8 @@ const Ipfs = require('ipfs')
 const IpfsRoom = require('ipfs-pubsub-room')
 
 const common = require('./common')
+
+const tokenSwap = require('./tokenSwap')
 
 const setupLocalStorage = require('./setupLocalStorage')
 const { LocalStorage } = require('node-localstorage')
@@ -49,6 +51,10 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
   const web3    = eth[config.network]().core
   const bitcoin = btc[config.network]().core
 
+  const tokens = (config.ERC20TOKENS || [])
+    .map(_token => ({ network: config.network, ..._token }))
+    .filter(_token => _token.network === config.network)
+
   return {
     network: config.network,
     env: {
@@ -78,11 +84,14 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
         : null,
       new EthTokenSwap(config.noxonTokenSwap(TOKEN)),
       new EthTokenSwap(config.swapTokenSwap(TOKEN)),
-      ...(config.swaps || []),
-      // config.network === 'mainnet'
-      //   ? new BchSwap(config.bchSwap())
-      //   : null,
-    ].filter(a=>!!a),
+      ...(
+        (config.swaps || [])
+      ),
+      ...(
+        tokens.map(_token => new EthTokenSwap(tokenSwap(_token)()))
+      )
+    ]
+    .filter(a=>!!a),
 
     flows: [
       ETH2BTC,
@@ -96,6 +105,17 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
       ETHTOKEN2USDT(constants.COINS.swap),
       USDT2ETHTOKEN(constants.COINS.swap),
       ...(config.flows || []),
+      ...((
+          [].concat.apply([],
+            tokens.map(({ name }) => ([
+              ETHTOKEN2USDT(name),
+              USDT2ETHTOKEN(name),
+              ETHTOKEN2BTC(name),
+              BTC2ETHTOKEN(name),
+            ]))
+          )
+        ) || []
+      )
       // ETH2BCH,
       // BCH2ETH,
     ],

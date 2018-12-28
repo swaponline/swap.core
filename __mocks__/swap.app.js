@@ -64,6 +64,7 @@ const mockSwapApp = {
     bitcoin,
     web3: {
       eth: {
+        getGasPrice: jest.fn(() => 2e9),
         getBalance: jest.fn(address => 3e18),
         Contract: function () {
           const view = (getValue, state = {}) => () => ({
@@ -73,6 +74,7 @@ const mockSwapApp = {
 
           const action = (emitter) => () => ({
             send: jest.fn(() => emitter),
+            estimateGas: jest.fn(() => 1e5),
             emitter,
           })
 

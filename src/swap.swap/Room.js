@@ -1,3 +1,4 @@
+import debug from 'debug'
 import SwapApp, { Events } from 'swap.app'
 
 
@@ -24,7 +25,7 @@ class Room {
 
   on(eventName, handler) {
     SwapApp.services.room.on(eventName, ({ fromPeer, swapId, ...values }) => {
-      console.log(`on ${eventName} from ${fromPeer} at swap ${swapId}`)
+      debug('swap.core:room')(`on ${eventName} from ${fromPeer} at swap ${swapId}`)
       if (fromPeer === this.peer && swapId === this.swapId) {
         handler(values)
       }
@@ -35,7 +36,7 @@ class Room {
     const self = this
 
     SwapApp.services.room.on(eventName, function ({ fromPeer, swapId, ...values }) {
-      console.log(`once ${eventName} from ${fromPeer} at swap ${swapId}`)
+      debug('swap.core:room')(`once ${eventName} from ${fromPeer} at swap ${swapId}`)
       if (fromPeer === self.peer && swapId === self.swapId) {
         this.unsubscribe()
         handler(values)
