@@ -65,7 +65,7 @@ class EthSwap extends SwapInterface {
    * @returns {Promise}
    */
   async create(data, handleTransactionHash) {
-    if (data.targetWallet && (data.targetWallet!==data.participantAddress) && this.hasTargetWalletFeature()) {
+    if (data.targetWallet && (data.targetWallet!==data.participantAddress) && this.hasTargetWallet()) {
       return this.createSwapTarget(data, handleTransactionHash)
     } else {
       return this.createSwap(data, handleTransactionHash)
