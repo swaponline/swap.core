@@ -250,7 +250,7 @@ class BtcSwap extends SwapInterface {
 
     const { script, scriptAddress } = this.createScript(scriptValues, hashName)
 
-    const destinationAddress = (data.destinationAddress) ? data.destinationAddress : false
+     const { destinationAddress } = data
 
     const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
     const unspents      = await this.fetchUnspents(scriptAddress)
