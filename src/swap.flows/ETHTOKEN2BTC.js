@@ -127,7 +127,7 @@ export default (tokenName) => {
         // 5. Create ETH Contract
 
         async () => {
-          const {participant, buyAmount, sellAmount, owner} = flow.swap
+          const { participant, buyAmount, sellAmount } = flow.swap
 
           // TODO move this somewhere!
           const utcNow = () => Math.floor(Date.now() / 1000)
@@ -152,47 +152,54 @@ export default (tokenName) => {
             targetWallet: flow.swap.destinationSellAddress
           }
 
-          debug('swap.core:flow')('fetching allowance')
-          const allowance = await flow.ethTokenSwap.checkAllowance({
-            spender: SwapApp.services.auth.getPublicData().eth.address
-          })
-          debug('swap.core:flow')('allowance', allowance)
-
-          if (allowance < sellAmount) {
-            debug('swap.core:flow')('allowance < sellAmount', allowance, sellAmount)
-            await flow.ethTokenSwap.approve({
-              amount: sellAmount,
+          const createSwap = async () => {
+            debug('swap.core:flow')('fetching allowance')
+            const allowance = await flow.ethTokenSwap.checkAllowance({
+              spender: SwapApp.services.auth.getPublicData().eth.address
             })
+
+            debug('swap.core:flow')('allowance', allowance)
+            if (allowance < sellAmount) {
+              debug('swap.core:flow')('allowance < sellAmount', allowance, sellAmount)
+              await flow.ethTokenSwap.approve({
+                amount: sellAmount,
+              })
+            }
+
+            clearInterval(checkCreateSwap)
+
+            debug('swap.core:flow')('create swap', swapData)
+            /* create contract and save this hash */
+            let ethSwapCreationTransactionHash
+            await flow.ethTokenSwap.create(swapData, async (hash) => {
+              debug('swap.core:flow')('create swap tx hash', hash)
+              ethSwapCreationTransactionHash = hash;
+            });
+
+            debug('swap.core:flow')('created swap!', ethSwapCreationTransactionHash)
+            /* set Target wallet */
+            //await flow.setTargetWalletDo();
+
+            /* send data to other side */
+            flow.swap.room.sendMessage({
+              event: 'create eth contract',
+              data: {
+                ethSwapCreationTransactionHash: ethSwapCreationTransactionHash,
+              },
+            })
+
+            flow.setState({
+              ethSwapCreationTransactionHash: ethSwapCreationTransactionHash,
+            })
+
+            flow.finishStep({
+              isEthContractFunded: true,
+            }, {step: 'lock-eth'})
           }
 
+          const checkCreateSwap = setInterval(createSwap, 20 * 1000)
 
-          debug('swap.core:flow')('create swap', swapData)
-          /* create contract and save this hash */
-          let ethSwapCreationTransactionHash
-          await flow.ethTokenSwap.create(swapData, async (hash) => {
-            debug('swap.core:flow')('create swap tx hash', hash)
-            ethSwapCreationTransactionHash = hash;
-          });
-
-          debug('swap.core:flow')('created swap!', ethSwapCreationTransactionHash)
-          /* set Target wallet */
-          //await flow.setTargetWalletDo();
-
-          /* send data to other side */
-          flow.swap.room.sendMessage({
-            event: 'create eth contract',
-            data: {
-              ethSwapCreationTransactionHash: ethSwapCreationTransactionHash,
-            },
-          })
-
-          flow.setState({
-            ethSwapCreationTransactionHash: ethSwapCreationTransactionHash,
-          })
-
-          flow.finishStep({
-            isEthContractFunded: true,
-          }, {step: 'lock-eth'})
+          createSwap()
         },
 
         // 6. Wait participant withdraw
