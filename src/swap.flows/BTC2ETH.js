@@ -129,17 +129,27 @@ class BTC2ETH extends Flow {
 
       async () => {
         const { sellAmount, participant } = flow.swap
+        const { btcScriptValues: scriptValues } = flow.state
+
         let btcScriptCreatingTransactionHash
 
-        // TODO move this somewhere!
-        const utcNow = () => Math.floor(Date.now() / 1000)
-        const getLockTime = () => utcNow() + 3600 * 3 // 3 hours from now
+        if (!scriptValues) {
+          // because these could have been already generated, see https://github.com/swaponline/swap.core/issues/121
 
-        const scriptValues = {
-          secretHash:         flow.state.secretHash,
-          ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
-          recipientPublicKey: participant.btc.publicKey,
-          lockTime:           getLockTime(),
+          // TODO move this somewhere!
+          const utcNow = () => Math.floor(Date.now() / 1000)
+          const getLockTime = () => utcNow() + 3600 * 3 // 3 hours from now
+
+          const newScriptValues = {
+            secretHash:         flow.state.secretHash,
+            ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
+            recipientPublicKey: participant.btc.publicKey,
+            lockTime:           getLockTime(),
+          }
+
+          flow.setState({
+            btcScriptValues: newScriptValues,
+          })
         }
 
         await flow.btcSwap.fundScript({
@@ -172,7 +182,6 @@ class BTC2ETH extends Flow {
 
         flow.finishStep({
           isBtcScriptFunded: true,
-          btcScriptValues: scriptValues,
         }, {  step: 'lock-btc' })
       },
 
