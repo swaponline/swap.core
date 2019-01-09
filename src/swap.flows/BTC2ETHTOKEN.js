@@ -201,7 +201,9 @@ export default (tokenName) => {
                   scriptBalance : Number(balance),
                   scriptUnconfirmedBalance : unconfirmedTotal
                 });
-                const balanceOnScript = BigInt(balanceSatoshi) + unconfirmedTotalSatoshi + BigInt(this.btcSwap.getTxFee( true ) );
+
+                //TODO miner fee
+                const balanceOnScript = BigInt(balanceSatoshi)// + BigInt(this.btcSwap.getTxFee( true ) );
                 const isEnoughMoney = sellAmount.multipliedBy(1e8).isLessThanOrEqualTo( balanceOnScript );
 
                 console.log(balanceOnScript)
