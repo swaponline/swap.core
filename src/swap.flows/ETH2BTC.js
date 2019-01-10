@@ -148,7 +148,7 @@ class ETH2BTC extends Flow {
           participantAddress:   participant.eth.address,
           secretHash:           flow.state.secretHash,
           amount:               sellAmount,
-           targetWallet:         flow.swap.destination.participantAddress,
+          targetWallet:         flow.swap.destinationSellAddress,
         }
 
         try {
