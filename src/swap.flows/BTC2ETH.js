@@ -1,6 +1,7 @@
 import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
+import { BigNumber } from 'bignumber.js'
 
 
 class BTC2ETH extends Flow {
@@ -128,52 +129,92 @@ class BTC2ETH extends Flow {
       // 4. Create BTC Script, fund, notify participant
 
       async () => {
-        const { sellAmount, participant } = flow.swap
+        const { sellAmount } = flow.swap
+
         let btcScriptCreatingTransactionHash
 
-        // TODO move this somewhere!
-        const utcNow = () => Math.floor(Date.now() / 1000)
-        const getLockTime = () => utcNow() + 3600 * 3 // 3 hours from now
+        const onBTCFuncSuccess = (txID) => {
 
-        const scriptValues = {
-          secretHash:         flow.state.secretHash,
-          ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
-          recipientPublicKey: participant.btc.publicKey,
-          lockTime:           getLockTime(),
-        }
-
-        await flow.btcSwap.fundScript({
-          scriptValues,
-          amount: sellAmount,
-        }, (hash) => {
-          btcScriptCreatingTransactionHash = hash
-          flow.setState({
-            btcScriptCreatingTransactionHash: hash,
+          flow.swap.room.on('request btc script', () => {
+            flow.swap.room.sendMessage({
+              event:  'create btc script',
+              data: {
+                scriptValues : flow.state.btcScriptValues,
+                btcScriptCreatingTransactionHash : txID,
+              }
+            })
           })
-        })
 
-        flow.swap.room.on('request btc script', () => {
           flow.swap.room.sendMessage({
             event: 'create btc script',
             data: {
-              scriptValues,
-              btcScriptCreatingTransactionHash,
+              scriptValues : flow.state.btcScriptValues,
+              btcScriptCreatingTransactionHash : txID,
             }
           })
-        })
 
-        flow.swap.room.sendMessage({
-          event: 'create btc script',
-          data: {
-            scriptValues,
-            btcScriptCreatingTransactionHash,
+          flow.finishStep({
+            isBtcScriptFunded: true
+          }, {  step: 'lock-btc' })
+        }
+
+        // Balance on system wallet enough
+        if (flow.state.isBalanceEnough) {
+          await flow.btcSwap.fundScript({
+            scriptValues : flow.state.btcScriptValues,
+            amount: sellAmount,
+          }, (hash) => {
+            btcScriptCreatingTransactionHash = hash
+
+            flow.setState({
+              btcScriptCreatingTransactionHash: hash,
+            })
+
+            onBTCFuncSuccess(hash)
+          })
+        } else {
+          let btcCheckTimer;
+
+          const checkBTCScriptBalance = () => {
+            btcCheckTimer = setTimeout( async () => {
+              const { sellAmount } = flow.swap
+
+              let txID = false
+
+              const unspends = await this.btcSwap.fetchUnspents(flow.state.scriptAddress);
+              if (unspends.length)
+                txID = unspends[0].txID;
+
+              const unconfirmedTotalSatoshi = BigInt(unspends.reduce( ( summ, txData ) => {
+                return summ + (!txData.confirmations) ? txData.satoshis : 0;
+              } , 0 ));
+              const unconfirmedTotal = unspends.reduce( ( summ, txData ) => {
+                return summ + (!txData.confirmations) ? txData.amount : 0;
+              } , 0 );
+
+              const balanceSatoshi = await this.btcSwap.getBalance(flow.state.scriptAddress);
+
+              const balance = BigNumber(balanceSatoshi).dividedBy(1e8);
+
+              flow.setState({
+                scriptBalance : Number(balance),
+                scriptUnconfirmedBalance : unconfirmedTotal
+              });
+
+              //TODO miner fee
+              const balanceOnScript = BigInt(balanceSatoshi)// + BigInt(this.btcSwap.getTxFee( true ) );
+              const isEnoughMoney = sellAmount.multipliedBy(1e8).isLessThanOrEqualTo( balanceOnScript );
+
+              console.log(balanceOnScript)
+              if (isEnoughMoney) {
+                onBTCFuncSuccess(txID)
+              } else {
+                checkBTCScriptBalance()
+              }
+            }, 20 * 1000)
           }
-        })
-
-        flow.finishStep({
-          isBtcScriptFunded: true,
-          btcScriptValues: scriptValues,
-        }, {  step: 'lock-btc' })
+          checkBTCScriptBalance();
+        }
       },
 
       // 5. Wait participant creates ETH Contract
@@ -323,10 +364,39 @@ class BTC2ETH extends Flow {
 
     const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
+    /* Secret hash generated - create BTC script - and only after this notify other part */
+    this.createWorkBTCScript(secretHash);
+
     this.finishStep({
       secret,
       secretHash,
     }, { step: 'submit-secret' })
+  }
+
+  createWorkBTCScript(secretHash) {
+    if (this.state.btcScriptValues) {
+      debug('swap.core:flow')('BTC Script already generated', this.state.btcScriptValues);
+      return;
+    }
+    const { participant } = this.swap
+    // TODO move this somewhere!
+    const utcNow = () => Math.floor(Date.now() / 1000)
+    const getLockTime = () => utcNow() + 3600 * 3 // 3 hours from now
+
+    const scriptValues = {
+      secretHash:         secretHash,
+      ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
+      recipientPublicKey: participant.btc.publicKey,
+      lockTime:           getLockTime(),
+    }
+    const scriptData = this.btcSwap.createScript(scriptValues)
+
+    this.setState( {
+      scriptAddress : scriptData.scriptAddress,
+      btcScriptValues: scriptValues,
+      scriptBalance : 0,
+      scriptUnspendBalance : 0
+    } );
   }
 
   async syncBalance() {
@@ -339,21 +409,14 @@ class BTC2ETH extends Flow {
     const balance = await this.btcSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
-    if (isEnoughMoney) {
-      this.finishStep({
-        balance,
-        isBalanceFetching: false,
-        isBalanceEnough: true,
-      }, { step: 'sync-balance' })
-    }
-    else {
+    if (!isEnoughMoney) {
       console.error(`Not enough money: ${balance} < ${sellAmount}`)
-      this.setState({
-        balance,
-        isBalanceFetching: false,
-        isBalanceEnough: false,
-      })
     }
+    this.finishStep({
+      balance,
+      isBalanceFetching: false,
+      isBalanceEnough: isEnoughMoney,
+    }, { step: 'sync-balance' })
   }
 
   getRefundTxHex = () => {
