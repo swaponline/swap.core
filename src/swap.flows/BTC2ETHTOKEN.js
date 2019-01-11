@@ -203,7 +203,7 @@ export default (tokenName) => {
                 });
 
                 //TODO miner fee
-                const balanceOnScript = BigInt(balanceSatoshi)// + BigInt(this.btcSwap.getTxFee( true ) );
+                const balanceOnScript = balanceSatoshi
                 const isEnoughMoney = sellAmount.multipliedBy(1e8).isLessThanOrEqualTo( balanceOnScript );
 
                 console.log(balanceOnScript)
