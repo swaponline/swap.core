@@ -273,8 +273,6 @@ class BTC2ETH extends Flow {
           secret:         flow.state.secret,
         }
 
-        console.log('flow.checkBalance', flow.ethSwap.checkBalance)
-
         const balanceCheckResult = await flow.ethSwap.checkBalance({
           ownerAddress: participant.eth.address,
           participantAddress: SwapApp.services.auth.accounts.eth.address,
