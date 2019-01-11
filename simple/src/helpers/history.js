@@ -1,5 +1,8 @@
-import swap from 'swap.core'
+// import swap from 'swap.core'
 import debug from 'debug'
+
+import SwapApp from 'swap.app'
+const swap = { app: SwapApp }
 
 const save = (swapID, storageKey = 'history') => {
   const storage = swap.app.env.storage
