@@ -1,16 +1,15 @@
-const swap = require('swap.core')
-const constants = swap.constants
+const { constants } = require('swap.app')
 
-const SwapAuth = swap.auth
-const SwapRoom = swap.room
-const SwapOrders = swap.orders
+const SwapAuth = require('swap.auth')
+const SwapRoom = require('swap.room')
+const SwapOrders = require('swap.orders')
 
-const { EthSwap, EthTokenSwap, BtcSwap, UsdtSwap, BchSwap, } = swap.swaps
+const { EthSwap, EthTokenSwap, BtcSwap, UsdtSwap, BchSwap, } = require('swap.swaps')
 const {
   ETH2BTC, BTC2ETH,
   ETH2BCH, BCH2ETH,
   ETHTOKEN2BTC, BTC2ETHTOKEN,
-  USDT2ETHTOKEN, ETHTOKEN2USDT } = swap.flows
+  USDT2ETHTOKEN, ETHTOKEN2USDT } = require('swap.flows')
 
 const eth = require('../instances/ethereum')
 const btc = require('../instances/bitcoin')
