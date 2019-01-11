@@ -263,7 +263,8 @@ class EthSwap extends SwapInterface {
     const { ownerAddress, participantAddress, expectedValue, expectedHash } = data
 
     const balance = await this.repeatToTheResult(-1, () => this.getBalance({ ownerAddress }))
-    const swap = await this.contract.methods.swaps(ownerAddress, participantAddress).call()
+    const swap = await this.repeatToTheResult(-1,
+      () => this.contract.methods.swaps(ownerAddress, participantAddress).call())
 
     const { secretHash } = swap
     debug('swap.core:swaps')(`swap.secretHash`, secretHash)
