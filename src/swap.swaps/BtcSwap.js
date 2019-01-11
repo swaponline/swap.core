@@ -23,12 +23,20 @@ class BtcSwap extends SwapInterface {
     if (typeof options.broadcastTx !== 'function') {
       throw new Error('EthSwap: "broadcastTx" required')
     }
+    if (typeof options.fetchTxInfo !== 'function') {
+      console.warn(`EthSwap: "fetchTxInfo" is not a function. You will not be able to use tx-confidence feature`)
+    }
+    if (typeof options.estimateFee !== 'function') {
+      console.warn(`EthSwap: "estimateFee" is not a function. You will not be able use automatic mempool-based fee`)
+    }
 
     this._swapName      = constants.COINS.btc
     this.fetchBalance   = options.fetchBalance
     this.fetchUnspents  = options.fetchUnspents
     this.broadcastTx    = options.broadcastTx
     this.feeValue       = options.feeValue || 5000
+    this.fetchTxInfo    = options.fetchTxInfo || () => ({})
+    this.estimateFee    = options.estimateFee || () => {}
   }
 
   _initSwap() {
@@ -41,12 +49,21 @@ class BtcSwap extends SwapInterface {
 
   /**
    *
-   * @param {boolean} satoshis
-   * @returns {BigNumber|double}
+   * @param {object} format
+   * @param {boolean} format.inSatoshis
+   * @returns {BigNumber|Number}
    * @public
    */
-  getTxFee( satoshis ) {
-    return (satoshis) ? this.feeValue : this.feeValue / 100000000
+  getTxFee({ inSatoshis } = {}) {
+    const estimated = this.estimateFee()
+
+    if (Number.isInteger(Number(estimated))) {
+      this.feeValue = Number(estimated)
+    }
+
+    return inSatoshis
+      ? this.feeValue
+      : BigNumber(this.feeValue).div(1e8)
   }
   /**
    *
@@ -175,7 +192,7 @@ class BtcSwap extends SwapInterface {
         const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.btc.getAddress())
 
         const fundValue     = amount.multipliedBy(1e8).integerValue().toNumber()
-        const feeValue      = this.getTxFee( true ) // TODO how to get this value
+        const feeValue      = this.getTxFee({ inSatoshis: true })
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue
 
