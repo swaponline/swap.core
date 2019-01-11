@@ -266,15 +266,20 @@ class BTC2ETH extends Flow {
 
       async () => {
         const { buyAmount, participant } = flow.swap
+        const { secretHash } = flow.state
 
         const data = {
           ownerAddress:   participant.eth.address,
           secret:         flow.state.secret,
         }
 
+        console.log('flow.checkBalance', flow.ethSwap.checkBalance)
+
         const balanceCheckResult = await flow.ethSwap.checkBalance({
           ownerAddress: participant.eth.address,
+          participantAddress: SwapApp.services.auth.accounts.eth.address,
           expectedValue: buyAmount,
+          expectedHash: secretHash,
         })
 
         if (balanceCheckResult) {

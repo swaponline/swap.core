@@ -256,13 +256,20 @@ export default (tokenName) => {
 
         async () => {
           const { buyAmount, participant } = flow.swap
+          const { secretHash } = flow.state
 
           const data = {
             ownerAddress:   participant.eth.address,
             secret:         flow.state.secret,
           }
 
-          const balanceCheckResult = await flow.waitEthBalance();
+          const balanceCheckResult = await flow.ethTokenSwap.checkBalance({
+            ownerAddress: participant.eth.address,
+            participantAddress: SwapApp.services.auth.accounts.eth.address,
+            expectedValue: buyAmount,
+            expectedHash: secretHash,
+          })
+
           if (!balanceCheckResult) {
             console.error(`Waiting until deposit: ETH balance check error:`, balanceCheckResult)
             flow.swap.events.dispatch('eth balance check error', balanceCheckResult)
