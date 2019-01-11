@@ -6,9 +6,11 @@ export const on = (emitter, _event) =>
 export const onFinish = emitter =>
   new Promise(resolve => {
     if (emitter instanceof Swap) {
-      emitter.on('enter step', () => {
-       if (emitter.flow.state.isFinished)
-        resolve()
+      emitter.on('enter step', function () {
+        if (emitter.flow.state.isFinished) {
+          this.unsubscribe()
+          resolve()
+        }
       })
     }
   })
