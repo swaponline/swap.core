@@ -1,11 +1,9 @@
-// import swap from 'swap.core'
+import SwapApp from 'swap.app'
 import debug from 'debug'
 
-import SwapApp from 'swap.app'
-const swap = { app: SwapApp }
 
 const save = (swapID, storageKey = 'history') => {
-  const storage = swap.app.env.storage
+  const storage = SwapApp.env.storage
 
   const history = storage.getItem(storageKey) || []
 
@@ -26,7 +24,7 @@ const save = (swapID, storageKey = 'history') => {
 }
 
 const remove = (swapID, storageKey = 'history') => {
-  const storage = swap.app.env.storage
+  const storage = SwapApp.env.storage
 
   const history = storage.getItem(storageKey) || []
 
@@ -47,7 +45,7 @@ const remove = (swapID, storageKey = 'history') => {
 }
 
 const getAll = (storageKey = 'history') => {
-  const storage = swap.app.env.storage
+  const storage = SwapApp.env.storage
 
   const history = storage.getItem(storageKey) || []
 
