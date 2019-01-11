@@ -229,10 +229,10 @@ class EthTokenSwap extends SwapInterface {
 
       try {
         debug('swap.core:swaps')("Get gas fee");
-        const gasFee = await this.contract.methods[contractMethod](...values).estimateGas(params)
+        const gasFee = await this.contract.methods.createSwapTarget(...values).estimateGas(params)
         params.gas = gasFee;
         debug('swap.core:swaps')("EthTokenSwap -> create -> gasFee",gasFee);
-        const result = await this.contract.methods[contractMethod](...values).send(params)
+        const result = await this.contract.methods.createSwapTarget(...values).send(params)
           .on('transactionHash', (hash) => {
             if (typeof handleTransactionHash === 'function') {
               handleTransactionHash(hash)
