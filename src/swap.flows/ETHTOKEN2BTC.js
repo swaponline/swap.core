@@ -212,11 +212,13 @@ export default (tokenName) => {
 
             const secret = await flow.ethTokenSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
 
+            const _secret = `0x${secret.replace(/^0x/, '')}`
+
             if (!flow.state.isEthWithdrawn && secret) {
-              debug('swap.core:flow')('got secret from tx', ethSwapWithdrawTransactionHash, secret)
+              debug('swap.core:flow')('got secret from tx', ethSwapWithdrawTransactionHash, _secret)
               flow.finishStep({
                 isEthWithdrawn: true,
-                secret,
+                secret: _secret,
               }, {step: 'wait-withdraw-eth'})
             }
           })
@@ -239,13 +241,15 @@ export default (tokenName) => {
               if (secret) {
                 clearInterval(checkSecretTimer)
 
-                if (flow.state.secret && secret !== flow.state.secret) {
-                  throw new Error(`Secret already exists and it differs! ${secret} ≠ ${flow.state.secret}`)
+                const _secret = `0x${secret.replace(/^0x/, '')}`
+
+                if (flow.state.secret && _secret !== flow.state.secret) {
+                  throw new Error(`Secret already exists and it differs! ${_secret} ≠ ${flow.state.secret}`)
                 }
 
-                debug('swap.core:flow')('got secret from smart contract', secret)
+                debug('swap.core:flow')('got secret from smart contract', _secret)
                 flow.finishStep({
-                  secret,
+                  secret: _secret,
                   isEthWithdrawn: true,
                 }, { step: 'wait-withdraw-eth' })
               }
