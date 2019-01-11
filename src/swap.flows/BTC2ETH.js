@@ -367,8 +367,10 @@ class BTC2ETH extends Flow {
     /* Secret hash generated - create BTC script - and only after this notify other part */
     this.createWorkBTCScript(secretHash);
 
+    const _secret = `0x${secret.replace(/^0x/, '')}`
+
     this.finishStep({
-      secret,
+      secret: _secret,
       secretHash,
     }, { step: 'submit-secret' })
   }
