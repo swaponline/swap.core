@@ -2,16 +2,12 @@
 const swap = require('./../src/index')
 
 const {
-  room: { ready },
   history: { getAllFinished, getAllInProgress },
 } = swap.helpers
 
-const { wallet, auth, room, orders } = swap.setup();
+swap.setup()
 
+console.log('in progress:', getAllInProgress())
+console.log('finished:', getAllFinished())
 
-(async () => {
-  await ready(room)
-  
-  console.log('in progress:', getAllInProgress())
-  console.log('finished:', getAllFinished())
-})()
+process.exit(0)
