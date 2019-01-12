@@ -24,7 +24,7 @@ class BtcSwap extends SwapInterface {
       throw new Error('EthSwap: "broadcastTx" required')
     }
     if (typeof options.fetchTxInfo !== 'function') {
-      // tx_hash => { confidence }
+      // tx_hash => { confidence, fees }
       console.warn(`EthSwap: "fetchTxInfo" is not a function. You will not be able to use tx-confidence feature`)
     }
     if (typeof options.estimateFee !== 'function') {
@@ -80,13 +80,30 @@ class BtcSwap extends SwapInterface {
    * @private
    */
   async filterConfidentUnspents(unspents, expectedConfidenceLevel) {
+    const currentFastestFee = await this.getTxFee({ inSatoshis: true })
+
+    const feesToConfidence = (fees, size) =>
+      fees < currentFastestFee ? (fees / currentFastestFee) : 1
+
+    const confirmationsToConfidence = confs => confs > 0 ? 1 : 0
+
     const fetchConfidence = async ({ txid, confirmations }) => {
       try {
-        const { confidence } = await this.fetchTxInfo(txid)
-        return confidence
+        const { confidence, fees, size } = await this.fetchTxInfo(txid)
+
+        if (confidence) {
+          return confidence
+        }
+
+        if (fees) {
+          return feesToConfidence(fees, size)
+        }
+
+        throw new Error(`confidence=${confidence},fees=${fees}`)
+
       } catch (err) {
         console.error(`BtcSwap: Error fetching confidence: using confirmations > 0`, err.message)
-        return confirmations > 0 ? 1 : 0
+        return confirmationsToConfidence(confirmations)
       }
     }
 
