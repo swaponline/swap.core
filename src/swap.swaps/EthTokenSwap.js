@@ -340,9 +340,22 @@ class EthTokenSwap extends SwapInterface {
    * @returns {Promise.<string>}
    */
   async checkBalance(data) {
-    const { ownerAddress, expectedValue } = data
-    let balance = await this.repeatToTheResult(9, () => this.getBalance({ ownerAddress }))
+    const { ownerAddress, participantAddress, expectedValue, expectedHash } = data
 
+    const balance = await this.repeatToTheResult(-1, () => this.getBalance({ ownerAddress }))
+    const swap = await this.repeatToTheResult(-1,
+      () => this.contract.methods.swaps(ownerAddress, participantAddress).call())
+
+    const { secretHash } = swap
+    debug('swap.core:swaps')(`swap.secretHash`, secretHash)
+
+    const _secretHash = `${secretHash.replace(/^0x/, '')}`
+
+    debug('swap.core:swaps')(`secretHash: expected hash = ${expectedHash}, contract hash = ${_secretHash}`)
+
+    if (expectedHash !== _secretHash) {
+      return `Expected hash: ${expectedHash}, got: ${_secretHash}`
+    }
 
     if (expectedValue.isGreaterThan(balance)) {
       return `Expected value: ${expectedValue.toNumber()}, got: ${balance}`

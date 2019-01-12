@@ -82,7 +82,10 @@ const mockSwapApp = {
 
           this.methods = {
             swaps:      jest.fn(view(
-              () => ({ balance: this.state.swapExists ? '2' : '0' }),
+              () => ({
+                secretHash: 'c0933f9be51a284acb6b1a6617a48d795bdeaa80',
+                balance: this.state.swapExists ? '2' : '0',
+              }),
               { swapExists: false }
             )),
             getBalance: jest.fn(view(
