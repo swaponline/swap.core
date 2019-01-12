@@ -55,7 +55,7 @@ class Order {
 
   _onMount() {
     SwapApp.services.room.on('request swap', ({ orderId, participant, destination }) => {
-      if (orderId === this.id && !this.requests.find(({ participant: { peer } }) => peer === participant.peer)) {
+      if (orderId === this.id && this.requests.length < 10 && !this.requests.find(({ participant: { peer } }) => peer === participant.peer)) {
         this.requests.push({ participant, destination, isPartial: false })
 
         events.dispatch('new order request', {
