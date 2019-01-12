@@ -28,6 +28,8 @@ module.exports = {
     fetchBalance: (address) => bitcoin.fetchBalance(address),
     fetchUnspents: (scriptAddress) => bitcoin.fetchUnspents(scriptAddress),
     broadcastTx: (txRaw) => bitcoin.broadcastTx(txRaw),
+    fetchTxInfo: txid => bitcoin.fetchTxInfo(txid),
+    estimateFee: ({ size, speed } = {}) => bitcoin.estimateFee({ size, speed }),
   }),
   usdtSwap: () => ({
     fetchBalance: (address) => bitcoin.fetchOmniBalance(address, 31),

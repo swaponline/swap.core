@@ -7,6 +7,10 @@ const debug = require('debug')
 const BITPAY = false ? `https://insight.bitpay.com/api` : `https://test-insight.swap.online/insight-api`
 const BITPAY_MAIN = `https://insight.bitpay.com/api`
 
+const BLOCKCYPHER_API = `https://api.blockcypher.com/v1/btc/main/`
+const EARN_COM = `https://bitcoinfees.earn.com/api/v1/fees/recommended`
+const BLOCKCYPHER_API_TOKEN = process.env.BLOCKCYPHER_API_TOKEN
+
 const filterError = (error) => {
   const { name, code, statusCode, options } = error
 
@@ -61,6 +65,14 @@ class Bitcoin {
     return account
   }
 
+  estimateFee({ size = 550, speed = 'fastestFee' } = {}) {
+    return request
+      .get(`${EARN_COM}`)
+      .then(json => JSON.parse(json))
+      .then(fees => Number(fees[speed]) * Number(size))
+      .catch(error => filterError(error))
+  }
+
   fetchBalance(address) {
     return request.get(`${this.root}/addr/${address}`)
       .then(( json ) => {
@@ -92,6 +104,13 @@ class Bitcoin {
   fetchTx(hash) {
     return request
       .get(`${this.root}/tx/${hash}`)
+      .then(json => JSON.parse(json))
+      .catch(error => filterError(error))
+  }
+
+  fetchTxInfo(hash) {
+    return request
+      .get(`${BLOCKCYPHER_API}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`)
       .then(json => JSON.parse(json))
       .catch(error => filterError(error))
   }
