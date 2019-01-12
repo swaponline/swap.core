@@ -111,6 +111,13 @@ class Bitcoin {
   fetchTxInfo(hash) {
     return request
       .get(`${BLOCKCYPHER_API}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`)
+      .catch(err => {
+        if (!/transaction hasalready been confirmed/.test(err.message)) {
+          throw err
+        }
+
+        return request.get(`${BLOCKCYPHER_API}/txs/${hash}`)
+      })
       .then(json => JSON.parse(json))
       .catch(error => filterError(error))
   }
