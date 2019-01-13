@@ -54,6 +54,7 @@ class BtcSwap extends SwapInterface {
    * @param {object} data.script
    * @param {*} data.txRaw
    * @param {string} data.secret
+   * @param {number} inputIndex
    * @private
    */
   _signTransaction(data, inputIndex = 0) {
