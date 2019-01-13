@@ -42,16 +42,30 @@ class Wallet {
   async getData() {
     const currencies = Object.values(this.constants.COINS)
     const data = this.auth.getPublicData()
-    let addresses = [];
-    const fetch = currencies.map(
-      symbol => {
-        const account = symbol == 'BTC' || symbol == 'BCH' || symbol == 'USDT' ? data.btc : data.eth
-        const instance = this.swapApp.swaps[symbol]
-        addresses[symbol] = account.address;
-        return instance ? instance.fetchBalance(account.address) : '-'
-      })
 
-    const values = await Promise.all( fetch )
+    const addresses = currencies.reduce((obj, symbol) => {
+      const { address } = (symbol == 'BTC' || symbol == 'BCH' || symbol == 'USDT')
+        ? data.btc : data.eth
+
+      return {
+        ...obj,
+        [symbol]: address,
+      }
+    }, {})
+
+    const fetchBalances = currencies.map(symbol => {
+      try {
+        const instance = this.swapApp.swaps[symbol]
+        const address = addresses[symbol]
+
+        return instance ? instance.fetchBalance(address) : '-'
+      } catch (err) {
+        debug(`Error fetching ${symbol} balance: ${err.message}`)
+        return '-'
+      }
+    })
+
+    const values = await Promise.all( fetchBalances )
 
     return values.map((value, index) => ({
       symbol: currencies[index],
