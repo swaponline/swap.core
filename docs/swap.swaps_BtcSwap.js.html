@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: swap.swaps/BtcSwap.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: swap.swaps/BtcSwap.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import debug from 'debug'
+import SwapApp, { SwapInterface, constants } from 'swap.app'
+import BigNumber from 'bignumber.js'
+
+class BtcSwap extends SwapInterface {
+
+  /**
+   *
+   * @param options
+   * @param options.fetchBalance
+   * @param options.fetchUnspents
+   * @param options.broadcastTx
+   */
+  constructor(options) {
+    super()
+
+    if (typeof options.fetchBalance !== 'function') {
+      throw new Error('EthSwap: "fetchBalance" required')
+    }
+    if (typeof options.fetchUnspents !== 'function') {
+      throw new Error('EthSwap: "fetchUnspents" required')
+    }
+    if (typeof options.broadcastTx !== 'function') {
+      throw new Error('EthSwap: "broadcastTx" required')
+    }
+
+    this._swapName      = constants.COINS.btc
+    this.fetchBalance   = options.fetchBalance
+    this.fetchUnspents  = options.fetchUnspents
+    this.broadcastTx    = options.broadcastTx
+    this.feeValue       = options.feeValue || 5000
+  }
+
+  _initSwap() {
+    this.network = (
+      SwapApp.isMainNet()
+        ? SwapApp.env.bitcoin.networks.bitcoin
+        : SwapApp.env.bitcoin.networks.testnet
+    )
+  }
+
+  /**
+   *
+   * @param {boolean} satoshis
+   * @returns {BigNumber|double}
+   * @public
+   */
+  getTxFee( satoshis ) {
+    return (satoshis) ? this.feeValue : this.feeValue / 100000000
+  }
+  /**
+   *
+   * @param {object} data
+   * @param {object} data.script
+   * @param {*} data.txRaw
+   * @param {string} data.secret
+   * @private
+   */
+  _signTransaction(data) {
+    const { script, txRaw, secret } = data
+
+    const hashType      = SwapApp.env.bitcoin.Transaction.SIGHASH_ALL
+    const signatureHash = txRaw.hashForSignature(0, script, hashType)
+    const signature     = SwapApp.services.auth.accounts.btc.sign(signatureHash).toScriptSignature(hashType)
+
+    const scriptSig = SwapApp.env.bitcoin.script.scriptHash.input.encode(
+      [
+        signature,
+        SwapApp.services.auth.accounts.btc.getPublicKeyBuffer(),
+        Buffer.from(secret.replace(/^0x/, ''), 'hex'),
+      ],
+      script,
+    )
+
+    txRaw.setInputScript(0, scriptSig)
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secretHash
+   * @param {string} data.ownerPublicKey
+   * @param {string} data.recipientPublicKey
+   * @param {number} data.lockTime
+   * @returns {{scriptAddress: *, script: (*|{ignored})}}
+   */
+  createScript(data, hashName = 'ripemd160') {
+    const hashOpcodeName = `OP_${hashName.toUpperCase()}`
+    const hashOpcode = SwapApp.env.bitcoin.opcodes[hashOpcodeName]
+
+    const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
+
+    debug('swap.core:swaps')('DATA', data)
+
+    const script = SwapApp.env.bitcoin.script.compile([
+
+      hashOpcode,
+      Buffer.from(secretHash, 'hex'),
+      SwapApp.env.bitcoin.opcodes.OP_EQUALVERIFY,
+
+      Buffer.from(recipientPublicKey, 'hex'),
+      SwapApp.env.bitcoin.opcodes.OP_EQUAL,
+      SwapApp.env.bitcoin.opcodes.OP_IF,
+
+      Buffer.from(recipientPublicKey, 'hex'),
+      SwapApp.env.bitcoin.opcodes.OP_CHECKSIG,
+
+      SwapApp.env.bitcoin.opcodes.OP_ELSE,
+
+      SwapApp.env.bitcoin.script.number.encode(lockTime),
+      SwapApp.env.bitcoin.opcodes.OP_CHECKLOCKTIMEVERIFY,
+      SwapApp.env.bitcoin.opcodes.OP_DROP,
+      Buffer.from(ownerPublicKey, 'hex'),
+      SwapApp.env.bitcoin.opcodes.OP_CHECKSIG,
+
+      SwapApp.env.bitcoin.opcodes.OP_ENDIF,
+    ])
+
+    const scriptPubKey  = SwapApp.env.bitcoin.script.scriptHash.output.encode(SwapApp.env.bitcoin.crypto.hash160(script))
+    const scriptAddress = SwapApp.env.bitcoin.address.fromOutputScript(scriptPubKey, this.network)
+
+    return {
+      scriptAddress,
+      script,
+    }
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.recipientPublicKey
+   * @param {number} data.lockTime
+   * @param {object} expected
+   * @param {number} expected.value
+   * @param {number} expected.lockTime
+   * @param {string} expected.recipientPublicKey
+   * @returns {Promise.&lt;string>}
+   */
+  async checkScript(data, expected, hashName) {
+    const { recipientPublicKey, lockTime } = data
+    const { scriptAddress, script } = this.createScript(data, hashName)
+
+    const unspents      = await this.fetchUnspents(scriptAddress)
+    const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+    const expectedValue = expected.value.multipliedBy(1e8).integerValue()
+
+    if (expectedValue.isGreaterThan(totalUnspent)) {
+      return `Expected script value: ${expectedValue.toNumber()}, got: ${totalUnspent}`
+    }
+    if (expected.lockTime > lockTime) {
+      return `Expected script lockTime: ${expected.lockTime}, got: ${lockTime}`
+    }
+    if (expected.recipientPublicKey !== recipientPublicKey) {
+      return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
+    }
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {object} data.scriptValues
+   * @param {BigNumber} data.amount
+   * @param {function} handleTransactionHash
+   * @returns {Promise}
+   */
+  fundScript(data, handleTransactionHash, hashName) {
+    const { scriptValues, amount } = data
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        const { scriptAddress } = this.createScript(scriptValues, hashName)
+
+        const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
+        const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.btc.getAddress())
+
+        const fundValue     = amount.multipliedBy(1e8).integerValue().toNumber()
+        const feeValue      = this.getTxFee( true ) // TODO how to get this value
+        const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+        const skipValue     = totalUnspent - fundValue - feeValue
+
+        if (totalUnspent &lt; feeValue + fundValue) {
+          throw new Error(`Total less than fee: ${totalUnspent} &lt; ${feeValue} + ${fundValue}`)
+        }
+
+        unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout))
+        tx.addOutput(scriptAddress, fundValue)
+        tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), skipValue)
+        tx.inputs.forEach((input, index) => {
+          tx.sign(index, SwapApp.services.auth.accounts.btc)
+        })
+
+        const txRaw = tx.buildIncomplete()
+
+        if (typeof handleTransactionHash === 'function') {
+          handleTransactionHash(txRaw.getId())
+        }
+
+        try {
+          const result = await this.broadcastTx(txRaw.toHex())
+
+          resolve(result)
+        }
+        catch (err) {
+          reject(err)
+        }
+      }
+      catch (err) {
+        reject(err)
+      }
+    })
+  }
+
+  /**
+   *
+   * @param {object|string} data - scriptValues or wallet address
+   * @returns {Promise.&lt;void>}
+   */
+  async getBalance(data, hashName) {
+    let address
+
+    if (typeof data === 'string') {
+      address = data
+    }
+    else if (typeof data === 'object') {
+      const { scriptAddress } = this.createScript(data, hashName)
+
+      address = scriptAddress
+    }
+    else {
+      throw new Error('Wrong data type')
+    }
+
+    const unspents      = await this.fetchUnspents(address)
+    const totalUnspent  = unspents &amp;&amp; unspents.length &amp;&amp; unspents.reduce((summ, { satoshis }) => summ + satoshis, 0) || 0
+
+    return totalUnspent
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {object} data.scriptValues
+   * @param {string} data.secret
+   * @param {boolean} isRefund
+   * @returns {Promise}
+   */
+  async getWithdrawRawTransaction(data, isRefund, hashName) {
+    const { scriptValues, secret } = data
+
+    const { script, scriptAddress } = this.createScript(scriptValues, hashName)
+
+    const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
+    const unspents      = await this.fetchUnspents(scriptAddress)
+    const feeValue      = this.feeValue // TODO how to get this value
+    const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+
+    if (totalUnspent &lt; feeValue) {
+      throw new Error(`Total less than fee: ${totalUnspent} &lt; ${feeValue}`)
+    }
+
+    if (isRefund) {
+      tx.setLockTime(scriptValues.lockTime)
+    }
+
+    unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
+    tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
+
+    const txRaw = tx.buildIncomplete()
+
+    this._signTransaction({
+      script,
+      secret,
+      txRaw,
+    })
+
+    return txRaw
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {object} data.scriptValues
+   * @param {string} data.secret
+   * @param {boolean} isRefund
+   * @returns {Promise}
+   */
+  async getWithdrawHexTransaction(data, isRefund) {
+    const txRaw = await this.getWithdrawRawTransaction(data, isRefund)
+
+    return txRaw.toHex()
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {object} data.scriptValues
+   * @param {string} data.secret
+   * @returns {Promise}
+   */
+  getRefundRawTransaction(data) {
+    return this.getWithdrawRawTransaction(data, true)
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {object} data.scriptValues
+   * @param {string} data.secret
+   * @returns {Promise}
+   */
+  async getRefundHexTransaction(data) {
+    const txRaw = await this.getRefundRawTransaction(data)
+
+    return txRaw.toHex()
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {object} data.scriptValues
+   * @param {string} data.secret
+   * @param {function} handleTransactionHash
+   * @param {boolean} isRefund
+   * @returns {Promise}
+   */
+  withdraw(data, handleTransactionHash, isRefund, hashName) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const txRaw = await this.getWithdrawRawTransaction(data, isRefund, hashName)
+        debug('swap.core:swaps')('raw tx withdraw', txRaw.toHex())
+
+        if (typeof handleTransactionHash === 'function') {
+          handleTransactionHash(txRaw.getId())
+        }
+
+        const result = await this.broadcastTx(txRaw.toHex())
+
+        resolve(result)
+      }
+      catch (err) {
+        reject(err)
+      }
+    })
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {object} data.scriptValues
+   * @param {string} data.secret
+   * @param {function} handleTransactionHash
+   * @returns {Promise}
+   */
+  refund(data, handleTransactionHash) {
+    return this.withdraw(data, handleTransactionHash, true)
+  }
+}
+
+
+export default BtcSwap
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BtcSwap.html">BtcSwap</a></li><li><a href="EthSwap.html">EthSwap</a></li><li><a href="EthTokenSwap.html">EthTokenSwap</a></li><li><a href="Event.html">Event</a></li><li><a href="LtcSwap.html">LtcSwap</a></li><li><a href="Order.html">Order</a></li><li><a href="UsdtSwap.html">UsdtSwap</a></li></ul><h3>Global</h3><ul><li><a href="global.html#createScript">createScript</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Dec 18 2018 16:19:29 GMT+0300 (Moscow Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

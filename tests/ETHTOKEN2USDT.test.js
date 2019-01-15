@@ -60,6 +60,7 @@ const _ORDER = {
   'requests': [],
   'isRequested': true,
   'isProcessing': true,
+  'destination': {},
 }
 
 beforeAll(() => {

@@ -27,7 +27,6 @@ export default {
   syc2: 'SYC2',
   pbl: 'PBL',
   senc: 'SENC',
-  mth: 'MTH',
   xnk: 'XNK',
   xyo: 'XYO',
   star: 'STAR',
@@ -51,4 +50,9 @@ export default {
   cgs: 'CGC',
   dov: 'DOV',
   xbx: 'XBX',
+  lif: 'LIF',
+  time: 'TIME',
+  mth: 'MTH',
+  zcn: 'ZCN',
+  cbt: 'CBT',
 }

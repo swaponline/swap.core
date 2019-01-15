@@ -1,6 +1,8 @@
+import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
+import { BigNumber } from 'bignumber.js'
 
 
 export default (tokenName) => {
@@ -191,17 +193,20 @@ export default (tokenName) => {
                   return summ + (!txData.confirmations) ? txData.amount : 0;
                 } , 0 );
 
-                const balance = await this.btcSwap.getBalance(flow.state.scriptAddress);
+                const balanceSatoshi = await this.btcSwap.getBalance(flow.state.scriptAddress);
 
-                const balanceSatoshi = BigInt(balance*1e8);
+                const balance = BigNumber(balanceSatoshi).dividedBy(1e8);
 
                 flow.setState({
-                  scriptBalance : balance,
+                  scriptBalance : Number(balance),
                   scriptUnconfirmedBalance : unconfirmedTotal
                 });
-                const balanceOnScript = balanceSatoshi + unconfirmedTotalSatoshi + BigInt(this.btcSwap.getTxFee( true ) );
+
+                //TODO miner fee
+                const balanceOnScript = BigInt(balanceSatoshi)// + BigInt(this.btcSwap.getTxFee( true ) );
                 const isEnoughMoney = sellAmount.multipliedBy(1e8).isLessThanOrEqualTo( balanceOnScript );
 
+                console.log(balanceOnScript)
                 if (isEnoughMoney) {
                   onBTCFuncSuccess(txID)
                 } else {
@@ -251,13 +256,20 @@ export default (tokenName) => {
 
         async () => {
           const { buyAmount, participant } = flow.swap
+          const { secretHash } = flow.state
 
           const data = {
             ownerAddress:   participant.eth.address,
             secret:         flow.state.secret,
           }
 
-          const balanceCheckResult = await flow.waitEthBalance();
+          const balanceCheckResult = await flow.ethTokenSwap.checkBalance({
+            ownerAddress: participant.eth.address,
+            participantAddress: SwapApp.services.auth.accounts.eth.address,
+            expectedValue: buyAmount,
+            expectedHash: secretHash,
+          })
+
           if (!balanceCheckResult) {
             console.error(`Waiting until deposit: ETH balance check error:`, balanceCheckResult)
             flow.swap.events.dispatch('eth balance check error', balanceCheckResult)
@@ -360,8 +372,10 @@ export default (tokenName) => {
       /* Secret hash generated - create BTC script - and only after this notify other part */
       this.createWorkBTCScript(secretHash);
 
+      const _secret = `0x${secret.replace(/^0x/, '')}`
+
       this.finishStep({
-        secret,
+        secret: _secret,
         secretHash,
       }, { step: 'submit-secret' })
     }
@@ -371,7 +385,7 @@ export default (tokenName) => {
     }
     createWorkBTCScript(secretHash) {
       if (this.state.btcScriptValues) {
-        console.log('BTC Script already generated',this.state.btcScriptValues);
+        debug('swap.core:flow')('BTC Script already generated', this.state.btcScriptValues);
         return;
       }
       const { participant } = this.swap
@@ -396,7 +410,7 @@ export default (tokenName) => {
     }
 
     async checkScriptBalance() {
-      console.log("BTC2ETHTOKEN checkScriptBalance - nothing do - empty :p - wait infinity loop");
+      debug('swap.core:flow')("BTC2ETHTOKEN checkScriptBalance - nothing do - empty :p - wait infinity loop");
     }
 
     async syncBalance() {

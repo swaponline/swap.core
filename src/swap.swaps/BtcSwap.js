@@ -1,3 +1,4 @@
+import debug from 'debug'
 import SwapApp, { SwapInterface, constants } from 'swap.app'
 import BigNumber from 'bignumber.js'
 
@@ -53,13 +54,15 @@ class BtcSwap extends SwapInterface {
    * @param {object} data.script
    * @param {*} data.txRaw
    * @param {string} data.secret
+   * @param {number} inputIndex
    * @private
    */
-  _signTransaction(data) {
+  _signTransaction(data, inputIndex = 0) {
+    debug('swap.core:swaps')('signing script input', inputIndex)
     const { script, txRaw, secret } = data
 
     const hashType      = SwapApp.env.bitcoin.Transaction.SIGHASH_ALL
-    const signatureHash = txRaw.hashForSignature(0, script, hashType)
+    const signatureHash = txRaw.hashForSignature(inputIndex, script, hashType)
     const signature     = SwapApp.services.auth.accounts.btc.sign(signatureHash).toScriptSignature(hashType)
 
     const scriptSig = SwapApp.env.bitcoin.script.scriptHash.input.encode(
@@ -71,7 +74,7 @@ class BtcSwap extends SwapInterface {
       script,
     )
 
-    txRaw.setInputScript(0, scriptSig)
+    txRaw.setInputScript(inputIndex, scriptSig)
   }
 
   /**
@@ -89,7 +92,7 @@ class BtcSwap extends SwapInterface {
 
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
 
-    console.log('DATA', data)
+    debug('swap.core:swaps')('DATA', data)
 
     const script = SwapApp.env.bitcoin.script.compile([
 
@@ -160,6 +163,7 @@ class BtcSwap extends SwapInterface {
    * @param {object} data.scriptValues
    * @param {BigNumber} data.amount
    * @param {function} handleTransactionHash
+   * @param {string} hashName
    * @returns {Promise}
    */
   fundScript(data, handleTransactionHash, hashName) {
@@ -248,6 +252,8 @@ class BtcSwap extends SwapInterface {
 
     const { script, scriptAddress } = this.createScript(scriptValues, hashName)
 
+     const { destinationAddress } = data
+
     const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
     const unspents      = await this.fetchUnspents(scriptAddress)
     const feeValue      = this.feeValue // TODO how to get this value
@@ -262,15 +268,17 @@ class BtcSwap extends SwapInterface {
     }
 
     unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
-    tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
+    tx.addOutput((destinationAddress) ? destinationAddress : SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
 
     const txRaw = tx.buildIncomplete()
 
-    this._signTransaction({
-      script,
-      secret,
-      txRaw,
-    })
+    unspents.map((_, index) =>
+      this._signTransaction({
+        script,
+        secret,
+        txRaw,
+      }, index)
+    )
 
     return txRaw
   }
@@ -320,13 +328,14 @@ class BtcSwap extends SwapInterface {
    * @param {string} data.secret
    * @param {function} handleTransactionHash
    * @param {boolean} isRefund
+   * @param {string} hashName
    * @returns {Promise}
    */
   withdraw(data, handleTransactionHash, isRefund, hashName) {
     return new Promise(async (resolve, reject) => {
       try {
         const txRaw = await this.getWithdrawRawTransaction(data, isRefund, hashName)
-        console.log('raw tx withdraw', txRaw.toHex())
+        debug('swap.core:swaps')('raw tx withdraw', txRaw.toHex())
 
         if (typeof handleTransactionHash === 'function') {
           handleTransactionHash(txRaw.getId())
@@ -348,10 +357,11 @@ class BtcSwap extends SwapInterface {
    * @param {object} data.scriptValues
    * @param {string} data.secret
    * @param {function} handleTransactionHash
+   * @param {string} hashName
    * @returns {Promise}
    */
-  refund(data, handleTransactionHash) {
-    return this.withdraw(data, handleTransactionHash, true)
+  refund(data, handleTransactionHash, hashName) {
+    return this.withdraw(data, handleTransactionHash, true, hashName)
   }
 }
 

@@ -1,3 +1,4 @@
+import debug from 'debug'
 import BigNumber from 'bignumber.js'
 import SwapApp, { Events, util,  } from 'swap.app'
 import Room from './Room'
@@ -50,13 +51,13 @@ class Swap {
 
     // Change destination address on run time
     this.room.on('set destination buy address', (data) => {
-      console.log("Other side change destination buy address", data);
+      debug('swap.core:swap')("Other side change destination buy address", data);
       this.update({
         destinationSellAddress: data.address
       })
     });
     this.room.on('set destination sell address', (data) => {
-      console.log("Other side change destination sell address", data);
+      debug('swap.core:swap')("Other side change destination sell address", data);
       this.update({
         destinationBuyAddress: data.address
       })
@@ -76,11 +77,11 @@ class Swap {
       'sellCurrency',
       'buyAmount',
       'sellAmount',
-      'destinationBuyAddress',
-      'destinationSellAddress',
+      'destination',
     )
 
-    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, destinationBuyAddress, destinationSellAddress, ...rest } = data
+    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, destination, ...rest } = data
+    const { ownerAddress, participantAddress } = destination
 
     const swap = {
       ...rest,
@@ -89,8 +90,8 @@ class Swap {
       sellCurrency: isMy ? sellCurrency : buyCurrency,
       buyAmount: isMy ? buyAmount : sellAmount,
       sellAmount: isMy ? sellAmount : buyAmount,
-      destinationBuyAddress: isMy ? destinationBuyAddress : destinationSellAddress,
-      destinationSellAddress: isMy ? destinationSellAddress : destinationBuyAddress
+      destinationBuyAddress: isMy ? ownerAddress : participantAddress,
+      destinationSellAddress: isMy ? participantAddress : ownerAddress,
     }
 
     if (!swap.participant && !isMy) {

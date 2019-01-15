@@ -1,7 +1,10 @@
+import debug from 'debug'
 import SwapApp, { SwapInterface, constants } from 'swap.app'
+import BigNumber from 'bignumber.js'
+
 
 const amountToUnits = amount =>
-  Number.parseFloat(amount.toString()).toFixed(4) * 10**4
+  Number.parseFloat(amount.toString()).toFixed(4) * 10 ** 4
 
 const amountToAsset = amount =>
   Number.parseFloat(amount.toString()).toFixed(4).concat(' EOS')
@@ -21,29 +24,29 @@ class EosSwap extends SwapInterface {
   _initSwap() {
   }
 
-  getAccounts = () => ({
-    userAccount: SwapApp.services.auth.getPublicData().eos.address,
-    swapAccount: this.swapAccount,
-    tokenAccount: 'eosio.token'
-  })
-
-  getSwaps() {
-    return this.eos.getTableRows({
-      code: this.swapAccount,
-      scope: this.swapAccount,
-      table: 'swap',
-      json: true,
-      limit: 1000
-    })
-  }
-
-  lazyInit() {
+  _lazyInit() {
     return SwapApp.env.eos.getInstance().then((eosInstance) => {
       this.eos = eosInstance
     })
   }
 
-  findCurrentSwap({ btcOwner, eosOwner }) {
+  _getAccounts = () => ({
+    userAccount: SwapApp.services.auth.getPublicData().eos.address,
+    swapAccount: this.swapAccount,
+    tokenAccount: 'eosio.token',
+  })
+
+  _getAllSwaps() {
+    return this.eos.getTableRows({
+      code: this.swapAccount,
+      scope: this.swapAccount,
+      table: 'swap',
+      json: true,
+      limit: 1000,
+    })
+  }
+
+  _findSwaps({ btcOwner, eosOwner }) {
     const encodedEosOwner = new BigNumber(this.eos.modules.format.encodeName(eosOwner, false))
 
     return this.eos.getTableRows({
@@ -54,54 +57,52 @@ class EosSwap extends SwapInterface {
       key_type: 'i64',
       index_position: 2,
       lower_bound: encodedEosOwner.toString(),
-      upper_bound: encodedEosOwner.plus(1).toString()
-    }).then((result) => {
-      const currentSwap = result.rows.find((swap) => {
-        return swap.eosOwner == eosOwner &&
-          swap.btcOwner == btcOwner &&
-          (swap.status == 0 || swap.status == 1)
-      })
+      upper_bound: encodedEosOwner.plus(1).toString(),
+    }).then(result => result.rows.filter(row => row.eosOwner === eosOwner && row.btcOwner === btcOwner))
+  }
 
-      return currentSwap
+  _findOpenSwapID({ btcOwner, eosOwner }) {
+    return this._findSwaps({ btcOwner, eosOwner }).then(swaps => {
+      const openSwap = swaps.find(swap => swap.status === 0)
+      return openSwap ? openSwap.swapID : null
     })
   }
 
-  findSwapID({ btcOwner, eosOwner }) {
-    return this.findCurrentSwap({ btcOwner, eosOwner }).then((swap) => {
-      return swap.swapID
+  _findActiveSwapID({ btcOwner, eosOwner }) {
+    return this._findSwaps({ btcOwner, eosOwner }).then(swaps => {
+      const activeSwap = swaps.find(swap => swap.status === 1)
+      return activeSwap ? activeSwap.swapID : null
     })
   }
 
   open({ btcOwner, secretHash, amount }, finishCallback) {
-    const { userAccount: eosOwner, swapAccount, tokenAccount } = this.getAccounts()
+    const { userAccount: eosOwner, swapAccount, tokenAccount } = this._getAccounts()
 
     const quantity = amountToAsset(amount)
 
-    const openSwap = () => {
-      return this.eos.transaction({
-        actions: [
-          {
-            account: swapAccount,
-            name: 'open',
-            authorization: [{
-              actor: eosOwner,
-              permission: 'active'
-            }],
-            data: {
-              secretHash,
-              eosOwner: eosOwner,
-              btcOwner: btcOwner,
-              quantity: quantity
-            }
-          }
-        ]
-      })
-    }
+    const openSwap = () => this.eos.transaction({
+      actions: [
+        {
+          account: swapAccount,
+          name: 'open',
+          authorization: [{
+            actor: eosOwner,
+            permission: 'active',
+          }],
+          data: {
+            secretHash,
+            eosOwner,
+            btcOwner,
+            quantity,
+          },
+        },
+      ],
+    })
 
-    const findSwapID = () => this.findSwapID({ btcOwner, eosOwner })
+    const findSwapID = () => this._findOpenSwapID({ btcOwner, eosOwner })
 
     const depositFunds = (swapID) => {
-      console.log('depositFunds', swapID)
+      debug('swap.core:swaps')('depositFunds', swapID)
 
       return this.eos.transaction({
         actions: [
@@ -110,16 +111,16 @@ class EosSwap extends SwapInterface {
             name: 'transfer',
             authorization: [{
               actor: eosOwner,
-              permission: 'active'
+              permission: 'active',
             }],
             data: {
               from: eosOwner,
               to: swapAccount,
-              quantity: quantity,
-              memo: swapID
-            }
-          }
-        ]
+              quantity,
+              memo: swapID,
+            },
+          },
+        ],
       }).then(transaction => ({ transaction, swapID }))
     }
 
@@ -131,7 +132,7 @@ class EosSwap extends SwapInterface {
       return { openTx, swapID }
     }
 
-    return this.lazyInit()
+    return this._lazyInit()
       .then(openSwap.bind(this))
       .then(findSwapID.bind(this))
       .then(depositFunds.bind(this))
@@ -139,27 +140,25 @@ class EosSwap extends SwapInterface {
   }
 
   withdraw({ eosOwner, secret }, finishCallback) {
-    const { userAccount: btcOwner, swapAccount } = this.getAccounts()
+    const { userAccount: btcOwner, swapAccount } = this._getAccounts()
 
-    const findSwapID = () => this.findSwapID({ btcOwner, eosOwner })
+    const findSwapID = () => this._findActiveSwapID({ btcOwner, eosOwner })
 
-    const withdrawDeposit = (swapID) => {
-      return this.eos.transaction({
-        actions: [
-          {
-            account: swapAccount,
-            name: 'withdraw',
-            authorization: [{
-              actor: btcOwner,
-              permission: 'active'
-            }],
-            data: {
-              swapID, secret
-            }
-          }
-        ]
-      })
-    }
+    const withdrawDeposit = (swapID) => this.eos.transaction({
+      actions: [
+        {
+          account: swapAccount,
+          name: 'withdraw',
+          authorization: [{
+            actor: btcOwner,
+            permission: 'active',
+          }],
+          data: {
+            swapID, secret,
+          },
+        },
+      ],
+    })
 
     const finish = (transaction) => {
       const eosWithdrawTx = transaction.transaction_id
@@ -170,34 +169,32 @@ class EosSwap extends SwapInterface {
       return eosWithdrawTx
     }
 
-    return this.lazyInit()
+    return this._lazyInit()
       .then(findSwapID.bind(this))
       .then(withdrawDeposit.bind(this))
       .then(finish)
   }
 
   refund({ btcOwner }, finishCallback) {
-    const { userAccount: eosOwner, swapAccount } = this.getAccounts()
+    const { userAccount: eosOwner, swapAccount } = this._getAccounts()
 
-    const findSwapID = () => this.findSwapID({ btcOwner, eosOwner })
+    const findSwapID = () => this._findActiveSwapID({ btcOwner, eosOwner })
 
-    const refundDeposit = (swapID) => {
-      return this.eos.transaction({
-        actions: [
-          {
-            account: swapAccount,
-            name: 'refund',
-            authorization: [{
-              actor: eosOwner,
-              permission: 'active'
-            }],
-            data: {
-              swapID
-            }
-          }
-        ]
-      })
-    }
+    const refundDeposit = (swapID) => this.eos.transaction({
+      actions: [
+        {
+          account: swapAccount,
+          name: 'refund',
+          authorization: [{
+            actor: eosOwner,
+            permission: 'active',
+          }],
+          data: {
+            swapID,
+          },
+        },
+      ],
+    })
 
     const finish = (transaction) => {
       const eosRefundTx = transaction.transaction_id
@@ -208,10 +205,31 @@ class EosSwap extends SwapInterface {
       return eosRefundTx
     }
 
-    return this.lazyInit()
+    return this._lazyInit()
       .then(findSwapID.bind(this))
       .then(refundDeposit.bind(this))
       .then(finish)
+  }
+
+  fetchSecret({ btcOwner, eosOwner }) {
+    const fetchSecret = async () => {
+      const swaps = await this._findSwaps({ btcOwner, eosOwner })
+      const activeSwapID = swaps.find(swap => swap.status === 1)
+
+      if (!activeSwapID) {
+        const finishedSwap = swaps.reverse()
+          .find(swap => swap.status === 2)
+
+        if (finishedSwap) {
+          return finishedSwap.secret
+        }
+      }
+
+      return 0
+    }
+
+    return this._lazyInit()
+      .then(fetchSecret)
   }
 
   getLockPeriod() {
