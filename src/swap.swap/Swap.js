@@ -79,6 +79,10 @@ class Swap {
 
     const Flow = SwapApp.flows[`${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}`]
 
+    if (!Flow) {
+      throw new Error(`Flow with name "${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}" not found in SwapApp.flows`)
+    }
+
     data.flow = Flow.read(data)
 
     return data
