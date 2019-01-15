@@ -17,8 +17,17 @@ class Flow {
     }
   }
 
+  static read({ id } = {}) {
+    if (!id) {
+      debug('swap.core:swap')(`FlowReadError: id not given: ${id}`)
+      return {}
+    }
+
+    return SwapApp.env.storage.getItem(`flow.${id}`)
+  }
+
   _persistState() {
-    const state = SwapApp.env.storage.getItem(`flow.${this.swap.id}`)
+    const state = Flow.read(this.swap)
 
     if (state) {
       this.state = {
