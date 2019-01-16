@@ -40,7 +40,7 @@ const btcSwap = new BtcSwap({
   fetchBalance: (address) => 10,
   fetchUnspents: (address) => [],
   broadcastTx: (rawTx) => {},
-  estimateFee: () => mainnet().estimateFee(),
+  estimateFeeRate: ({ speed } = {}) => mainnet().estimateFeeRate({ speed }),
   fetchTxInfo: txid => ({ confidence: 1 })
 })
 

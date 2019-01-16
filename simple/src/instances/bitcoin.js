@@ -83,7 +83,7 @@ class Bitcoin {
     return request
       .get(`${EARN_COM}`)
       .then(json => JSON.parse(json))
-      .then(fees => Number(fees[_speed]))
+      .then(fees => Number(fees[_speed]) * 1024)
       .catch(error => filterError(error))
   }
 
