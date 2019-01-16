@@ -17,7 +17,7 @@ const filterError = (error) => {
   if (name == 'StatusCodeError' && statusCode == 525)
     debug('swap.core:bitcoin')('Error:', `BITPAY refuse:`, options.method, options.uri)
   else
-    debug('swap.core:bitcoin')('Error:', code, name, statusCode, options)
+    debug('swap.core:bitcoin')(`UnknownError: statusCode=${statusCode} ${error.message}`)
 
   throw error
 }
@@ -33,12 +33,11 @@ class Bitcoin {
   }
 
   getRate() {
-    return new Promise((resolve) => {
-      request.get('https://noxonfund.com/curs.php')
-        .then(({ price_btc }) => {
-          resolve(price_btc)
-        })
-    })
+    request.get('https://noxonfund.com/curs.php')
+      .then(({ price_btc }) => {
+        return price_btc
+      })
+      .catch(err => console.error(`NOXONFUND error: ${err.message}`))
   }
 
   login(_privateKey) {
@@ -173,7 +172,7 @@ class Bitcoin {
           return 0
         }
       })
-      .catch(error => debug('swap.core:bitcoin')('Error:', error))
+      .catch(error => filterError(error))
   }
 
   async sendTransaction({ account, to, value }, handleTransactionHash) {

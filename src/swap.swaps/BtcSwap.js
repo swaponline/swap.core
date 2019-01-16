@@ -126,13 +126,15 @@ class BtcSwap extends SwapInterface {
    * @param {object} data.script
    * @param {*} data.txRaw
    * @param {string} data.secret
+   * @param {number} inputIndex
    * @private
    */
-  _signTransaction(data) {
+  _signTransaction(data, inputIndex = 0) {
+    debug('swap.core:swaps')('signing script input', inputIndex)
     const { script, txRaw, secret } = data
 
     const hashType      = SwapApp.env.bitcoin.Transaction.SIGHASH_ALL
-    const signatureHash = txRaw.hashForSignature(0, script, hashType)
+    const signatureHash = txRaw.hashForSignature(inputIndex, script, hashType)
     const signature     = SwapApp.services.auth.accounts.btc.sign(signatureHash).toScriptSignature(hashType)
 
     const scriptSig = SwapApp.env.bitcoin.script.scriptHash.input.encode(
@@ -144,7 +146,7 @@ class BtcSwap extends SwapInterface {
       script,
     )
 
-    txRaw.setInputScript(0, scriptSig)
+    txRaw.setInputScript(inputIndex, scriptSig)
   }
 
   /**
@@ -349,11 +351,13 @@ class BtcSwap extends SwapInterface {
 
     const txRaw = tx.buildIncomplete()
 
-    this._signTransaction({
-      script,
-      secret,
-      txRaw,
-    })
+    unspents.map((_, index) =>
+      this._signTransaction({
+        script,
+        secret,
+        txRaw,
+      }, index)
+    )
 
     return txRaw
   }

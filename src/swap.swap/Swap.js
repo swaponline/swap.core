@@ -64,6 +64,30 @@ class Swap {
     });
   }
 
+  static read({ id } = {}) {
+    if (!id) {
+      debug('swap.core:swap')(`SwapReadError: id not given: ${id}`)
+      return {}
+    }
+
+    const data = SwapApp.env.storage.getItem(`swap.${id}`)
+
+    if (!data) {
+      debug('swap.core:swap')(`SwapReadError: No swap with id=${id}`)
+      return {}
+    }
+
+    const Flow = SwapApp.flows[`${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}`]
+
+    if (!Flow) {
+      throw new Error(`Flow with name "${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}" not found in SwapApp.flows`)
+    }
+
+    data.flow = Flow.read(data)
+
+    return data
+  }
+
   _getDataFromOrder(order) {
     // TODO add check order format (typeforce)
 

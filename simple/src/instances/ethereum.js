@@ -43,11 +43,17 @@ class Ethereum {
 
   fetchTokenBalance(address, tokenAddress, decimals) {
     const base = TEN.pow(decimals) // 1e18 usually
-    return request.get(`${this.etherscan}/api?module=account&action=tokenbalance&contractaddress=${tokenAddress}&address=${address}`)
+    const url = `${this.etherscan}/api?module=account&action=tokenbalance&contractaddress=${tokenAddress}&address=${address}`
+
+    return request.get(url)
       .then( json => JSON.parse(json))
       .then(({ result }) => result)
       .then( raw => BigNumber(raw).dividedBy( base ) )
       .then( num => num.toNumber())
+      .catch(error => {
+        debug('swap.core:ethereum')(`TokenBalanceError: ${error.statusCode} ${url} - Failed to fetch token balance (${tokenAddress}). Probably too frequent request!`)
+        return '-'
+      })
   }
 
   async sendTransaction({to, value}) {
