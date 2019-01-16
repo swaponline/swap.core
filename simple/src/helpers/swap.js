@@ -6,6 +6,8 @@ import crypto from 'crypto'
 import history from './history'
 import on from './on'
 
+export const read = Swap.read
+
 export const get = id => new Swap(id)
 
 export const onStep = (swap, _step) => new Promise(async resolve => {
@@ -76,4 +78,3 @@ export const refund = (swapID) =>
     }
   })
 
-module.exports = { get, onStep, start, refund }

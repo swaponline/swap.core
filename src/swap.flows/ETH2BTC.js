@@ -148,7 +148,7 @@ class ETH2BTC extends Flow {
           participantAddress:   participant.eth.address,
           secretHash:           flow.state.secretHash,
           amount:               sellAmount,
-           targetWallet:         flow.swap.destination.participantAddress,
+          targetWallet:         flow.swap.destinationSellAddress,
         }
 
         try {
@@ -192,10 +192,13 @@ class ETH2BTC extends Flow {
           const secret = await flow.ethSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
 
           if (!flow.state.isEthWithdrawn && secret) {
-            debug('swap.core:flow')('got secret from tx', ethSwapWithdrawTransactionHash, secret)
+            const _secret = `0x${secret.replace(/^0x/, '')}`
+
+            debug('swap.core:flow')('got secret from tx', ethSwapWithdrawTransactionHash, _secret)
+
             flow.finishStep({
               isEthWithdrawn: true,
-              secret,
+              secret: _secret,
             }, { step: 'wait-withdraw-eth' })
           }
         })
@@ -218,13 +221,15 @@ class ETH2BTC extends Flow {
             if (secret) {
               clearInterval(checkSecretTimer)
 
-              if (flow.state.secret && secret !== flow.state.secret) {
-                throw new Error(`Secret already exists and it differs! ${secret} ≠ ${flow.state.secret}`)
+              const _secret = `0x${secret.replace(/^0x/, '')}`
+
+              if (flow.state.secret && _secret !== flow.state.secret) {
+                throw new Error(`Secret already exists and it differs! ${_secret} ≠ ${flow.state.secret}`)
               }
 
-              debug('swap.core:flow')('got secret from smart contract', secret)
+              debug('swap.core:flow')('got secret from smart contract', _secret)
               flow.finishStep({
-                secret,
+                secret: _secret,
                 isEthWithdrawn: true,
               }, { step: 'wait-withdraw-eth' })
             }
