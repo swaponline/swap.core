@@ -64,6 +64,18 @@ class Ethereum {
 
     return this.core.eth.sendTransaction({ from, to, value, gas })
   }
+
+  estimateGasPrice({ speed }) {
+    return new Promise((resolve, reject) =>
+      this.core.eth.getGasPrice((err, gasPrice) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve(gasPrice)
+        }
+      })
+    )
+  }
 }
 
 module.exports = new Ethereum()
