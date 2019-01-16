@@ -150,7 +150,7 @@ class Order {
    * @param callback - callback will receive updated order
    * @param conditionHandler - autoreply to new order proposal
    */
-  sendRequestForPartial(updatedOrder = {}, destination = {}, callback, conditionHandler) {
+  sendRequestForPartial(updatedOrder = {}, requestOptions, callback, conditionHandler) {
     if (!this.isPartial) {
       throw new Error(`Cant request partial fulfilment for order ${this.id}`)
     }
@@ -209,7 +209,7 @@ class Order {
 
         if (newOrderIsGood) {
           // request that new order
-          newOrder.sendRequest(accepted => callback(newOrder, accepted), destination)
+          newOrder.sendRequest(accepted => callback(newOrder, accepted), requestOptions)
         } else {
           callback(newOrder, false)
         }
@@ -230,8 +230,10 @@ class Order {
    *
    * @param callback - awaiting for response - accept / decline
    */
-  sendRequest(callback, { participantMetadata, destination }) {
+  sendRequest(callback, requestOptions) {
     const self = this
+
+    const { participantMetadata, destination } = requestOptions
 
     if (SwapApp.services.room.peer === this.owner.peer) {
       console.warn('You are the owner of this Order. You can\'t send request to yourself.')
