@@ -40,7 +40,7 @@ class BtcSwap extends SwapInterface {
     this.broadcastTx    = options.broadcastTx
     this.feeValue       = options.feeValue || 5000
     this.fetchTxInfo    = options.fetchTxInfo || (() => ({}))
-    this.estimateFeeRate= options.estimateFeeRate || (() => {})
+    this.estimateFeeRate = options.estimateFeeRate || (() => {})
   }
 
   _initSwap() {
