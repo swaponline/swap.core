@@ -10,26 +10,28 @@ class BtcSwap extends SwapInterface {
    * @param options.fetchBalance
    * @param options.fetchUnspents
    * @param options.broadcastTx
+   * @param options.fetchTxInfo {(tx_hash) => Promise({ confidence, fees })}
+   * @param options.estimateFeeRate { ({ speed }) => Promise(fee_rate_per_kb) }
    */
   constructor(options) {
     super()
 
     if (typeof options.fetchBalance !== 'function') {
-      throw new Error('EthSwap: "fetchBalance" required')
+      throw new Error('BtcSwap: "fetchBalance" required')
     }
     if (typeof options.fetchUnspents !== 'function') {
-      throw new Error('EthSwap: "fetchUnspents" required')
+      throw new Error('BtcSwap: "fetchUnspents" required')
     }
     if (typeof options.broadcastTx !== 'function') {
-      throw new Error('EthSwap: "broadcastTx" required')
+      throw new Error('BtcSwap: "broadcastTx" required')
     }
     if (typeof options.fetchTxInfo !== 'function') {
       // tx_hash => { confidence, fees }
-      console.warn(`EthSwap: "fetchTxInfo" is not a function. You will not be able to use tx-confidence feature`)
+      console.warn(`BtcSwap: "fetchTxInfo" is not a function. You will not be able to use tx-confidence feature`)
     }
-    if (typeof options.estimateFee !== 'function') {
-      // ({ size, speed } = {}) => feeValue
-      console.warn(`EthSwap: "estimateFee" is not a function. You will not be able use automatic mempool-based fee`)
+    if (typeof options.estimateFeeRate !== 'function') {
+      // ({ speed } = {}) => feeRate
+      console.warn(`BtcSwap: "estimateFeeRate" is not a function. You will not be able use automatic mempool-based fee`)
     }
 
     this._swapName      = constants.COINS.btc
@@ -38,7 +40,7 @@ class BtcSwap extends SwapInterface {
     this.broadcastTx    = options.broadcastTx
     this.feeValue       = options.feeValue || 5000
     this.fetchTxInfo    = options.fetchTxInfo || (() => ({}))
-    this.estimateFee    = options.estimateFee || (() => {})
+    this.estimateFeeRate= options.estimateFeeRate || (() => {})
   }
 
   _initSwap() {
@@ -51,17 +53,22 @@ class BtcSwap extends SwapInterface {
 
   /**
    *
-   * @param {object} format
-   * @param {boolean} format.inSatoshis
+   * @param {object} options
+   * @param {boolean} options.inSatoshis
+   * @param {Number} options.size
+   * @param {String} options.speed
    * @returns {BigNumber|Number}
    * @public
    */
-  async getTxFee({ inSatoshis, size, speed } = {}) {
+  async getTxFee({ inSatoshis, size = 550, speed = 'normal' } = {}) {
     try {
-      const estimated = await this.estimateFee({ size, speed })
+      const estimatedRate = await this.estimateFeeRate({ speed })
+      const estimatedFee = Math.ceil(estimatedRate * size / 1024)
 
-      if (Number.isInteger(Number(estimated))) {
-        this.feeValue = Number(estimated)
+      if (Number.isInteger(Number(estimatedFee))) {
+        this.feeValue = Number(estimatedFee)
+      } else {
+        throw new Error(`Not an Integer: ${estimatedFee}`)
       }
     } catch (err) {
       debug('swap.core:swaps')(`BtcSwap: Error with fee update: ${err.message}, using old value feeValue=${this.feeValue}`)

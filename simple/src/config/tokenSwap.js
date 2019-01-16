@@ -32,4 +32,5 @@ module.exports = ({ network, name, decimals, tokenAddress }) => (contract = {}) 
   address: contract.address || SwapContract[network].address,
   abi: contract.abi || SwapContract[network].abi,
   fetchBalance: (address) => eth[network].fetchTokenBalance(address, tokenAddress, decimals),
+  estimateGasPrice: ({ speed } = {}) => ethereum.estimateGasPrice({ speed }),
 })

@@ -41,6 +41,11 @@ class EthTokenSwap extends SwapInterface {
     if (!Array.isArray(options.tokenAbi)) {
       throw new Error('EthTokenSwap: "tokenAbi" required')
     }
+    if (typeof options.estimateGasPrice !== 'function') {
+      // ({ speed } = {}) => gasPrice
+      console.warn(`EthTokenSwap: "estimateGasPrice" is not a function. You will not be able use automatic mempool-based fee`)
+    }
+
 
 
     this._swapName      = options.name.toUpperCase()
@@ -54,6 +59,7 @@ class EthTokenSwap extends SwapInterface {
     this.gasLimit       = options.gasLimit || 2e5
     this.gasPrice       = options.gasPrice || 2e9
     this.fetchBalance   = options.fetchBalance
+    this.estimateGasPrice = options.estimateGasPrice || (() => {})
   }
 
   _initSwap() {
@@ -64,17 +70,11 @@ class EthTokenSwap extends SwapInterface {
 
   async updateGas() {
     try {
-      await SwapApp.env.web3.eth.getGasPrice((err, _gasPrice) => {
-        const newGas = new BigNumber(String(_gasPrice)).plus(new BigNumber(String(1300000000)))
-        this.gasPrice = Number(newGas)
-      })
-    }
-    catch(err) {
-      console.error(`${err.name}: ${err.message}`)
-      this.gasPrice = 15e9
+      this.gasPrice = await this.estimateGasPrice()
+    } catch(err) {
+      debug('swap.core:swaps')(`EthTokenSwap: Error with gas update: ${err.message}, using old value gasPrice=${this.gasPrice}`)
     }
   }
-
 
   /**
    *

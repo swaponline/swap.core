@@ -65,11 +65,26 @@ class Bitcoin {
     return account
   }
 
-  estimateFee({ size = 550, speed = 'fastestFee' } = {}) {
+  estimateFeeRate({ speed = 'fastestFee' } = {}) {
+    const _speed = (() => {
+      switch (speed) {
+        case 'fast':    return 'fastestFee'
+        case 'normal':  return 'halfHourFee'
+        case 'slow':    return 'hourFee'
+        default:      return 'halfHourFee'
+      }
+    })()
+
+    // {
+    //   fast: 'fastestFee',
+    //   normal: 'fastFee',
+    //   slow: 'normalFee',
+    // }[speed]
+
     return request
       .get(`${EARN_COM}`)
       .then(json => JSON.parse(json))
-      .then(fees => Number(fees[speed]) * Number(size))
+      .then(fees => Number(fees[_speed]))
       .catch(error => filterError(error))
   }
 
