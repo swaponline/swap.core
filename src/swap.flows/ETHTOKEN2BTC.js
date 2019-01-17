@@ -180,6 +180,11 @@ export default (tokenName) => {
             /* set Target wallet */
             //await flow.setTargetWalletDo();
 
+            flow.swap.room.once('request withdraw', () => {
+              flow.setState({
+                withdrawRequestIncoming: true,
+              })
+            })
             /* send data to other side */
             flow.swap.room.sendMessage({
               event: 'create eth contract',
@@ -308,6 +313,39 @@ export default (tokenName) => {
 
         },
       ]
+    }
+
+    acceptWithdrawRequest() {
+      const flow = this
+
+      if (this.state.withdrawRequestAccepted) return
+      this.setState({
+        withdrawRequestAccepted: true,
+      })
+
+      this.swap.room.once('do withdraw', async ({secret}) => {
+        try {
+          const data = {
+            participantAddress: flow.swap.participant.eth.address,
+            secret,
+          }
+          
+          await flow.ethTokenSwap.withdrawNoMoney(data, (hash) => {
+            flow.swap.room.sendMessage({
+              event: 'withdraw ready',
+              data: {
+                ethSwapWithdrawTransactionHash: hash,
+              }
+            })
+          })
+        } catch (err) {
+          debug('swap.core:flow')(err.message)
+        }
+      })
+
+      this.swap.room.sendMessage({
+        event: 'accept withdraw'
+      })
     }
 
     _checkSwapAlreadyExists() {
