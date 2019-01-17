@@ -8,6 +8,7 @@ const BITPAY = false ? `https://insight.bitpay.com/api` : `https://test-insight.
 const BITPAY_MAIN = `https://insight.bitpay.com/api`
 
 const BLOCKCYPHER_API = `https://api.blockcypher.com/v1/btc/main/`
+const BLOCKCYPHER_API_TESTNET = `https://api.blockcypher.com/v1/btc/test3/`
 const EARN_COM = `https://bitcoinfees.earn.com/api/v1/fees/recommended`
 const BLOCKCYPHER_API_TOKEN = process.env.BLOCKCYPHER_API_TOKEN
 
@@ -64,7 +65,20 @@ class Bitcoin {
     return account
   }
 
-  estimateFeeRate({ speed = 'fastestFee' } = {}) {
+  async estimateFeeRate(options) {
+    if (this.network === 'testnet') {
+      return this.estimateFeeRateBLOCKCYPHER(options)
+    }
+
+    try {
+      return await this.estimateFeeRateBLOCKCYPHER(options)
+    } catch (err) {
+      console.error(`EstimateFeeError: BLOCKCYPHER_API ${err.message}, trying EARN.COM...`)
+      return await this.estimateFeeRateEARNCOM(options)
+    }
+  }
+
+  estimateFeeRateEARNCOM({ speed = 'normal' } = {}) {
     const _speed = (() => {
       switch (speed) {
         case 'fast':    return 'fastestFee'
@@ -74,16 +88,31 @@ class Bitcoin {
       }
     })()
 
-    // {
-    //   fast: 'fastestFee',
-    //   normal: 'fastFee',
-    //   slow: 'normalFee',
-    // }[speed]
-
     return request
       .get(`${EARN_COM}`)
       .then(json => JSON.parse(json))
       .then(fees => Number(fees[_speed]) * 1024)
+      .catch(error => filterError(error))
+  }
+
+  estimateFeeRateBLOCKCYPHER({ speed = 'normal' } = {}) {
+    const _speed = (() => {
+      switch (speed) {
+        case 'fast':    return 'high_fee_per_kb'
+        case 'normal':  return 'medium_fee_per_kb'
+        case 'slow':    return 'low_fee_per_kb'
+        default:      return 'medium_fee_per_kb'
+      }
+    })()
+
+    const API_ROOT = this.network === 'testnet'
+      ? BLOCKCYPHER_API_TESTNET
+      : BLOCKCYPHER_API
+
+    return request
+      .get(`${API_ROOT}`)
+      .then(json => JSON.parse(json))
+      .then(info => Number(info[_speed]))
       .catch(error => filterError(error))
   }
 

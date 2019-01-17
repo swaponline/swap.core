@@ -2,6 +2,8 @@ import debug from 'debug'
 import SwapApp, { SwapInterface, constants } from 'swap.app'
 import BigNumber from 'bignumber.js'
 
+const DUST = 546
+
 class BtcSwap extends SwapInterface {
 
   /**
@@ -63,7 +65,7 @@ class BtcSwap extends SwapInterface {
   async getTxFee({ inSatoshis, size = 550, speed = 'normal' } = {}) {
     try {
       const estimatedRate = await this.estimateFeeRate({ speed })
-      const estimatedFee = Math.ceil(estimatedRate * size / 1024)
+      const estimatedFee = Math.max(DUST, Math.ceil(estimatedRate * size / 1024))
 
       if (Number.isInteger(Number(estimatedFee))) {
         this.feeValue = Number(estimatedFee)
