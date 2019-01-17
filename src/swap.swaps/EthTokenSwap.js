@@ -485,7 +485,7 @@ class EthTokenSwap extends SwapInterface {
           from: SwapApp.services.auth.accounts.eth.address,
         })
 
-        const secretValue = secret && !/^0x0+/.test(secret) ? secret : null
+        const secretValue = secret && !/^0x0+$/.test(secret) ? secret : null
 
         resolve(secretValue)
       }

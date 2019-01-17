@@ -413,7 +413,7 @@ class EthSwap extends SwapInterface {
 
         debug('swap.core:swaps')('secret ethswap.js', secret)
 
-        const secretValue = secret && !/^0x0+/.test(secret) ? secret : null
+        const secretValue = secret && !/^0x0+$/.test(secret) ? secret : null
 
         resolve(secretValue)
       }
