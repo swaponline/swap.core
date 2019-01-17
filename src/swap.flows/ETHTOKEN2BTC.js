@@ -149,7 +149,8 @@ export default (tokenName) => {
             participantAddress: participant.eth.address,
             secretHash: flow.state.secretHash,
             amount: sellAmount,
-            targetWallet: flow.swap.destinationSellAddress
+            targetWallet: flow.swap.destinationSellAddress,
+            calcFee: true,
           }
 
           const createSwap = async () => {
@@ -169,8 +170,15 @@ export default (tokenName) => {
             clearInterval(checkCreateSwap)
 
             debug('swap.core:flow')('create swap', swapData)
+
+            /* calc create contract fee and save this */
+            flow.setState({
+              createSwapFee: await flow.ethTokenSwap.create(swapData),
+            })
+
             /* create contract and save this hash */
             let ethSwapCreationTransactionHash
+            swapData.calcFee = false
             await flow.ethTokenSwap.create(swapData, async (hash) => {
               debug('swap.core:flow')('create swap tx hash', hash)
               ethSwapCreationTransactionHash = hash;
