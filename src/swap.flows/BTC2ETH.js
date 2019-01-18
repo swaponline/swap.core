@@ -273,16 +273,16 @@ class BTC2ETH extends Flow {
           secret:         flow.state.secret,
         }
 
-        const balanceCheckResult = await flow.ethSwap.checkBalance({
+        const balanceCheckError = await flow.ethSwap.checkBalance({
           ownerAddress: participant.eth.address,
           participantAddress: SwapApp.services.auth.accounts.eth.address,
           expectedValue: buyAmount,
           expectedHash: secretHash,
         })
 
-        if (balanceCheckResult) {
-          console.error(`Waiting until deposit: ETH balance check error:`, balanceCheckResult)
-          flow.swap.events.dispatch('eth balance check error', balanceCheckResult)
+        if (balanceCheckError) {
+          console.error(`Waiting until deposit: ETH balance check error:`, balanceCheckError)
+          flow.swap.events.dispatch('eth balance check error', balanceCheckError)
           return
         }
 
