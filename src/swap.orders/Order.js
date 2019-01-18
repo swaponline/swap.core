@@ -1,3 +1,4 @@
+import debug from 'debug'
 import SwapApp from 'swap.app'
 import BigNumber from 'bignumber.js'
 import events from './events'
@@ -56,8 +57,16 @@ class Order {
   _onMount() {
     SwapApp.services.room.on('request swap', ({ orderId, participant, participantMetadata, destination }) => {
       if (orderId === this.id && this.requests.length < 10 && !this.requests.find(({ participant: { peer } }) => peer === participant.peer)) {
-        const reputation = SwapApp.env.swapsExplorer && typeof SwapApp.env.swapsExplorer.getVerifiedReputation === 'function' ?
-          SwapApp.env.swapsExplorer.getVerifiedReputation(participantMetadata) : 0
+        let reputation = 0
+
+        try {
+          // todo: check other blockchains
+          if (participant.eth.address === participantMetadata.address || participant.btc.address === participantMetadata.address) {
+            reputation = SwapApp.env.swapsExplorer.getVerifiedReputation(participantMetadata)
+          }
+        } catch (err) {
+          debug('swap.core:order')(err)
+        }
 
         this.requests.push({ participant, destination, reputation, isPartial: false })
 
@@ -237,7 +246,10 @@ class Order {
   sendRequest(callback, requestOptions = {}) {
     const self = this
 
-    const { address, participantMetadata } = requestOptions
+    const {
+      address: destinationAddress,
+      participantMetadata,
+    } = requestOptions
 
     if (SwapApp.services.room.peer === this.owner.peer) {
       console.warn('You are the owner of this Order. You can\'t send request to yourself.')
@@ -260,9 +272,9 @@ class Order {
       data: {
         orderId: this.id,
         participant,
-        participantMetadata, // seller can verify reputation of participant before he will accept request
+        participantMetadata,
         destination: {
-          address
+          address: destinationAddress
         }
       },
     })
@@ -276,7 +288,7 @@ class Order {
           isRequested: false,
           destination: {
             ...self.destination,
-            participantAddress: address,
+            participantAddress: destinationAddress,
           },
         })
 
