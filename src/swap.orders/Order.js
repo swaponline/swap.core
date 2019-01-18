@@ -56,7 +56,10 @@ class Order {
   _onMount() {
     SwapApp.services.room.on('request swap', ({ orderId, participant, participantMetadata, destination }) => {
       if (orderId === this.id && this.requests.length < 10 && !this.requests.find(({ participant: { peer } }) => peer === participant.peer)) {
-        this.requests.push({ participant, destination, isPartial: false })
+        const reputation = SwapApp.env.swapsExplorer && typeof SwapApp.env.swapsExplorer.getVerifiedReputation === 'function' ?
+          SwapApp.env.swapsExplorer.getVerifiedReputation(participantMetadata) : 0
+
+        this.requests.push({ participant, destination, reputation, isPartial: false })
 
         events.dispatch('new order request', {
           orderId,
