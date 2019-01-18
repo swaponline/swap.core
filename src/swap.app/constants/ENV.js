@@ -5,5 +5,6 @@ export default {
   coininfo: 'coininfo',
   Ipfs: 'Ipfs',
   IpfsRoom: 'IpfsRoom',
-  storage: 'storage'
+  storage: 'storage',
+  swapsExplorer: 'swapsExplorer',
 }
