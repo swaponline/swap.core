@@ -277,7 +277,7 @@ class EthSwap extends SwapInterface {
       return `Expected hash: ${expectedHash}, got: ${_secretHash}`
     }
 
-    if (expectedValue.isGreaterThan(balance)) {
+    if (BigNumber(expectedValue).times(1e18).isGreaterThan(balance)) {
       return `Expected value: ${expectedValue.toNumber()}, got: ${balance}`
     }
 
