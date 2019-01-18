@@ -150,7 +150,7 @@ class Order {
    * @param callback - callback will receive updated order
    * @param conditionHandler - autoreply to new order proposal
    */
-  sendRequestForPartial(updatedOrder = {}, requestOptions, callback, conditionHandler) {
+  sendRequestForPartial(updatedOrder = {}, requestOptions = {}, callback, conditionHandler) {
     if (!this.isPartial) {
       throw new Error(`Cant request partial fulfilment for order ${this.id}`)
     }
@@ -230,7 +230,7 @@ class Order {
    *
    * @param callback - awaiting for response - accept / decline
    */
-  sendRequest(callback, requestOptions) {
+  sendRequest(callback, requestOptions = {}) {
     const self = this
 
     const { participantMetadata, destination } = requestOptions
