@@ -204,6 +204,7 @@ class Order {
         // if condition to check is not given,
         // we need logic on client app side
         if (typeof conditionHandler !== 'function') {
+          // TODO: pass destination and participantMetadata
           return callback(newOrder)
         }
 
@@ -236,7 +237,7 @@ class Order {
   sendRequest(callback, requestOptions = {}) {
     const self = this
 
-    const { participantMetadata, destination } = requestOptions
+    const { address, participantMetadata } = requestOptions
 
     if (SwapApp.services.room.peer === this.owner.peer) {
       console.warn('You are the owner of this Order. You can\'t send request to yourself.')
@@ -253,7 +254,6 @@ class Order {
     })
 
     const participant = SwapApp.services.auth.getPublicData()
-    const { address } = destination
 
     SwapApp.services.room.sendMessagePeer(this.owner.peer, {
       event: 'request swap',
@@ -261,7 +261,9 @@ class Order {
         orderId: this.id,
         participant,
         participantMetadata, // seller can verify reputation of participant before he will accept request
-        destination
+        destination: {
+          address
+        }
       },
     })
 
