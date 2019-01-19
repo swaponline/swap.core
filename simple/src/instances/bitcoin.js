@@ -12,6 +12,7 @@ const BLOCKCYPHER_API_TESTNET = `https://api.blockcypher.com/v1/btc/test3/`
 const EARN_COM = `https://bitcoinfees.earn.com/api/v1/fees/recommended`
 const BLOCKCYPHER_API_TOKEN = process.env.BLOCKCYPHER_API_TOKEN
 
+
 const filterError = (error) => {
   const { name, code, statusCode, options } = error
 
@@ -152,8 +153,12 @@ class Bitcoin {
   }
 
   fetchTxInfo(hash) {
+    const API_ROOT = this.network === 'testnet'
+      ? BLOCKCYPHER_API_TESTNET
+      : BLOCKCYPHER_API
+
     return request
-      .get(`${BLOCKCYPHER_API}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`)
+      .get(`${API_ROOT}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`)
       .catch(err => {
         if (!/transaction hasalready been confirmed/.test(err.message)
         &&  !/API calls limits/.test(err.message)) {
@@ -161,7 +166,7 @@ class Bitcoin {
           throw err
         }
 
-        return request.get(`${BLOCKCYPHER_API}/txs/${hash}`)
+        return request.get(`${API_ROOT}/txs/${hash}`)
       })
       .then(json => JSON.parse(json))
       .catch(error => filterError(error))
