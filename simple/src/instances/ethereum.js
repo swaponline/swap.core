@@ -95,7 +95,7 @@ class Ethereum {
       })
     )
 
-    return BigNumber(gasPrice).times(_multiplier).times(1e9).toNumber()
+    return BigNumber(gasPrice).times(_multiplier).toNumber()
   }
 
   estimateGasPriceEtherChain({ speed = 'normal' } = {}) {
