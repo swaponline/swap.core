@@ -88,7 +88,7 @@ class BtcSwap extends SwapInterface {
    * @returns {array}
    * @private
    */
-  async filterConfidentUnspents(unspents, expectedConfidenceLevel) {
+  async filterConfidentUnspents(unspents, expectedConfidenceLevel = 0.95) {
     const currentFastestFee = await this.getTxFee({ inSatoshis: true })
 
     const feesToConfidence = (fees, size) =>
@@ -116,10 +116,10 @@ class BtcSwap extends SwapInterface {
       }
     }
 
-    const confidences = Promise.all(unspents.map(fetchConfidence))
+    const confidences = await Promise.all(unspents.map(fetchConfidence))
 
-    return unspents.filter(async (utxo, index) => {
-      return confidences[index] > expectedConfidenceLevel
+    return unspents.filter((utxo, index) => {
+      return BigNumber(confidences[index]).isGreaterThan(expectedConfidenceLevel)
     })
   }
   /**
