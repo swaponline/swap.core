@@ -357,8 +357,8 @@ class EthTokenSwap extends SwapInterface {
       return `Expected hash: ${expectedHash}, got: ${_secretHash}`
     }
 
-    if (BigNumber(expectedValue).times(1e18).isGreaterThan(balance)) {
-      return `Expected value: ${expectedValue.toNumber()}, got: ${balance}`
+    if (BigNumber(expectedValue).times(1e18).isLessThan(balance)) {
+      return `Expected value: ${BigNumber(expectedValue).times(1e18).toNumber()}, got: ${balance}`
     }
   }
 
