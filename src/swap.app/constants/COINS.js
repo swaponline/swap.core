@@ -49,5 +49,5 @@ export default {
   mth: 'MTH',
   zcn: 'ZCN',
   cbt: 'CBT',
-  swap2: 'swap2',
+  swap2: 'SWAP2',
 }
