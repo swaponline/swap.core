@@ -130,7 +130,7 @@ describe('full flow', () => {
     // decode broadcasted tx and check
   })
 
-  test('does not withdraw ETH when swap doesnt exist', async () => {
+  xtest('does not withdraw ETH when swap doesnt exist', async () => {
     swap.flow.ethTokenSwap.contract.state.swapExists = false
 
     SwapApp.services.room.emit('create eth contract', { ethSwapCreationTransactionHash: '555abcdef333', ..._roomId })
@@ -141,7 +141,7 @@ describe('full flow', () => {
 
   })
 
-  test('withdraws ETH if balance is locked', async () => {
+  xtest('withdraws ETH if balance is locked', async () => {
     swap.flow.ethTokenSwap.contract.state.swapExists = true
 
     swap.flow.steps[6]() // not for production use

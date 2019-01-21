@@ -1,5 +1,5 @@
 import debug from 'debug'
-import SwapApp, {constants, SwapInterface} from 'swap.app'
+import SwapApp, { constants, SwapInterface, util } from 'swap.app'
 import BigNumber from 'bignumber.js'
 import InputDataDecoder from 'ethereum-input-data-decoder'
 
@@ -226,32 +226,6 @@ class EthSwap extends SwapInterface {
     })
   }
 
-
-  /**
-   *
-   * @param {number} repeat
-   * @param {function} action
-   * @param delay
-   * @returns {Promise<any>}
-   */
-  repeatToTheResult = (repeat, action, delay = 5000) =>
-    new Promise(async (resolve, reject) => {
-      let result = await action()
-
-      if (result === 0 || typeof result === 'undefined' || result === null || result === '0x0000000000000000000000000000000000000000') {
-        if (repeat > 0 || repeat === -1) {
-          if (repeat !== -1) repeat--
-          setTimeout(async () => {
-            result = await this.repeatToTheResult(repeat, action, delay)
-            resolve(result)
-          }, delay)
-        }
-      } else {
-        resolve(result)
-      }
-    })
-
-
   /**
    *
    * @param {object} data
@@ -262,9 +236,12 @@ class EthSwap extends SwapInterface {
   async checkBalance(data) {
     const { ownerAddress, participantAddress, expectedValue, expectedHash } = data
 
-    const balance = await this.repeatToTheResult(-1, () => this.getBalance({ ownerAddress }))
-    const swap = await this.repeatToTheResult(-1,
-      () => this.contract.methods.swaps(ownerAddress, participantAddress).call())
+    const balance = await util.helpers.repeatAsyncUntilResult(() =>
+      this.getBalance({ ownerAddress })
+    )
+    const swap = await util.helpers.repeatAsyncUntilResult(() =>
+      this.contract.methods.swaps(ownerAddress, participantAddress).call()
+    )
 
     const { secretHash } = swap
     debug('swap.core:swaps')(`swap.secretHash`, secretHash)
@@ -277,10 +254,11 @@ class EthSwap extends SwapInterface {
       return `Expected hash: ${expectedHash}, got: ${_secretHash}`
     }
 
-    if (BigNumber(expectedValue).times(1e18).isLessThan(balance)) {
-      return `Expected value: ${BigNumber(expectedValue).times(1e18).toNumber()}, got: ${balance}`
-    }
+    const expectedValueWei = BigNumber(expectedValue).times(1e18).toNumber()
 
+    if (expectedValueWei < balance) {
+      return `Expected value: ${expectedValueWei}, got: ${balance}`
+    }
   }
 
   /**
@@ -298,7 +276,9 @@ class EthSwap extends SwapInterface {
    */
   async getTargetWallet(ownerAddress) {
     console.log('EthSwap->getTargetWallet');
-    let address = await this.repeatToTheResult(-1, () => this.getTargetWalletPromise(ownerAddress))
+    let address = await util.helpers.repeatAsyncUntilResult(() =>
+      this.getTargetWalletPromise(ownerAddress)
+    )
     return address
   }
 
@@ -442,16 +422,18 @@ class EthSwap extends SwapInterface {
    * @returns {Promise<any>}
    */
   getSecretFromTxhash = (transactionHash) =>
-    this.repeatToTheResult(-1, () => SwapApp.env.web3.eth.getTransaction(transactionHash)
-      .then(txResult => {
-        try {
-          const bytes32 = this.decoder.decodeData(txResult.input)
-          return SwapApp.env.web3.utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
-        } catch (err) {
-          debug('swap.core:swaps')('Trying to fetch secret from tx: ' + err.message)
-          return
-        }
-      }))
+    util.helpers.repeatAsyncUntilResult(() =>
+      SwapApp.env.web3.eth.getTransaction(transactionHash)
+        .then(txResult => {
+          try {
+            const bytes32 = this.decoder.decodeData(txResult.input)
+            return SwapApp.env.web3.utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
+          } catch (err) {
+            debug('swap.core:swaps')('Trying to fetch secret from tx: ' + err.message)
+            return
+          }
+        })
+    )
 }
 
 
