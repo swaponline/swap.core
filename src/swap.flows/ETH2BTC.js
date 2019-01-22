@@ -1,6 +1,6 @@
 import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto' // move to BtcSwap
-import SwapApp, { constants } from 'swap.app'
+import SwapApp, { constants, util } from 'swap.app'
 import { Flow } from 'swap.swap'
 
 
@@ -60,7 +60,7 @@ class ETH2BTC extends Flow {
 
       btcScriptCreatingTransactionHash: null,
       ethSwapCreationTransactionHash: null,
-
+      canCreateEthTransaction: true,
       isEthContractFunded: false,
 
       secret: null,
@@ -141,44 +141,75 @@ class ETH2BTC extends Flow {
         if (scriptCheckResult) {
           console.error(`Btc script check error:`, scriptCheckResult)
           flow.swap.events.dispatch('btc script check error', scriptCheckResult)
+
           return
         }
 
         const swapData = {
-          participantAddress:   participant.eth.address,
-          secretHash:           flow.state.secretHash,
-          amount:               sellAmount,
-          targetWallet:         flow.swap.destinationSellAddress,
+          participantAddress: participant.eth.address,
+          secretHash: flow.state.secretHash,
+          amount: sellAmount,
+          targetWallet: flow.swap.destinationSellAddress
         }
 
-        try {
-          await this.ethSwap.create(swapData, (hash) => {
-            flow.swap.room.sendMessage({
-              event: 'create eth contract',
-              data: {
-                ethSwapCreationTransactionHash: hash,
-              },
-            })
+        const tryCreateSwapKeyName = `${flow.swap.id}.tryCreateSwap`
 
-            flow.setState({
-              ethSwapCreationTransactionHash: hash,
-            })
-          })
-        } catch (err) {
-          // TODO user can stuck here after page reload...
-          if ( /known transaction/.test(err.message) )
-            return console.error(`known tx: ${err.message}`)
-          else if ( /out of gas/.test(err.message) )
-            return console.error(`tx failed (wrong secret?): ${err.message}`)
-          else
-            return console.error(err)
+        const tryCreateSwap = async (currentKey) => {
+          if (!util.actualKey.compare(tryCreateSwapKeyName, currentKey)) {
+            return false
+          }
+
+          if (!flow.state.isEthContractFunded) {
+            try {
+              debug('swap.core:flow')('create swap', swapData)
+              await this.ethSwap.create(swapData, (hash) => {
+                debug('swap.core:flow')('create swap tx hash', hash)
+                flow.swap.room.sendMessage({
+                  event: 'create eth contract',
+                  data: {
+                    ethSwapCreationTransactionHash: hash,
+                  },
+                })
+
+                flow.setState({
+                  ethSwapCreationTransactionHash: hash,
+                  canCreateEthTransaction: true,
+                })
+
+                util.actualKey.remove(tryCreateSwapKeyName)
+              })
+            } catch (err) {
+              if ( /known transaction/.test(err.message) ) {
+                console.error(`known tx: ${err.message}`)
+              } else if ( /out of gas/.test(err.message) ) {
+                console.error(`tx failed (wrong secret?): ${err.message}`)
+              } else {
+                console.error(err)
+              }
+
+              flow.setState({
+                canCreateEthTransaction: false,
+              })
+
+              return null
+            }
+          }
+
+          return true
         }
 
-        debug('swap.core:flow')(`finish step`)
+        const tryCreateSwapKey = util.actualKey.create(tryCreateSwapKeyName)
 
-        flow.finishStep({
-          isEthContractFunded: true,
-        }, { step: 'lock-eth' })
+        const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
+          tryCreateSwap(tryCreateSwapKey),
+        )
+
+        if (isEthContractFunded) {
+          debug('swap.core:flow')(`finish step`)
+          flow.finishStep({
+            isEthContractFunded,
+          }, {step: 'lock-eth'})
+        }
       },
 
       // 6. Wait participant withdraw

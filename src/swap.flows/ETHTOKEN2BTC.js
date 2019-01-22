@@ -1,6 +1,6 @@
 import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto' // move to BtcSwap
-import SwapApp, { constants } from 'swap.app'
+import SwapApp, { constants, util } from 'swap.app'
 import { Flow } from 'swap.swap'
 
 
@@ -63,6 +63,7 @@ export default (tokenName) => {
 
         btcScriptCreatingTransactionHash: null,
         ethSwapCreationTransactionHash: null,
+        canCreateEthTransaction: true,
         isEthContractFunded: false,
 
         secret: null,
@@ -128,6 +129,7 @@ export default (tokenName) => {
 
         async () => {
           const { participant, buyAmount, sellAmount } = flow.swap
+          const { secretHash } = flow.state
 
           // TODO move this somewhere!
           const utcNow = () => Math.floor(Date.now() / 1000)
@@ -142,64 +144,89 @@ export default (tokenName) => {
           if (scriptCheckResult) {
             console.error(`Btc script check error:`, scriptCheckResult)
             flow.swap.events.dispatch('btc script check error', scriptCheckResult)
+
             return
           }
 
           const swapData = {
             participantAddress: participant.eth.address,
-            secretHash: flow.state.secretHash,
+            secretHash,
             amount: sellAmount,
             targetWallet: flow.swap.destinationSellAddress
           }
 
-          const createSwap = async () => {
-            debug('swap.core:flow')('fetching allowance')
-            const allowance = await flow.ethTokenSwap.checkAllowance({
-              spender: SwapApp.services.auth.getPublicData().eth.address
-            })
+          const tryCreateSwapKeyName = `${flow.swap.id}.tryCreateSwap`
 
-            debug('swap.core:flow')('allowance', allowance)
-            if (allowance < sellAmount) {
-              debug('swap.core:flow')('allowance < sellAmount', allowance, sellAmount)
-              await flow.ethTokenSwap.approve({
-                amount: sellAmount,
-              })
+          const tryCreateSwap = async (currentKey) => {
+            if (!util.actualKey.compare(tryCreateSwapKeyName, currentKey)) {
+              return false
             }
 
-            clearInterval(checkCreateSwap)
+            if (!flow.state.isEthContractFunded) {
+              try {
+                debug('swap.core:flow')('fetching allowance')
+                const allowance = await flow.ethTokenSwap.checkAllowance({
+                  spender: SwapApp.services.auth.getPublicData().eth.address,
+                })
 
-            debug('swap.core:flow')('create swap', swapData)
-            /* create contract and save this hash */
-            let ethSwapCreationTransactionHash
-            await flow.ethTokenSwap.create(swapData, async (hash) => {
-              debug('swap.core:flow')('create swap tx hash', hash)
-              ethSwapCreationTransactionHash = hash;
-            });
+                debug('swap.core:flow')('allowance', allowance)
+                if (allowance < sellAmount) {
+                  debug('swap.core:flow')('allowance < sellAmount', allowance, sellAmount)
+                  await flow.ethTokenSwap.approve({
+                    amount: sellAmount,
+                  })
+                }
 
-            debug('swap.core:flow')('created swap!', ethSwapCreationTransactionHash)
-            /* set Target wallet */
-            //await flow.setTargetWalletDo();
+                debug('swap.core:flow')('create swap', swapData)
+                await flow.ethTokenSwap.create(swapData, async (hash) => {
+                  debug('swap.core:flow')('create swap tx hash', hash)
+                  flow.swap.room.sendMessage({
+                    event: 'create eth contract',
+                    data: {
+                      ethSwapCreationTransactionHash: hash,
+                    },
+                  })
 
-            /* send data to other side */
-            flow.swap.room.sendMessage({
-              event: 'create eth contract',
-              data: {
-                ethSwapCreationTransactionHash: ethSwapCreationTransactionHash,
-              },
-            })
+                  flow.setState({
+                    ethSwapCreationTransactionHash: hash,
+                    canCreateEthTransaction: true,
+                  })
 
-            flow.setState({
-              ethSwapCreationTransactionHash: ethSwapCreationTransactionHash,
-            })
+                  debug('swap.core:flow')('created swap!', hash)
+                  util.actualKey.remove(tryCreateSwapKeyName)
+                })
+              } catch (err) {
+                if ( /known transaction/.test(err.message) ) {
+                  console.error(`known tx: ${err.message}`)
+                } else if ( /out of gas/.test(err.message) ) {
+                  console.error(`tx failed (wrong secret?): ${err.message}`)
+                } else {
+                  console.error(err)
+                }
 
-            flow.finishStep({
-              isEthContractFunded: true,
-            }, {step: 'lock-eth'})
+                flow.setState({
+                  canCreateEthTransaction: false,
+                })
+
+                return null
+              }
+            }
+
+            return true
           }
 
-          const checkCreateSwap = setInterval(createSwap, 20 * 1000)
+          const tryCreateSwapKey = util.actualKey.create(tryCreateSwapKeyName)
 
-          createSwap()
+          const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
+            tryCreateSwap(tryCreateSwapKey),
+          )
+
+          if (isEthContractFunded) {
+            debug('swap.core:flow')(`finish step`)
+            flow.finishStep({
+              isEthContractFunded,
+            }, {step: 'lock-eth'})
+          }
         },
 
         // 6. Wait participant withdraw
