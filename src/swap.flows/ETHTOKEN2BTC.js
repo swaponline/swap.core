@@ -163,12 +163,16 @@ export default (tokenName) => {
             calcFee: true,
           }
 
+          // TODO fee after allowance
+          // EthTokenSwap -> approve need gas too
           /* calc create contract fee and save this */
+          /*
           flow.setState({
             createSwapFee: await flow.ethTokenSwap.create(swapData),
           })
+          */
           swapData.calcFee = false
-          debug('swap.core:flow')('create swap fee', flow.state.createSwapFee)
+          //debug('swap.core:flow')('create swap fee', flow.state.createSwapFee)
 
           const tryCreateSwapKeyName = `${flow.swap.id}.tryCreateSwap`
 
