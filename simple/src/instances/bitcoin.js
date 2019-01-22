@@ -7,6 +7,12 @@ const debug = require('debug')
 const BITPAY = false ? `https://insight.bitpay.com/api` : `https://test-insight.swap.online/insight-api`
 const BITPAY_MAIN = `https://insight.bitpay.com/api`
 
+const BLOCKCYPHER_API = `https://api.blockcypher.com/v1/btc/main/`
+const BLOCKCYPHER_API_TESTNET = `https://api.blockcypher.com/v1/btc/test3/`
+const EARN_COM = `https://bitcoinfees.earn.com/api/v1/fees/recommended`
+const BLOCKCYPHER_API_TOKEN = process.env.BLOCKCYPHER_API_TOKEN
+
+
 const filterError = (error) => {
   const { name, code, statusCode, options } = error
 
@@ -60,6 +66,57 @@ class Bitcoin {
     return account
   }
 
+  async estimateFeeRate(options) {
+    if (this.network === 'testnet') {
+      return this.estimateFeeRateBLOCKCYPHER(options)
+    }
+
+    try {
+      return await this.estimateFeeRateBLOCKCYPHER(options)
+    } catch (err) {
+      console.error(`EstimateFeeError: BLOCKCYPHER_API ${err.message}, trying EARN.COM...`)
+      return await this.estimateFeeRateEARNCOM(options)
+    }
+  }
+
+  estimateFeeRateEARNCOM({ speed = 'normal' } = {}) {
+    const _speed = (() => {
+      switch (speed) {
+        case 'fast':    return 'fastestFee'
+        case 'normal':  return 'halfHourFee'
+        case 'slow':    return 'hourFee'
+        default:      return 'halfHourFee'
+      }
+    })()
+
+    return request
+      .get(`${EARN_COM}`)
+      .then(json => JSON.parse(json))
+      .then(fees => Number(fees[_speed]) * 1024)
+      .catch(error => filterError(error))
+  }
+
+  estimateFeeRateBLOCKCYPHER({ speed = 'normal' } = {}) {
+    const _speed = (() => {
+      switch (speed) {
+        case 'fast':    return 'high_fee_per_kb'
+        case 'normal':  return 'medium_fee_per_kb'
+        case 'slow':    return 'low_fee_per_kb'
+        default:      return 'medium_fee_per_kb'
+      }
+    })()
+
+    const API_ROOT = this.network === 'testnet'
+      ? BLOCKCYPHER_API_TESTNET
+      : BLOCKCYPHER_API
+
+    return request
+      .get(`${API_ROOT}`)
+      .then(json => JSON.parse(json))
+      .then(info => Number(info[_speed]))
+      .catch(error => filterError(error))
+  }
+
   fetchBalance(address) {
     return request.get(`${this.root}/addr/${address}`)
       .then(( json ) => {
@@ -91,6 +148,26 @@ class Bitcoin {
   fetchTx(hash) {
     return request
       .get(`${this.root}/tx/${hash}`)
+      .then(json => JSON.parse(json))
+      .catch(error => filterError(error))
+  }
+
+  fetchTxInfo(hash) {
+    const API_ROOT = this.network === 'testnet'
+      ? BLOCKCYPHER_API_TESTNET
+      : BLOCKCYPHER_API
+
+    return request
+      .get(`${API_ROOT}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`)
+      .catch(err => {
+        if (!/transaction hasalready been confirmed/.test(err.message)
+        &&  !/API calls limits/.test(err.message)) {
+          debug('swap.core:bitcoin')(`bitcoin error: fetch tx info: ${err.message}`)
+          throw err
+        }
+
+        return request.get(`${API_ROOT}/txs/${hash}`)
+      })
       .then(json => JSON.parse(json))
       .catch(error => filterError(error))
   }

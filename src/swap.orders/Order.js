@@ -1,3 +1,4 @@
+import debug from 'debug'
 import SwapApp from 'swap.app'
 import BigNumber from 'bignumber.js'
 import events from './events'
@@ -54,14 +55,26 @@ class Order {
   }
 
   _onMount() {
-    SwapApp.services.room.on('request swap', ({ orderId, participant, destination }) => {
+    SwapApp.services.room.on('request swap', ({ orderId, participant, participantMetadata, destination }) => {
       if (orderId === this.id && this.requests.length < 10 && !this.requests.find(({ participant: { peer } }) => peer === participant.peer)) {
-        this.requests.push({ participant, destination, isPartial: false })
+        let reputation = 0
+
+        try {
+          // todo: check other blockchains
+          if (participant.eth.address === participantMetadata.address || participant.btc.address === participantMetadata.address) {
+            reputation = SwapApp.env.swapsExplorer.getVerifiedReputation(participantMetadata)
+          }
+        } catch (err) {
+          debug('swap.core:order')(err)
+        }
+
+        this.requests.push({ participant, destination, reputation, isPartial: false })
 
         events.dispatch('new order request', {
           orderId,
           participant,
           destination,
+          participantMetadata
         })
       }
     })
@@ -149,7 +162,7 @@ class Order {
    * @param callback - callback will receive updated order
    * @param conditionHandler - autoreply to new order proposal
    */
-  sendRequestForPartial(updatedOrder = {}, destination = {}, callback, conditionHandler) {
+  sendRequestForPartial(updatedOrder = {}, requestOptions = {}, callback, conditionHandler) {
     if (!this.isPartial) {
       throw new Error(`Cant request partial fulfilment for order ${this.id}`)
     }
@@ -200,6 +213,7 @@ class Order {
         // if condition to check is not given,
         // we need logic on client app side
         if (typeof conditionHandler !== 'function') {
+          // TODO: pass destination and participantMetadata
           return callback(newOrder)
         }
 
@@ -208,7 +222,7 @@ class Order {
 
         if (newOrderIsGood) {
           // request that new order
-          newOrder.sendRequest(accepted => callback(newOrder, accepted), destination)
+          newOrder.sendRequest(accepted => callback(newOrder, accepted), requestOptions)
         } else {
           callback(newOrder, false)
         }
@@ -229,8 +243,13 @@ class Order {
    *
    * @param callback - awaiting for response - accept / decline
    */
-  sendRequest(callback, destination = {}) {
+  sendRequest(callback, requestOptions = {}) {
     const self = this
+
+    const {
+      address: destinationAddress,
+      participantMetadata,
+    } = requestOptions
 
     if (SwapApp.services.room.peer === this.owner.peer) {
       console.warn('You are the owner of this Order. You can\'t send request to yourself.')
@@ -247,15 +266,16 @@ class Order {
     })
 
     const participant = SwapApp.services.auth.getPublicData()
-    const { address } = destination
 
     SwapApp.services.room.sendMessagePeer(this.owner.peer, {
       event: 'request swap',
       data: {
         orderId: this.id,
-        // TODO why do we send this info?
         participant,
-        destination,
+        participantMetadata,
+        destination: {
+          address: destinationAddress
+        }
       },
     })
 
@@ -268,7 +288,7 @@ class Order {
           isRequested: false,
           destination: {
             ...self.destination,
-            participantAddress: address,
+            participantAddress: destinationAddress,
           },
         })
 

@@ -203,7 +203,7 @@ export default (tokenName) => {
                 });
 
                 //TODO miner fee
-                const balanceOnScript = BigInt(balanceSatoshi)// + BigInt(this.btcSwap.getTxFee( true ) );
+                const balanceOnScript = balanceSatoshi
                 const isEnoughMoney = sellAmount.multipliedBy(1e8).isLessThanOrEqualTo( balanceOnScript );
 
                 console.log(balanceOnScript)
@@ -263,17 +263,17 @@ export default (tokenName) => {
             secret:         flow.state.secret,
           }
 
-          const balanceCheckResult = await flow.ethTokenSwap.checkBalance({
+          const balanceCheckError = await flow.ethTokenSwap.checkBalance({
             ownerAddress: participant.eth.address,
             participantAddress: SwapApp.services.auth.accounts.eth.address,
             expectedValue: buyAmount,
             expectedHash: secretHash,
           })
 
-          if (!balanceCheckResult) {
-            console.error(`Waiting until deposit: ETH balance check error:`, balanceCheckResult)
-            flow.swap.events.dispatch('eth balance check error', balanceCheckResult)
-            //return
+          if (balanceCheckError) {
+            console.error(`Waiting until deposit: ETH balance check error:`, balanceCheckError)
+            flow.swap.events.dispatch('eth balance check error', balanceCheckError)
+            return
           }
 
           const targetWallet = await flow.ethTokenSwap.getTargetWallet( participant.eth.address );
