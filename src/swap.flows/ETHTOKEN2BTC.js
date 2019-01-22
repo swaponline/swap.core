@@ -352,7 +352,7 @@ export default (tokenName) => {
       })
 
       this.swap.room.sendMessage({
-        event: 'accept withdraw'
+        event: 'accept withdraw request'
       })
     }
 
