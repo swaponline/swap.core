@@ -15,6 +15,14 @@ const ETHERCHAIN_API = `https://www.etherchain.org/api/gasPriceOracle`
 const BigNumber = require('bignumber.js')
 const TEN = new BigNumber(10)
 
+const filterError = (error) => {
+  const { name, code, statusCode, options } = error
+
+  debug('swap.core:ethereum')(`UnknownError: statusCode=${statusCode} ${error.message}`)
+
+  throw error
+}
+
 class Ethereum {
 
   constructor(_network = 'testnet', _customProvider) {

@@ -161,7 +161,8 @@ class Bitcoin {
       .get(`${API_ROOT}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`)
       .catch(err => {
         if (!/transaction hasalready been confirmed/.test(err.message)
-        &&  !/API calls limits/.test(err.message)) {
+        &&  !/API calls limits/.test(err.message)
+        &&  !/Confidence factor limits/.test(err.message)) {
           debug('swap.core:bitcoin')(`bitcoin error: fetch tx info: ${err.message}`)
           throw err
         }
