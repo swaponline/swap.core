@@ -379,7 +379,7 @@ export default (tokenName) => {
         requireWithdrawFeeSended: true,
       })
 
-      this.swap.room.once('accept withdraw', () => {
+      this.swap.room.on('accept withdraw request', () => {
         flow.swap.room.sendMessage({
           event: 'do withdraw',
           data: {
