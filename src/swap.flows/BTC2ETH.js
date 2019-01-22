@@ -64,6 +64,7 @@ class BTC2ETH extends Flow {
 
       ethSwapWithdrawTransactionHash: null,
       isEthWithdrawn: false,
+      ethWithdrawnError: false,
 
       refundTransactionHash: null,
       isRefunded: false,
@@ -265,6 +266,9 @@ class BTC2ETH extends Flow {
 
           })
         } catch (err) {
+          flow.setState({
+            ethWithdrawnError: true,
+          })
           // TODO user can stuck here after page reload...
           if ( /known transaction/.test(err.message) )
             return console.error(`known tx: ${err.message}`)
@@ -290,6 +294,7 @@ class BTC2ETH extends Flow {
 
         flow.finishStep({
           isEthWithdrawn: true,
+          ethWithdrawnError: false,
         })
       },
 

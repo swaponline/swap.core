@@ -1,3 +1,4 @@
+import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
@@ -64,6 +65,7 @@ class LTC2ETH extends Flow {
 
       ethSwapWithdrawTransactionHash: null,
       isEthWithdrawn: false,
+      ethWithdrawnError: false,
 
       refundTransactionHash: null,
       isRefunded: false,
@@ -84,7 +86,7 @@ class LTC2ETH extends Flow {
     //   ownerAddress: this.swap.participant.eth.address,
     // })
     //   .then((balance) => {
-    //     console.log('balance:', balance)
+    //     debug('swap.core:flow')('balance:', balance)
     //   })
   }
 
@@ -264,6 +266,7 @@ class LTC2ETH extends Flow {
 
           })
         } catch (err) {
+          this.setState({ ethWithdrawnError: true })
           // TODO user can stuck here after page reload...
           if ( /known transaction/.test(err.message) )
             return console.error(`known tx: ${err.message}`)
