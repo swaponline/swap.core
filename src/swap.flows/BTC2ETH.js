@@ -64,6 +64,7 @@ class BTC2ETH extends Flow {
       isEthContractFunded: false,
 
       ethSwapWithdrawTransactionHash: null,
+      canCreateEthTransaction: true,
       isEthWithdrawn: false,
 
       refundTransactionHash: null,
@@ -283,6 +284,7 @@ class BTC2ETH extends Flow {
         if (balanceCheckError) {
           console.error('Waiting until deposit: ETH balance check error:', balanceCheckError)
           flow.swap.events.dispatch('eth balance check error', balanceCheckError)
+
           return
         }
 
@@ -296,12 +298,13 @@ class BTC2ETH extends Flow {
             console.error(
               'Destination address for ether dismatch with needed (Needed, Getted). Stop swap now!',
               needTargetWallet,
-              targetWallet
+              targetWallet,
             )
             flow.swap.events.dispatch('address for ether invalid', {
-              needed : needTargetWallet,
-              getted : targetWallet
+              needed: needTargetWallet,
+              getted: targetWallet,
             })
+
             return
           }
         }
@@ -318,6 +321,7 @@ class BTC2ETH extends Flow {
               await flow.ethSwap.withdraw(data, (hash) => {
                 flow.setState({
                   ethSwapWithdrawTransactionHash: hash,
+                  canCreateEthTransaction: true,
                 })
 
                 // Spot where there was an a vulnerability
@@ -332,17 +336,22 @@ class BTC2ETH extends Flow {
               })
             } catch (err) {
               if ( /known transaction/.test(err.message) ) {
-                console.log(`known tx: ${err.message}`)
+                console.error(`known tx: ${err.message}`)
               } else if ( /out of gas/.test(err.message) ) {
-                console.log(`tx failed (wrong secret?): ${err.message}`)
+                console.error(`tx failed (wrong secret?): ${err.message}`)
               } else {
-                console.log(err)
+                console.error(err)
               }
+
+              flow.setState({
+                canCreateEthTransaction: false,
+              })
+
               return null
             }
-
-            return true
           }
+
+          return true
         }
 
         const tryWithdrawKey = util.actualKey.create(tryWithdrawKeyName)

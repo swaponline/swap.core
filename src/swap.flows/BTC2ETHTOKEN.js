@@ -1,6 +1,6 @@
 import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto'
-import SwapApp, { constants } from 'swap.app'
+import SwapApp, { constants, util } from 'swap.app'
 import { Flow } from 'swap.swap'
 import { BigNumber } from 'bignumber.js'
 
@@ -66,8 +66,8 @@ export default (tokenName) => {
         isEthContractFunded: false,
 
         ethSwapWithdrawTransactionHash: null,
+        canCreateEthTransaction: true,
         isEthWithdrawn: false,
-        isBtcWithdrawn: false,
 
         refundTxHex: null,
         isFinished: false,
@@ -271,55 +271,101 @@ export default (tokenName) => {
           })
 
           if (balanceCheckError) {
-            console.error(`Waiting until deposit: ETH balance check error:`, balanceCheckError)
+            console.error('Waiting until deposit: ETH balance check error:', balanceCheckError)
             flow.swap.events.dispatch('eth balance check error', balanceCheckError)
+
             return
           }
 
-          const targetWallet = await flow.ethTokenSwap.getTargetWallet( participant.eth.address );
-          const needTargetWallet = (flow.swap.destinationBuyAddress) ? flow.swap.destinationBuyAddress : SwapApp.services.auth.accounts.eth.address;
+          const targetWallet = await flow.ethTokenSwap.getTargetWallet( participant.eth.address )
+          const needTargetWallet = (flow.swap.destinationBuyAddress)
+            ? flow.swap.destinationBuyAddress
+            : SwapApp.services.auth.accounts.eth.address
 
           if (targetWallet != needTargetWallet) {
-            console.error("Destination address for tokens dismatch with needed (Needed, Getted). Stop swap now!",needTargetWallet,targetWallet);
-            flow.swap.events.dispatch('address for tokens invalid', { needed : needTargetWallet, getted : targetWallet });
+            console.error(
+              "Destination address for tokens dismatch with needed (Needed, Getted). Stop swap now!",
+              needTargetWallet,
+              targetWallet,
+            )
+
+            flow.swap.events.dispatch('address for tokens invalid', {
+              needed: needTargetWallet,
+              getted: targetWallet,
+            })
+
             return
           }
 
-          try {
-            await flow.ethTokenSwap.withdraw(data, (hash) => {
-              flow.setState({
-                ethSwapWithdrawTransactionHash: hash,
-              })
+          const tryWithdrawKeyName = `${flow.swap.id}.tryWithdraw`
 
+          const tryWithdraw = async (currentKey) => {
+            if (!util.actualKey.compare(tryWithdrawKeyName, currentKey)) {
+              return false
+            }
+
+            if (!flow.state.isEthWithdrawn) {
+              try {
+                await flow.ethTokenSwap.withdraw(data, (hash) => {
+                  flow.setState({
+                    ethSwapWithdrawTransactionHash: hash,
+                    canCreateEthTransaction: true,
+                  })
+
+                  // Spot where there was an a vulnerability
+                  flow.swap.room.sendMessage({
+                    event: 'ethWithdrawTxHash',
+                    data: {
+                      ethSwapWithdrawTransactionHash: hash,
+                    }
+                  })
+
+                  util.actualKey.remove(tryWithdrawKeyName)
+                })
+              } catch (err) {
+                if ( /known transaction/.test(err.message) ) {
+                  console.error(`known tx: ${err.message}`)
+                } else if ( /out of gas/.test(err.message) ) {
+                  console.error(`tx failed (wrong secret?): ${err.message}`)
+                } else {
+                  console.error(err)
+                }
+
+                flow.setState({
+                  canCreateEthTransaction: false,
+                })
+
+                return null
+              }
+            }
+
+            return true
+          }
+
+          const tryWithdrawKey = util.actualKey.create(tryWithdrawKeyName)
+
+          const isEthWithdrawn = await util.helpers.repeatAsyncUntilResult(() =>
+            tryWithdraw(tryWithdrawKey),
+          )
+
+          if (isEthWithdrawn) {
+            flow.swap.room.on('request ethWithdrawTxHash', () => {
               flow.swap.room.sendMessage({
                 event: 'ethWithdrawTxHash',
                 data: {
-                  ethSwapWithdrawTransactionHash: hash,
-                }
+                  ethSwapWithdrawTransactionHash: flow.state.ethSwapWithdrawTransactionHash,
+                },
               })
             })
-          } catch (err) {
-            // TODO user can stuck here after page reload...
-            if ( !/known transaction/.test(err.message) ) console.error(err)
-            return
-          }
 
-          flow.swap.room.on('request ethWithdrawTxHash', () => {
             flow.swap.room.sendMessage({
-              event: 'ethWithdrawTxHash',
-              data: {
-                ethSwapWithdrawTransactionHash: flow.state.ethSwapWithdrawTransactionHash,
-              },
+              event: 'finish eth withdraw',
             })
-          })
 
-          flow.swap.room.sendMessage({
-            event: 'finish eth withdraw',
-          })
-
-          flow.finishStep({
-            isEthWithdrawn: true,
-          })
+            flow.finishStep({
+              isEthWithdrawn,
+            })
+          }
         },
 
         // 7. Finish
