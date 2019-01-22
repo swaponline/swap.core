@@ -2,6 +2,8 @@ import debug from 'debug'
 import SwapApp, { SwapInterface, constants } from 'swap.app'
 import BigNumber from 'bignumber.js'
 
+const DUST = 546
+
 class BtcSwap extends SwapInterface {
 
   /**
@@ -10,18 +12,28 @@ class BtcSwap extends SwapInterface {
    * @param options.fetchBalance
    * @param options.fetchUnspents
    * @param options.broadcastTx
+   * @param options.fetchTxInfo {(tx_hash) => Promise({ confidence, fees })}
+   * @param options.estimateFeeRate { ({ speed }) => Promise(fee_rate_per_kb) }
    */
   constructor(options) {
     super()
 
     if (typeof options.fetchBalance !== 'function') {
-      throw new Error('EthSwap: "fetchBalance" required')
+      throw new Error('BtcSwap: "fetchBalance" required')
     }
     if (typeof options.fetchUnspents !== 'function') {
-      throw new Error('EthSwap: "fetchUnspents" required')
+      throw new Error('BtcSwap: "fetchUnspents" required')
     }
     if (typeof options.broadcastTx !== 'function') {
-      throw new Error('EthSwap: "broadcastTx" required')
+      throw new Error('BtcSwap: "broadcastTx" required')
+    }
+    if (typeof options.fetchTxInfo !== 'function') {
+      // tx_hash => { confidence, fees }
+      console.warn(`BtcSwap: "fetchTxInfo" is not a function. You will not be able to use tx-confidence feature`)
+    }
+    if (typeof options.estimateFeeRate !== 'function') {
+      // ({ speed } = {}) => feeRate
+      console.warn(`BtcSwap: "estimateFeeRate" is not a function. You will not be able use automatic mempool-based fee`)
     }
 
     this._swapName      = constants.COINS.btc
@@ -29,6 +41,8 @@ class BtcSwap extends SwapInterface {
     this.fetchUnspents  = options.fetchUnspents
     this.broadcastTx    = options.broadcastTx
     this.feeValue       = options.feeValue || 5000
+    this.fetchTxInfo    = options.fetchTxInfo || (() => ({}))
+    this.estimateFeeRate = options.estimateFeeRate || (() => {})
   }
 
   _initSwap() {
@@ -41,12 +55,72 @@ class BtcSwap extends SwapInterface {
 
   /**
    *
-   * @param {boolean} satoshis
-   * @returns {BigNumber|double}
+   * @param {object} options
+   * @param {boolean} options.inSatoshis
+   * @param {Number} options.size
+   * @param {String} options.speed
+   * @returns {BigNumber|Number}
    * @public
    */
-  getTxFee( satoshis ) {
-    return (satoshis) ? this.feeValue : this.feeValue / 100000000
+  async getTxFee({ inSatoshis, size = 550, speed = 'normal' } = {}) {
+    try {
+      const estimatedRate = await this.estimateFeeRate({ speed })
+      const estimatedFee = Math.max(DUST, Math.ceil(estimatedRate * size / 1024))
+
+      if (Number.isInteger(Number(estimatedFee))) {
+        this.feeValue = Number(estimatedFee)
+      } else {
+        throw new Error(`Not an Integer: ${estimatedFee}`)
+      }
+    } catch (err) {
+      debug('swap.core:swaps')(`BtcSwap: Error with fee update: ${err.message}, using old value feeValue=${this.feeValue}`)
+    }
+
+    return inSatoshis
+      ? this.feeValue
+      : BigNumber(this.feeValue).div(1e8)
+  }
+
+  /**
+   *
+   * @param {array} unspents
+   * @param {Number} expectedConfidenceLevel
+   * @returns {array}
+   * @private
+   */
+  async filterConfidentUnspents(unspents, expectedConfidenceLevel = 0.95) {
+    const currentFastestFee = await this.getTxFee({ inSatoshis: true })
+
+    const feesToConfidence = (fees, size) =>
+      fees < currentFastestFee ? (fees / currentFastestFee) : 1
+
+    const confirmationsToConfidence = confs => confs > 0 ? 1 : 0
+
+    const fetchConfidence = async ({ txid, confirmations }) => {
+      try {
+        const { confidence, fees, size } = await this.fetchTxInfo(txid)
+
+        if (confidence) {
+          return confidence
+        }
+
+        if (fees) {
+          return feesToConfidence(fees, size)
+        }
+
+        throw new Error(`confidence=${confidence},fees=${fees}`)
+
+      } catch (err) {
+        console.error(`BtcSwap: Error fetching confidence: using confirmations > 0`, err.message)
+        return confirmationsToConfidence(confirmations)
+      }
+    }
+
+    const confidences = await Promise.all(unspents.map(fetchConfidence))
+
+    return unspents.filter((utxo, index) => {
+      return BigNumber(confidences[index]).isGreaterThan(expectedConfidenceLevel)
+    })
   }
   /**
    *
@@ -142,9 +216,13 @@ class BtcSwap extends SwapInterface {
     const { recipientPublicKey, lockTime } = data
     const { scriptAddress, script } = this.createScript(data, hashName)
 
+    const expectedConfidence = expected.confidence || 0.99
     const unspents      = await this.fetchUnspents(scriptAddress)
-    const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
     const expectedValue = expected.value.multipliedBy(1e8).integerValue()
+    const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+
+    const confidentUnspents = await this.filterConfidentUnspents(unspents, expectedConfidence)
+    const totalConfidentUnspent = confidentUnspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
 
     if (expectedValue.isGreaterThan(totalUnspent)) {
       return `Expected script value: ${expectedValue.toNumber()}, got: ${totalUnspent}`
@@ -154,6 +232,9 @@ class BtcSwap extends SwapInterface {
     }
     if (expected.recipientPublicKey !== recipientPublicKey) {
       return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
+    }
+    if (expectedValue.isGreaterThan(totalConfidentUnspent)) {
+      return `Expected script value: ${expectedValue.toNumber()} with confidence above ${expectedConfidence}, got: ${totalConfidentUnspent}`
     }
   }
 
@@ -177,7 +258,7 @@ class BtcSwap extends SwapInterface {
         const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.btc.getAddress())
 
         const fundValue     = amount.multipliedBy(1e8).integerValue().toNumber()
-        const feeValue      = this.getTxFee( true ) // TODO how to get this value
+        const feeValue      = await this.getTxFee({ inSatoshis: true })
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue
 

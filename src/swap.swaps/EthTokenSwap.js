@@ -1,5 +1,5 @@
 import debug from 'debug'
-import SwapApp, { SwapInterface, constants } from 'swap.app'
+import SwapApp, { SwapInterface, constants, util } from 'swap.app'
 import BigNumber from 'bignumber.js'
 import InputDataDecoder from 'ethereum-input-data-decoder'
 
@@ -41,6 +41,11 @@ class EthTokenSwap extends SwapInterface {
     if (!Array.isArray(options.tokenAbi)) {
       throw new Error('EthTokenSwap: "tokenAbi" required')
     }
+    if (typeof options.estimateGasPrice !== 'function') {
+      // ({ speed } = {}) => gasPrice
+      console.warn(`EthTokenSwap: "estimateGasPrice" is not a function. You will not be able use automatic mempool-based fee`)
+    }
+
 
 
     this._swapName      = options.name.toUpperCase()
@@ -54,6 +59,7 @@ class EthTokenSwap extends SwapInterface {
     this.gasLimit       = options.gasLimit || 2e5
     this.gasPrice       = options.gasPrice || 2e9
     this.fetchBalance   = options.fetchBalance
+    this.estimateGasPrice = options.estimateGasPrice || (() => {})
   }
 
   _initSwap() {
@@ -64,17 +70,11 @@ class EthTokenSwap extends SwapInterface {
 
   async updateGas() {
     try {
-      await SwapApp.env.web3.eth.getGasPrice((err, _gasPrice) => {
-        const newGas = new BigNumber(String(_gasPrice)).plus(new BigNumber(String(1300000000)))
-        this.gasPrice = Number(newGas)
-      })
-    }
-    catch(err) {
-      console.error(`${err.name}: ${err.message}`)
-      this.gasPrice = 15e9
+      this.gasPrice = await this.estimateGasPrice()
+    } catch(err) {
+      debug('swap.core:swaps')(`EthTokenSwap: Error with gas update: ${err.message}, using old value gasPrice=${this.gasPrice}`)
     }
   }
-
 
   /**
    *
@@ -282,31 +282,6 @@ class EthTokenSwap extends SwapInterface {
     })
   }
 
-
-  /**
-   *
-   * @param {number} repeat
-   * @param {function} action
-   * @param delay
-   * @returns {Promise<any>}
-   */
-  repeatToTheResult = (repeat, action, delay = 5000) =>
-    new Promise(async (resolve, reject) => {
-      let result = await action()
-
-      if (result === 0 || typeof result === 'undefined' || result === null || result === '0x0000000000000000000000000000000000000000') {
-        if (repeat > 0 || repeat === -1) {
-          if (repeat !== -1) repeat--
-          setTimeout(async () => {
-            result = await this.repeatToTheResult(repeat, action, delay)
-            resolve(result)
-          }, delay)
-        }
-      } else {
-        resolve(result)
-      }
-    })
-
   /**
    *
    * @param {object} data
@@ -342,9 +317,12 @@ class EthTokenSwap extends SwapInterface {
   async checkBalance(data) {
     const { ownerAddress, participantAddress, expectedValue, expectedHash } = data
 
-    const balance = await this.repeatToTheResult(-1, () => this.getBalance({ ownerAddress }))
-    const swap = await this.repeatToTheResult(-1,
-      () => this.contract.methods.swaps(ownerAddress, participantAddress).call())
+    const balance = await util.helpers.repeatAsyncUntilResult(() =>
+      this.getBalance({ ownerAddress })
+    )
+    const swap = await util.helpers.repeatAsyncUntilResult(() =>
+      this.contract.methods.swaps(ownerAddress, participantAddress).call()
+    )
 
     const { secretHash } = swap
     debug('swap.core:swaps')(`swap.secretHash`, secretHash)
@@ -357,8 +335,10 @@ class EthTokenSwap extends SwapInterface {
       return `Expected hash: ${expectedHash}, got: ${_secretHash}`
     }
 
-    if (expectedValue.isGreaterThan(balance)) {
-      return `Expected value: ${expectedValue.toNumber()}, got: ${balance}`
+    const expectedValueWei = BigNumber(expectedValue).times(1e18).toNumber()
+
+    if (expectedValueWei < balance) {
+      return `Expected value: ${expectedValueWei}, got: ${balance}`
     }
   }
 
@@ -368,7 +348,9 @@ class EthTokenSwap extends SwapInterface {
    * @returns {Promise.<string>}
    */
   async getTargetWallet(ownerAddress) {
-    let address = await this.repeatToTheResult(-1, () => this.getTargetWalletPromise(ownerAddress))
+    let address = await util.helpers.repeatAsyncUntilResult(() =>
+      this.getTargetWalletPromise(ownerAddress)
+    )
     return address
   }
 
@@ -502,16 +484,18 @@ class EthTokenSwap extends SwapInterface {
    * @returns {Promise<any>}
    */
   getSecretFromTxhash = (transactionHash) =>
-    this.repeatToTheResult(-1, () => SwapApp.env.web3.eth.getTransaction(transactionHash)
-      .then(txResult => {
-        try {
-          const bytes32 = this.decoder.decodeData(txResult.input)
-          return SwapApp.env.web3.utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
-        } catch (err) {
-          debug('swap.core:swaps')('Trying to fetch secret from tx: ' + err.message)
-          return
-        }
-      }))
+    util.helpers.repeatAsyncUntilResult(() =>
+      SwapApp.env.web3.eth.getTransaction(transactionHash)
+        .then(txResult => {
+          try {
+            const bytes32 = this.decoder.decodeData(txResult.input)
+            return SwapApp.env.web3.utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
+          } catch (err) {
+            debug('swap.core:swaps')('Trying to fetch secret from tx: ' + err.message)
+            return
+          }
+        })
+    )
 
 }
 

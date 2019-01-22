@@ -1,5 +1,5 @@
 import debug from 'debug'
-import SwapApp, { SwapInterface, constants } from 'swap.app'
+import SwapApp, { SwapInterface, constants, util } from 'swap.app'
 
 
 class LtcSwap extends SwapInterface {
@@ -317,30 +317,6 @@ class LtcSwap extends SwapInterface {
 
   /**
    *
-   * @param {number} repeat
-   * @param {function} action
-   * @param delay
-   * @returns {Promise<any>}
-   */
-  repeatToTheResult = (repeat, action, delay = 5000) =>
-    new Promise(async (resolve, reject) => {
-      let result = await action()
-
-      if (result === 0 || typeof result === 'undefined' || result === null) {
-        if (repeat > 0) {
-          repeat--
-          setTimeout(async () => {
-            result = await this.repeatToTheResult(repeat, action)
-            resolve(result)
-          }, delay)
-        }
-      } else {
-        resolve(result)
-      }
-    })
-
-  /**
-   *
    * @param {object} data
    * @param {string} data.ownerAddress
    * @param {BigNumber} data.expectedValue
@@ -348,7 +324,9 @@ class LtcSwap extends SwapInterface {
    */
   async checkBalance(data) {
     const { ownerAddress, expectedValue } = data
-    let balance = await this.repeatToTheResult(9, () => this.getBalance( ownerAddress ))
+    let balance = await util.helpers.repeatAsyncUntilResult(() =>
+      this.getBalance( ownerAddress )
+    )
 
 
     if (expectedValue.isGreaterThan(balance)) {
@@ -403,8 +381,10 @@ class LtcSwap extends SwapInterface {
    * @returns {Promise<any>}
    */
   getSecretFromTxhash = (transactionHash) =>
-    this.repeatToTheResult(9, () => this.fetchTx(transactionHash)
-      .then(txResult => txResult.vin[0].scriptSig.asm.split(' ')[2]))
+    util.helpers.repeatAsyncUntilResult(() =>
+      this.fetchTx(transactionHash)
+        .then(txResult => txResult.vin[0].scriptSig.asm.split(' ')[2])
+    )
 }
 
 export default LtcSwap
