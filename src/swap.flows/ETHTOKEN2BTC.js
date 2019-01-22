@@ -79,6 +79,12 @@ export default (tokenName) => {
 
       super._persistSteps()
       this._persistState()
+
+      flow.swap.room.once('request withdraw', () => {
+        flow.setState({
+          withdrawRequestIncoming: true,
+        })
+      })
     }
 
     _persistState() {
@@ -188,11 +194,6 @@ export default (tokenName) => {
             /* set Target wallet */
             //await flow.setTargetWalletDo();
 
-            flow.swap.room.once('request withdraw', () => {
-              flow.setState({
-                withdrawRequestIncoming: true,
-              })
-            })
             /* send data to other side */
             flow.swap.room.sendMessage({
               event: 'create eth contract',
