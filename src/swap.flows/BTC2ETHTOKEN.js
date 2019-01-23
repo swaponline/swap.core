@@ -297,6 +297,25 @@ export default (tokenName) => {
             return
           }
 
+          const onWithdrawReady = () => {
+            flow.swap.room.on('request ethWithdrawTxHash', () => {
+              flow.swap.room.sendMessage({
+                event: 'ethWithdrawTxHash',
+                data: {
+                  ethSwapWithdrawTransactionHash: flow.state.ethSwapWithdrawTransactionHash,
+                },
+              })
+            })
+
+            flow.swap.room.sendMessage({
+              event: 'finish eth withdraw',
+            })
+
+            flow.finishStep({
+              isEthWithdrawn: true,
+            })
+          }
+
           const tryWithdrawKeyName = `${flow.swap.id}.tryWithdraw`
 
           const tryWithdraw = async (currentKey) => {
@@ -306,6 +325,17 @@ export default (tokenName) => {
 
             if (!flow.state.isEthWithdrawn) {
               try {
+                const withdrawNeededGas = await flow.ethTokenSwap.withdraw({
+                  ownerAddress: data.ownerAddress,
+                  secret: data.secret,
+                  calcFee: true
+                })
+                flow.setState({
+                  withdrawFee: withdrawNeededGas
+                })
+
+                debug('swap.core:flow')('withdraw gas fee', withdrawNeededGas)
+
                 await flow.ethTokenSwap.withdraw(data, (hash) => {
                   flow.setState({
                     ethSwapWithdrawTransactionHash: hash,
@@ -327,6 +357,20 @@ export default (tokenName) => {
                   console.error(`known tx: ${err.message}`)
                 } else if ( /out of gas/.test(err.message) ) {
                   console.error(`tx failed (wrong secret?): ${err.message}`)
+                } else if ( /insufficient funds for gas/.test(err.message) ) {
+                  console.error(`insufficient fund for gas: $(err.message)`)
+                  debug('swap.core:flow')('insufficient fund for gas... wait fund or request other side to withdraw')
+
+                  flow.setState({
+                    requireWithdrawFee: true,
+                  })
+
+                  flow.swap.room.once('withdraw ready', ({ethSwapWithdrawTransactionHash}) => {
+                    flow.setState({
+                      ethSwapWithdrawTransactionHash,
+                    })
+                    onWithdrawReady()
+                  })
                 } else {
                   console.error(err)
                 }
@@ -349,22 +393,7 @@ export default (tokenName) => {
           )
 
           if (isEthWithdrawn) {
-            flow.swap.room.on('request ethWithdrawTxHash', () => {
-              flow.swap.room.sendMessage({
-                event: 'ethWithdrawTxHash',
-                data: {
-                  ethSwapWithdrawTransactionHash: flow.state.ethSwapWithdrawTransactionHash,
-                },
-              })
-            })
-
-            flow.swap.room.sendMessage({
-              event: 'finish eth withdraw',
-            })
-
-            flow.finishStep({
-              isEthWithdrawn,
-            })
+            onWithdrawReady()
           }
         },
 
@@ -383,6 +412,30 @@ export default (tokenName) => {
 
         }
       ]
+    }
+
+    sendWithdrawRequest() {
+      const flow = this
+
+      if (!this.state.requireWithdrawFee) return
+      if (this.state.requireWithdrawFeeSended) return
+
+      this.setState({
+        requireWithdrawFeeSended: true,
+      })
+
+      this.swap.room.on('accept withdraw request', () => {
+        flow.swap.room.sendMessage({
+          event: 'do withdraw',
+          data: {
+            secret: flow.state.secret,
+          }
+        })
+      })
+
+      this.swap.room.sendMessage({
+        event: 'request withdraw',
+      })
     }
 
     async waitEthBalance() {

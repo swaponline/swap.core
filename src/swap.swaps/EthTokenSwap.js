@@ -163,7 +163,7 @@ class EthTokenSwap extends SwapInterface {
    * @returns {Promise}
    */
   async createSwap(data, handleTransactionHash) {
-    const { secretHash, participantAddress, amount } = data
+    const { secretHash, participantAddress, amount, calcFee } = data
     const newAmount = new BigNumber(String(amount)).times(new BigNumber(10).pow(this.decimals)).decimalPlaces(this.decimals).toNumber()
 
     await this.updateGas()
@@ -181,6 +181,12 @@ class EthTokenSwap extends SwapInterface {
 
       try {
         const gasFee = await this.contract.methods.createSwap(...values).estimateGas(params)
+
+        if (calcFee) {
+          resolve(gasFee)
+          return
+        }
+
         params.gas = gasFee;
         console.log("EthTokenSwap -> createSwap -> gasFee",gasFee);
         const result = await this.contract.methods.createSwap(...values).send(params)
@@ -211,7 +217,7 @@ class EthTokenSwap extends SwapInterface {
    * @returns {Promise}
    */
   async createSwapTarget(data, handleTransactionHash) {
-    const { secretHash, participantAddress, amount , targetWallet } = data
+    const { secretHash, participantAddress, amount , targetWallet, calcFee } = data
     const newAmount = new BigNumber(String(amount)).times(new BigNumber(10).pow(this.decimals)).decimalPlaces(this.decimals).toNumber()
 
     await this.updateGas()
@@ -230,6 +236,12 @@ class EthTokenSwap extends SwapInterface {
       try {
         debug('swap.core:swaps')("Get gas fee");
         const gasFee = await this.contract.methods.createSwapTarget(...values).estimateGas(params)
+
+        if (calcFee) {
+          resolve(gasFee)
+          return
+        }
+
         params.gas = gasFee;
         debug('swap.core:swaps')("EthTokenSwap -> create -> gasFee",gasFee);
         const result = await this.contract.methods.createSwapTarget(...values).send(params)
@@ -384,7 +396,7 @@ class EthTokenSwap extends SwapInterface {
    * @returns {Promise}
    */
   async withdraw(data, handleTransactionHash) {
-    const { ownerAddress, secret } = data
+    const { ownerAddress, secret, calcFee } = data
 
     await this.updateGas()
 
@@ -400,8 +412,115 @@ class EthTokenSwap extends SwapInterface {
       try {
         const gasFee = await this.contract.methods.withdraw(_secret, ownerAddress).estimateGas(params);
         debug('swap.core:swaps')("EthTokenSwap -> withdraw -> gasFee",gasFee);
+
+        if (calcFee) {
+          resolve(gasFee)
+          return
+        }
+
         params.gas = gasFee;
         const result = await this.contract.methods.withdraw(_secret, ownerAddress).send(params)
+          .on('transactionHash', (hash) => {
+            if (typeof handleTransactionHash === 'function') {
+              handleTransactionHash(hash)
+            }
+          })
+          .on('error', (err) => {
+            reject(err)
+          })
+
+        resolve(result)
+      }
+      catch (err) {
+        reject(err)
+      }
+    })
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secret
+   * @param {string} data.participantAddress
+   * @param {function} handleTransactionHash
+   * @returns {Promise}
+   */
+  async withdrawNoMoney(data, handleTransactionHash) {
+    const { participantAddress, secret, calcFee } = data
+
+    await this.updateGas()
+
+    return new Promise(async (resolve, reject) => {
+      const _secret = `0x${secret.replace(/^0x/, '')}`
+
+      const params = {
+        from: SwapApp.services.auth.accounts.eth.address,
+        gas: this.gasLimit,
+        gasPrice: this.gasPrice,
+      }
+
+      try {
+        const gasFee = await this.contract.methods.withdrawNoMoney(_secret, participantAddress).estimateGas(params);
+        debug('swap.core:swaps')("EthTokenSwap -> withdrawNoMoney -> gasFee",gasFee);
+
+        if (calcFee) {
+          resolve(gasFee)
+          return
+        }
+
+        params.gas = gasFee;
+        const result = await this.contract.methods.withdrawNoMoney(_secret, participantAddress).send(params)
+          .on('transactionHash', (hash) => {
+            if (typeof handleTransactionHash === 'function') {
+              handleTransactionHash(hash)
+            }
+          })
+          .on('error', (err) => {
+            reject(err)
+          })
+
+        resolve(result)
+      }
+      catch (err) {
+        reject(err)
+      }
+    })
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secret
+   * @param {string} data.ownerAddress
+   * @param {string} data.participantAddress
+   * @param {function} handleTransactionHash
+   * @returns {Promise}
+   */
+  async withdrawOther(data, handleTransactionHash) {
+    const { ownerAddress, participantAddress, secret, calcFee } = data
+
+    await this.updateGas()
+
+    return new Promise(async (resolve, reject) => {
+      const _secret = `0x${secret.replace(/^0x/, '')}`
+
+      const params = {
+        from: SwapApp.services.auth.accounts.eth.address,
+        gas: this.gasLimit,
+        gasPrice: this.gasPrice,
+      }
+
+      try {
+        const gasFee = await this.contract.methods.withdrawOther(_secret, ownerAddress, participantAddress).estimateGas(params);
+        debug('swap.core:swaps')("EthTokenSwap -> withdrawOther -> gasFee",gasFee);
+
+        if (calcFee) {
+          resolve(gasFee)
+          return
+        }
+
+        params.gas = gasFee;
+        const result = await this.contract.methods.withdrawOther(_secret, ownerAddress, participantAddress).send(params)
           .on('transactionHash', (hash) => {
             if (typeof handleTransactionHash === 'function') {
               handleTransactionHash(hash)

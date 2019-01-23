@@ -80,6 +80,13 @@ export default (tokenName) => {
 
       super._persistSteps()
       this._persistState()
+
+      const flow = this
+      flow.swap.room.once('request withdraw', () => {
+        flow.setState({
+          withdrawRequestIncoming: true,
+        })
+      })
     }
 
     _persistState() {
@@ -152,8 +159,20 @@ export default (tokenName) => {
             participantAddress: participant.eth.address,
             secretHash,
             amount: sellAmount,
-            targetWallet: flow.swap.destinationSellAddress
+            targetWallet: flow.swap.destinationSellAddress,
+            calcFee: true,
           }
+
+          // TODO fee after allowance
+          // EthTokenSwap -> approve need gas too
+          /* calc create contract fee and save this */
+          /*
+          flow.setState({
+            createSwapFee: await flow.ethTokenSwap.create(swapData),
+          })
+          */
+          swapData.calcFee = false
+          //debug('swap.core:flow')('create swap fee', flow.state.createSwapFee)
 
           const tryCreateSwapKeyName = `${flow.swap.id}.tryCreateSwap`
 
@@ -335,6 +354,39 @@ export default (tokenName) => {
 
         },
       ]
+    }
+
+    acceptWithdrawRequest() {
+      const flow = this
+
+      if (this.state.withdrawRequestAccepted) return
+      this.setState({
+        withdrawRequestAccepted: true,
+      })
+
+      this.swap.room.once('do withdraw', async ({secret}) => {
+        try {
+          const data = {
+            participantAddress: flow.swap.participant.eth.address,
+            secret,
+          }
+          
+          await flow.ethTokenSwap.withdrawNoMoney(data, (hash) => {
+            flow.swap.room.sendMessage({
+              event: 'withdraw ready',
+              data: {
+                ethSwapWithdrawTransactionHash: hash,
+              }
+            })
+          })
+        } catch (err) {
+          debug('swap.core:flow')(err.message)
+        }
+      })
+
+      this.swap.room.sendMessage({
+        event: 'accept withdraw request'
+      })
     }
 
     _checkSwapAlreadyExists() {
