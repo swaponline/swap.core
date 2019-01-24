@@ -409,10 +409,6 @@ class Order {
       return peer !== participantPeer
     })
 
-    // if (updatedRequests.length === this.requests.length) {
-    //   return
-    // }
-
     this.update({
       isRequested: false,
       requests: updatedRequests,
