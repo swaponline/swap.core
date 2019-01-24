@@ -1,10 +1,12 @@
+import SwapApp from 'swap.app'
+
 /**
  * @param {string} options.keyName
  */
 const create = (keyName) => {
   const key = Date.now()
 
-  sessionStorage.setItem(keyName, key)
+  SwapApp.env.sessionStorage.setItem(keyName, key)
 
   return key
 }
@@ -14,7 +16,7 @@ const create = (keyName) => {
  * @param {number} options.actualKey
  */
 const compare = (keyName, actualKey) => {
-  const oldKey = Number(sessionStorage.getItem(keyName))
+  const oldKey = Number(SwapApp.env.sessionStorage.getItem(keyName))
 
   if (oldKey === 0) {
     throw new Error('Not found this keyName')
@@ -27,7 +29,7 @@ const compare = (keyName, actualKey) => {
  * @param {string} options.keyName
  */
 const remove = (keyName) => {
-  sessionStorage.removeItem(keyName)
+  SwapApp.env.sessionStorage.removeItem(keyName)
 }
 
 export default {

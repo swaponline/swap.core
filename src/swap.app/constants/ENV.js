@@ -6,5 +6,6 @@ export default {
   Ipfs: 'Ipfs',
   IpfsRoom: 'IpfsRoom',
   storage: 'storage',
+  sessionStorage: 'sessionStorage',
   swapsExplorer: 'swapsExplorer',
 }
