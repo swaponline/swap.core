@@ -155,7 +155,7 @@ class ETH2BTC extends Flow {
         const tryCreateSwapKeyName = `${flow.swap.id}.tryCreateSwap`
 
         const tryCreateSwap = async (currentKey) => {
-          if (!util.actualKey.compare(tryCreateSwapKeyName, currentKey)) {
+          if (!util.actualKey.compare(this.app, tryCreateSwapKeyName, currentKey)) {
             return false
           }
 
@@ -176,7 +176,7 @@ class ETH2BTC extends Flow {
                   canCreateEthTransaction: true,
                 })
 
-                util.actualKey.remove(tryCreateSwapKeyName)
+                util.actualKey.remove(this.app, tryCreateSwapKeyName)
               })
             } catch (err) {
               if ( /known transaction/.test(err.message) ) {
@@ -198,7 +198,7 @@ class ETH2BTC extends Flow {
           return true
         }
 
-        const tryCreateSwapKey = util.actualKey.create(tryCreateSwapKeyName)
+        const tryCreateSwapKey = util.actualKey.create(this.app, tryCreateSwapKeyName)
 
         const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
           tryCreateSwap(tryCreateSwapKey),
