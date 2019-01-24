@@ -319,7 +319,7 @@ export default (tokenName) => {
           const tryWithdrawKeyName = `${flow.swap.id}.tryWithdraw`
 
           const tryWithdraw = async (currentKey) => {
-            if (!util.actualKey.compare(tryWithdrawKeyName, currentKey)) {
+            if (!util.actualKey.compare(this.app, tryWithdrawKeyName, currentKey)) {
               return false
             }
 
@@ -350,7 +350,7 @@ export default (tokenName) => {
                     }
                   })
 
-                  util.actualKey.remove(tryWithdrawKeyName)
+                  util.actualKey.remove(this.app, tryWithdrawKeyName)
                 })
               } catch (err) {
                 if ( /known transaction/.test(err.message) ) {
@@ -386,7 +386,7 @@ export default (tokenName) => {
             return true
           }
 
-          const tryWithdrawKey = util.actualKey.create(tryWithdrawKeyName)
+          const tryWithdrawKey = util.actualKey.create(this.app, tryWithdrawKeyName)
 
           const isEthWithdrawn = await util.helpers.repeatAsyncUntilResult(() =>
             tryWithdraw(tryWithdrawKey),
