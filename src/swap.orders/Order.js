@@ -405,23 +405,17 @@ class Order {
   }
 
   declineRequest(participantPeer) {
-    let index
-
-    this.requests.some(({ participant: { peer } }, _index) => {
-      if (peer === participantPeer) {
-        index = _index
-      }
-      return index !== undefined
+    const updatedRequests = this.requests.filter(({ participant: { peer } }) => {
+      return peer !== participantPeer
     })
 
-    const requests = [
-      ...this.requests.slice(0, index),
-      ...this.requests.slice(index + 1)
-    ]
+    // if (updatedRequests.length === this.requests.length) {
+    //   return
+    // }
 
     this.update({
       isRequested: false,
-      requests,
+      requests: updatedRequests,
     })
 
     SwapApp.services.room.sendMessagePeer(participantPeer, {
