@@ -26,7 +26,9 @@ class Flow {
     this.app = app
   }
 
-  static read({ id } = {}, app = SwapApp.shared()) {
+  static read(app, { id } = {}) {
+    SwapApp.required(app)
+    
     if (!id) {
       debug('swap.core:swap')(`FlowReadError: id not given: ${id}`)
       return {}

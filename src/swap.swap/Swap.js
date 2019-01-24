@@ -66,7 +66,7 @@ class Swap {
     });
   }
 
-  static read({ id } = {}, app = SwapApp.shared()) {
+  static read(app, { id } = {}) {
     SwapApp.required(app)
 
     if (!id) {
