@@ -30,9 +30,16 @@ class SwapApp {
     this._addFlows(options.flows || [])
   }
 
-  static setup(options) {
+  static init(options) {
+    return new SwapApp(options)
+  }
+
+  static setup(options, forceFreshSetup = false) {
+    if (SwapApp._swapAppInstance && !forceFreshSetup) {
+      throw new Error(`Shared instance already initialized. Use SwapApp.shared() to access it.`)
+    }
+
     SwapApp._swapAppInstance = new SwapApp(options)
-    return SwapApp._swapAppInstance
   }
 
   static shared() {

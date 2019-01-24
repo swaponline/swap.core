@@ -15,7 +15,7 @@ module.exports = settings => {
 
   const config = getConfig({ contracts: {}, ...settings })
 
-  const swapApp = SwapApp.setup(config)
+  const swapApp = SwapApp.init(config)
 
   const wallet = new Wallet(swapApp, constants, config)
 

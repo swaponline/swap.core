@@ -37,7 +37,7 @@ window.clear = localStorage.clear = () => {
 
 // Swap ------------------------------------------------------ /
 
-const swapApp = SwapApp.setup({
+SwapApp.setup({
   network: 'testnet',
 
   env: {
@@ -113,6 +113,6 @@ const swapApp = SwapApp.setup({
   ],
 })
 
-export default swapApp
+export default SwapApp.shared()
 
-window.swapApp = swapApp
+window.SwapApp = SwapApp.shared()
