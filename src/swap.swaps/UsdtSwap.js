@@ -39,14 +39,18 @@ class UsdtSwap extends SwapInterface {
     this.getRecommendedFees = options.getRecommendedFees || (() => {})
   }
 
-  _initSwap() {
+  _initSwap(app) {
+    super._initSwap(app)
+
+    this.app = app
+
     this.network = (
-      SwapApp.isMainNet()
-        ? SwapApp.env.bitcoin.networks.bitcoin
-        : SwapApp.env.bitcoin.networks.testnet
+      this.app.isMainNet()
+        ? this.app.env.bitcoin.networks.bitcoin
+        : this.app.env.bitcoin.networks.testnet
     )
 
-    if (!SwapApp.isMainNet()) {
+    if (!this.app.isMainNet()) {
       throw new Error(`Sorry, USDT does not yet works on testnet!`)
     }
   }
@@ -62,14 +66,14 @@ class UsdtSwap extends SwapInterface {
   _signTransaction(data, inputIndex = 0) {
     const { script, txRaw, secret } = data
 
-    const hashType      = SwapApp.env.bitcoin.Transaction.SIGHASH_ALL
+    const hashType      = this.app.env.bitcoin.Transaction.SIGHASH_ALL
     const signatureHash = txRaw.hashForSignature(inputIndex, script, hashType)
-    const signature     = SwapApp.services.auth.accounts.btc.sign(signatureHash).toScriptSignature(hashType)
+    const signature     = this.app.services.auth.accounts.btc.sign(signatureHash).toScriptSignature(hashType)
 
-    const scriptSig = SwapApp.env.bitcoin.script.scriptHash.input.encode(
+    const scriptSig = this.app.env.bitcoin.script.scriptHash.input.encode(
       [
         signature,
-        SwapApp.services.auth.accounts.btc.getPublicKeyBuffer(),
+        this.app.services.auth.accounts.btc.getPublicKeyBuffer(),
         Buffer.from(secret.replace(/^0x/, ''), 'hex'),
       ],
       script,
@@ -92,32 +96,32 @@ class UsdtSwap extends SwapInterface {
 
     debug('swap.core:swaps')('DATA', data)
 
-    const script = SwapApp.env.bitcoin.script.compile([
+    const script = this.app.env.bitcoin.script.compile([
 
-      SwapApp.env.bitcoin.opcodes.OP_RIPEMD160,
+      this.app.env.bitcoin.opcodes.OP_RIPEMD160,
       Buffer.from(secretHash, 'hex'),
-      SwapApp.env.bitcoin.opcodes.OP_EQUALVERIFY,
+      this.app.env.bitcoin.opcodes.OP_EQUALVERIFY,
 
       Buffer.from(recipientPublicKey, 'hex'),
-      SwapApp.env.bitcoin.opcodes.OP_EQUAL,
-      SwapApp.env.bitcoin.opcodes.OP_IF,
+      this.app.env.bitcoin.opcodes.OP_EQUAL,
+      this.app.env.bitcoin.opcodes.OP_IF,
 
       Buffer.from(recipientPublicKey, 'hex'),
-      SwapApp.env.bitcoin.opcodes.OP_CHECKSIG,
+      this.app.env.bitcoin.opcodes.OP_CHECKSIG,
 
-      SwapApp.env.bitcoin.opcodes.OP_ELSE,
+      this.app.env.bitcoin.opcodes.OP_ELSE,
 
-      SwapApp.env.bitcoin.script.number.encode(lockTime),
-      SwapApp.env.bitcoin.opcodes.OP_CHECKLOCKTIMEVERIFY,
-      SwapApp.env.bitcoin.opcodes.OP_DROP,
+      this.app.env.bitcoin.script.number.encode(lockTime),
+      this.app.env.bitcoin.opcodes.OP_CHECKLOCKTIMEVERIFY,
+      this.app.env.bitcoin.opcodes.OP_DROP,
       Buffer.from(ownerPublicKey, 'hex'),
-      SwapApp.env.bitcoin.opcodes.OP_CHECKSIG,
+      this.app.env.bitcoin.opcodes.OP_CHECKSIG,
 
-      SwapApp.env.bitcoin.opcodes.OP_ENDIF,
+      this.app.env.bitcoin.opcodes.OP_ENDIF,
     ])
 
-    const scriptPubKey  = SwapApp.env.bitcoin.script.scriptHash.output.encode(SwapApp.env.bitcoin.crypto.hash160(script))
-    const scriptAddress = SwapApp.env.bitcoin.address.fromOutputScript(scriptPubKey, this.network)
+    const scriptPubKey  = this.app.env.bitcoin.script.scriptHash.output.encode(this.app.env.bitcoin.crypto.hash160(script))
+    const scriptAddress = this.app.env.bitcoin.address.fromOutputScript(scriptPubKey, this.network)
 
     return {
       scriptAddress,
@@ -183,7 +187,7 @@ class UsdtSwap extends SwapInterface {
     try {
       const omniScript = omniOutput.scriptPubKey.asm
       const expectedOmniScript = createOmniScript(expected.amount)
-      const expectedOmniOutput = SwapApp.env.bitcoin.script.toASM(expectedOmniScript)
+      const expectedOmniOutput = this.app.env.bitcoin.script.toASM(expectedOmniScript)
 
       if (expectedOmniOutput !== omniScript) {
         debug('swap.core:swaps')(expectedOmniOutput, omniScript)
@@ -221,7 +225,7 @@ class UsdtSwap extends SwapInterface {
         const { ownerPublicKey, recipientPublicKey } = scriptValues
 
         const dialog = {
-          owner: SwapApp.services.auth.accounts.btc,
+          owner: this.app.services.auth.accounts.btc,
           party: Buffer.from(recipientPublicKey, 'hex')
         }
 
@@ -256,7 +260,7 @@ class UsdtSwap extends SwapInterface {
         const { ownerPublicKey, recipientPublicKey } = scriptValues
 
 
-        const redeem_tx = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
+        const redeem_tx = new this.app.env.bitcoin.TransactionBuilder(this.network)
 
         const { script, scriptAddress } = createScript(
           secretHash,
@@ -265,7 +269,7 @@ class UsdtSwap extends SwapInterface {
           lockTime)
 
         debug('swap.core:swaps')('script address', scriptAddress)
-        const keyPair = SwapApp.services.auth.accounts.btc
+        const keyPair = this.app.services.auth.accounts.btc
         const myBtcAddress = keyPair.getAddress()
 
         const myUnspents      = await this.fetchUnspents(myBtcAddress)

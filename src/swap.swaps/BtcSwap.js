@@ -45,11 +45,15 @@ class BtcSwap extends SwapInterface {
     this.estimateFeeRate = options.estimateFeeRate || (() => {})
   }
 
-  _initSwap() {
+  _initSwap(app) {
+    super._initSwap(app)
+
+    this.app = app
+
     this.network = (
-      SwapApp.isMainNet()
-        ? SwapApp.env.bitcoin.networks.bitcoin
-        : SwapApp.env.bitcoin.networks.testnet
+      this.app.isMainNet()
+        ? this.app.env.bitcoin.networks.bitcoin
+        : this.app.env.bitcoin.networks.testnet
     )
   }
 
@@ -135,14 +139,14 @@ class BtcSwap extends SwapInterface {
     debug('swap.core:swaps')('signing script input', inputIndex)
     const { script, txRaw, secret } = data
 
-    const hashType      = SwapApp.env.bitcoin.Transaction.SIGHASH_ALL
+    const hashType      = this.app.env.bitcoin.Transaction.SIGHASH_ALL
     const signatureHash = txRaw.hashForSignature(inputIndex, script, hashType)
-    const signature     = SwapApp.services.auth.accounts.btc.sign(signatureHash).toScriptSignature(hashType)
+    const signature     = this.app.services.auth.accounts.btc.sign(signatureHash).toScriptSignature(hashType)
 
-    const scriptSig = SwapApp.env.bitcoin.script.scriptHash.input.encode(
+    const scriptSig = this.app.env.bitcoin.script.scriptHash.input.encode(
       [
         signature,
-        SwapApp.services.auth.accounts.btc.getPublicKeyBuffer(),
+        this.app.services.auth.accounts.btc.getPublicKeyBuffer(),
         Buffer.from(secret.replace(/^0x/, ''), 'hex'),
       ],
       script,
@@ -162,38 +166,38 @@ class BtcSwap extends SwapInterface {
    */
   createScript(data, hashName = 'ripemd160') {
     const hashOpcodeName = `OP_${hashName.toUpperCase()}`
-    const hashOpcode = SwapApp.env.bitcoin.opcodes[hashOpcodeName]
+    const hashOpcode = this.app.env.bitcoin.opcodes[hashOpcodeName]
 
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
 
     debug('swap.core:swaps')('DATA', data)
 
-    const script = SwapApp.env.bitcoin.script.compile([
+    const script = this.app.env.bitcoin.script.compile([
 
       hashOpcode,
       Buffer.from(secretHash, 'hex'),
-      SwapApp.env.bitcoin.opcodes.OP_EQUALVERIFY,
+      this.app.env.bitcoin.opcodes.OP_EQUALVERIFY,
 
       Buffer.from(recipientPublicKey, 'hex'),
-      SwapApp.env.bitcoin.opcodes.OP_EQUAL,
-      SwapApp.env.bitcoin.opcodes.OP_IF,
+      this.app.env.bitcoin.opcodes.OP_EQUAL,
+      this.app.env.bitcoin.opcodes.OP_IF,
 
       Buffer.from(recipientPublicKey, 'hex'),
-      SwapApp.env.bitcoin.opcodes.OP_CHECKSIG,
+      this.app.env.bitcoin.opcodes.OP_CHECKSIG,
 
-      SwapApp.env.bitcoin.opcodes.OP_ELSE,
+      this.app.env.bitcoin.opcodes.OP_ELSE,
 
-      SwapApp.env.bitcoin.script.number.encode(lockTime),
-      SwapApp.env.bitcoin.opcodes.OP_CHECKLOCKTIMEVERIFY,
-      SwapApp.env.bitcoin.opcodes.OP_DROP,
+      this.app.env.bitcoin.script.number.encode(lockTime),
+      this.app.env.bitcoin.opcodes.OP_CHECKLOCKTIMEVERIFY,
+      this.app.env.bitcoin.opcodes.OP_DROP,
       Buffer.from(ownerPublicKey, 'hex'),
-      SwapApp.env.bitcoin.opcodes.OP_CHECKSIG,
+      this.app.env.bitcoin.opcodes.OP_CHECKSIG,
 
-      SwapApp.env.bitcoin.opcodes.OP_ENDIF,
+      this.app.env.bitcoin.opcodes.OP_ENDIF,
     ])
 
-    const scriptPubKey  = SwapApp.env.bitcoin.script.scriptHash.output.encode(SwapApp.env.bitcoin.crypto.hash160(script))
-    const scriptAddress = SwapApp.env.bitcoin.address.fromOutputScript(scriptPubKey, this.network)
+    const scriptPubKey  = this.app.env.bitcoin.script.scriptHash.output.encode(this.app.env.bitcoin.crypto.hash160(script))
+    const scriptAddress = this.app.env.bitcoin.address.fromOutputScript(scriptPubKey, this.network)
 
     return {
       scriptAddress,
@@ -254,8 +258,8 @@ class BtcSwap extends SwapInterface {
       try {
         const { scriptAddress } = this.createScript(scriptValues, hashName)
 
-        const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
-        const unspents      = await this.fetchUnspents(SwapApp.services.auth.accounts.btc.getAddress())
+        const tx            = new this.app.env.bitcoin.TransactionBuilder(this.network)
+        const unspents      = await this.fetchUnspents(this.app.services.auth.accounts.btc.getAddress())
 
         const fundValue     = amount.multipliedBy(1e8).integerValue().toNumber()
         const feeValue      = await this.getTxFee({ inSatoshis: true })
@@ -268,9 +272,9 @@ class BtcSwap extends SwapInterface {
 
         unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout))
         tx.addOutput(scriptAddress, fundValue)
-        tx.addOutput(SwapApp.services.auth.accounts.btc.getAddress(), skipValue)
+        tx.addOutput(this.app.services.auth.accounts.btc.getAddress(), skipValue)
         tx.inputs.forEach((input, index) => {
-          tx.sign(index, SwapApp.services.auth.accounts.btc)
+          tx.sign(index, this.app.services.auth.accounts.btc)
         })
 
         const txRaw = tx.buildIncomplete()
@@ -335,7 +339,7 @@ class BtcSwap extends SwapInterface {
 
      const { destinationAddress } = data
 
-    const tx            = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
+    const tx            = new this.app.env.bitcoin.TransactionBuilder(this.network)
     const unspents      = await this.fetchUnspents(scriptAddress)
     const feeValue      = this.feeValue // TODO how to get this value
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
@@ -349,7 +353,7 @@ class BtcSwap extends SwapInterface {
     }
 
     unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
-    tx.addOutput((destinationAddress) ? destinationAddress : SwapApp.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
+    tx.addOutput((destinationAddress) ? destinationAddress : this.app.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
 
     const txRaw = tx.buildIncomplete()
 

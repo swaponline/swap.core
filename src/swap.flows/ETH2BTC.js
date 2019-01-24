@@ -134,7 +134,7 @@ class ETH2BTC extends Flow {
 
         const scriptCheckResult = await flow.btcSwap.checkScript(flow.state.btcScriptValues, {
           value: buyAmount,
-          recipientPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
+          recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
           lockTime: getLockTime(),
         })
 
@@ -327,7 +327,7 @@ class ETH2BTC extends Flow {
     const { participant } = this.swap
 
     const swapData = {
-      ownerAddress:       SwapApp.services.auth.accounts.eth.address,
+      ownerAddress:       this.app.services.auth.accounts.eth.address,
       participantAddress: participant.eth.address
     }
 
@@ -391,7 +391,7 @@ class ETH2BTC extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.ethSwap.fetchBalance(SwapApp.services.auth.accounts.eth.address)
+    const balance = await this.ethSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
     if (isEnoughMoney) {

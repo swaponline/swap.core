@@ -10,6 +10,8 @@ jest.mock('swap.app')
 jest.unmock('swap.flows')
 jest.unmock('swap.swaps')
 
+const app = SwapApp.shared()
+
 const log = console.log
 
 const utcNow = () => Math.floor(Date.now() / 1000)
@@ -64,10 +66,10 @@ const _ORDER = {
 }
 
 beforeAll(() => {
-  SwapApp.flows['USDT2SWAP'] = USDT2ETHTOKEN('SWAP')
-  SwapApp.flows['SWAP2USDT'] = ETHTOKEN2USDT('SWAP')
+  app.flows['USDT2SWAP'] = USDT2ETHTOKEN('SWAP')
+  app.flows['SWAP2USDT'] = ETHTOKEN2USDT('SWAP')
 
-  SwapApp.swaps['SWAP'] = new EthTokenSwap({
+  app.swaps['SWAP'] = new EthTokenSwap({
     name: 'SWAP',
     fetchBalance: jest.fn(address => 50),
     address: '0xABABABABABABABABABABABABABA',
@@ -77,21 +79,21 @@ beforeAll(() => {
     decimals: 18,
   })
 
-  SwapApp.swaps['USDT'] = new UsdtSwap({
+  app.swaps['USDT'] = new UsdtSwap({
     fetchBalance: jest.fn(address => 100),
     fetchUnspents: jest.fn(address => fixtures.unspents.filter(u => u.address == address)),
     broadcastTx: jest.fn(tx => Promise.resolve()),
     fetchTx: jest.fn(),
   })
 
-  SwapApp.swaps['USDT'].checkScript = () => {}
+  app.swaps['USDT'].checkScript = () => {}
 
-  SwapApp.swaps['SWAP']._initSwap()
-  SwapApp.swaps['USDT']._initSwap()
+  app.swaps['SWAP']._initSwap(app)
+  app.swaps['USDT']._initSwap(app)
 })
 
 test('create swap', () => {
-  const swap = new Swap("Qm-1231231", _ORDER)
+  const swap = new Swap("Qm-1231231", app, _ORDER)
 
   expect(swap.flow.state.step).toBe(0)
 
@@ -104,7 +106,7 @@ describe('full flow', () => {
   const _messageForEvent = (event, payload) => [ "Qmbbb", { action: 'active', data: { swapId: 'Qm-1231231' }, event } ]
 
   beforeAll(() => {
-    swap = new Swap("Qm-1231231", _ORDER)
+    swap = new Swap("Qm-1231231", app, _ORDER)
   })
 
   test('answers to request sign', async () => {
@@ -113,15 +115,15 @@ describe('full flow', () => {
 
     swap.flow.sign()
 
-    SwapApp.services.room.emit('request sign', _roomId)
-    // SwapApp.services.room.emit('confirmation', _confirmationForEvent('request sign'))
+    app.services.room.emit('request sign', _roomId)
+    // app.services.room.emit('confirmation', _confirmationForEvent('request sign'))
 
 
     await timeout(100)
 
-    expect(SwapApp.services.room.sendConfirmation).toHaveBeenCalled()
-    expect(SwapApp.services.room.sendConfirmation.mock.calls[0]).toEqual(_messageForEvent('swap sign'))
-    expect(SwapApp.services.room.sendConfirmation.mock.calls[1]).toEqual(_messageForEvent('request btc script'))
+    expect(app.services.room.sendConfirmation).toHaveBeenCalled()
+    expect(app.services.room.sendConfirmation.mock.calls[0]).toEqual(_messageForEvent('swap sign'))
+    expect(app.services.room.sendConfirmation.mock.calls[1]).toEqual(_messageForEvent('request btc script'))
   })
 
   test('saves script values', async () => {
@@ -154,7 +156,7 @@ describe('full flow', () => {
 // GET https://insight.bitpay.com/api/addr/38VoPwngdHpuLeJqAHrnH8V4FtYCrHZ6UE/utxo/
 // redeem hex
 
-    SwapApp.services.room.emit('create btc script', {
+    app.services.room.emit('create btc script', {
       scriptValues, usdtFundingTransactionHash,
       usdtRawRedeemTransactionHex,
       ..._roomId })
@@ -170,11 +172,11 @@ describe('full flow', () => {
 
     await timeout(100)
 
-    expect(SwapApp.services.room.sendConfirmation.mock.calls[2]).toEqual(_messageForEvent('create eth contract'))
+    expect(app.services.room.sendConfirmation.mock.calls[2]).toEqual(_messageForEvent('create eth contract'))
 
-    // expect(SwapApp.services.room.sendMessage.mock.calls[2]).toEqual(_messageForEvent('create eth contract'))
+    // expect(app.services.room.sendMessage.mock.calls[2]).toEqual(_messageForEvent('create eth contract'))
 
-    // expect(SwapApp.services.room.sendMessage).toHaveBeenCalled()
+    // expect(app.services.room.sendMessage).toHaveBeenCalled()
 
     swap.flow.ethTokenSwap.contract.methods.createSwap().emitter.emit('transactionHash', 'asdfghjkl')
 
@@ -191,7 +193,7 @@ describe('full flow', () => {
     await timeout(100)
     expect(swap.flow.state.step).toBe(6)
 
-    SwapApp.services.room.emit('finish eth withdraw', _roomId)
+    app.services.room.emit('finish eth withdraw', _roomId)
 
     await timeout(100)
     expect(swap.flow.state.step).toBe(9)

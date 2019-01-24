@@ -59,12 +59,18 @@ const accounts = {
 }
 
 const mockSwapApp = {
+  // static
+  required: app => true,
+  shared: () => mockSwapApp,
+  is: app => true,
+
+  isSwapApp: () => true,
   isMainNet: () => true,
   env: {
     bitcoin,
     web3: {
       eth: {
-        getGasPrice: jest.fn(() => 2e9),
+        getGasPrice: jest.fn(gas => Promise.resolve(2e9)),
         getBalance: jest.fn(address => 3e18),
         Contract: function () {
           const view = (getValue, state = {}) => () => ({
@@ -136,8 +142,8 @@ const util = {
   pullProps: (obj, ...keys) => obj,
 }
 
-const SwapInterface = function () {
-
+class SwapInterface {
+  _initSwap(app) {}
 }
 
 const constants = {

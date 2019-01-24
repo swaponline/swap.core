@@ -144,7 +144,7 @@ export default (tokenName) => {
 
           const scriptCheckResult = await flow.btcSwap.checkScript(flow.state.btcScriptValues, {
             value: buyAmount,
-            recipientPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
+            recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
             lockTime: getLockTime(),
           })
 
@@ -185,7 +185,7 @@ export default (tokenName) => {
               try {
                 debug('swap.core:flow')('fetching allowance')
                 const allowance = await flow.ethTokenSwap.checkAllowance({
-                  spender: SwapApp.services.auth.getPublicData().eth.address,
+                  spender: this.app.services.auth.getPublicData().eth.address,
                 })
 
                 debug('swap.core:flow')('allowance', allowance)
@@ -370,7 +370,7 @@ export default (tokenName) => {
             participantAddress: flow.swap.participant.eth.address,
             secret,
           }
-          
+
           await flow.ethTokenSwap.withdrawNoMoney(data, (hash) => {
             flow.swap.room.sendMessage({
               event: 'withdraw ready',
@@ -393,7 +393,7 @@ export default (tokenName) => {
       const {participant} = this.swap
 
       const swapData = {
-        ownerAddress: SwapApp.services.auth.accounts.eth.address,
+        ownerAddress: this.app.services.auth.accounts.eth.address,
         participantAddress: participant.eth.address
       }
 
@@ -458,7 +458,7 @@ export default (tokenName) => {
         isBalanceFetching: true,
       })
 
-      const balance = await this.ethTokenSwap.fetchBalance(SwapApp.services.auth.accounts.eth.address)
+      const balance = await this.ethTokenSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
       const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
       if (isEnoughMoney) {
