@@ -3,7 +3,7 @@ import bitcoin from 'bitcoinjs-lib'
 import { ethereumInstance, bitcoinInstance } from './instances'
 import { web3 } from './instances/ethereum'
 
-import swapApp, { constants } from 'swap.app'
+import SwapApp, { constants } from 'swap.app'
 import SwapAuth from 'swap.auth'
 import SwapRoom from 'swap.room'
 import SwapOrders from 'swap.orders'
@@ -37,7 +37,7 @@ window.clear = localStorage.clear = () => {
 
 // Swap ------------------------------------------------------ /
 
-swapApp.setup({
+const swapApp = SwapApp.setup({
   network: 'testnet',
 
   env: {
@@ -54,14 +54,12 @@ swapApp.setup({
       btc: null,
     }),
     new SwapRoom({
-      EXPERIMENTAL: {
-        pubsub: true,
-      },
       config: {
         Addresses: {
           Swarm: [
+            '/dns4/discovery.libp2p.array.io/tcp/9091/wss/p2p-websocket-star',
             // '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
-            '/dns4/star.wpmix.net/tcp/443/wss/p2p-websocket-star',
+            // '/dns4/star.wpmix.net/tcp/443/wss/p2p-websocket-star',
           ],
         },
       },
@@ -115,5 +113,6 @@ swapApp.setup({
   ],
 })
 
+export default swapApp
 
 window.swapApp = swapApp

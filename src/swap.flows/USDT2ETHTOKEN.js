@@ -22,11 +22,11 @@ export default (tokenName) => {
 
       this._flowName = USDT2ETHTOKEN.getName()
 
-      this.ethTokenSwap = SwapApp.swaps[tokenName.toUpperCase()]
-      this.usdtSwap      = SwapApp.swaps[constants.COINS.usdt]
+      this.ethTokenSwap = this.app.swaps[tokenName.toUpperCase()]
+      this.usdtSwap      = this.app.swaps[constants.COINS.usdt]
 
-      this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
-      this.myEthAddress = SwapApp.services.auth.accounts.eth.address
+      this.myBtcAddress = this.app.services.auth.accounts.btc.getAddress()
+      this.myEthAddress = this.app.services.auth.accounts.eth.address
 
       this.stepNumbers = {
         'sign': 1,
@@ -138,7 +138,7 @@ export default (tokenName) => {
           if (!usdtScriptValues) {
             scriptValues = {
               secretHash:         flow.state.secretHash,
-              ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
+              ownerPublicKey:     this.app.services.auth.accounts.btc.getPublicKey(),
               recipientPublicKey: participant.btc.publicKey,
               lockTime:           getLockTime(),
             }
@@ -319,7 +319,7 @@ export default (tokenName) => {
         isBalanceFetching: true,
       })
 
-      const balance = await this.usdtSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
+      const balance = await this.usdtSwap.fetchBalance(this.app.services.auth.accounts.btc.getAddress())
       const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
       if (isEnoughMoney) {

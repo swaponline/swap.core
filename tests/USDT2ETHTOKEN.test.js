@@ -10,6 +10,8 @@ jest.mock('swap.app')
 jest.unmock('swap.flows')
 jest.unmock('swap.swaps')
 
+let app = SwapApp
+
 const log = console.log
 
 const secret      = 'c0809ce9f484fdcdfb2d5aabd609768ce0374ee97a1a5618ce4cd3f16c00a078'
@@ -60,10 +62,10 @@ const _ORDER = {
 }
 
 beforeAll(() => {
-  SwapApp.flows['USDT2SWAP'] = USDT2ETHTOKEN('SWAP')
-  SwapApp.flows['SWAP2USDT'] = ETHTOKEN2USDT('SWAP')
+  app.flows['USDT2SWAP'] = USDT2ETHTOKEN('SWAP')
+  app.flows['SWAP2USDT'] = ETHTOKEN2USDT('SWAP')
 
-  SwapApp.swaps['SWAP'] = new EthTokenSwap({
+  app.swaps['SWAP'] = new EthTokenSwap({
     name: 'SWAP',
     fetchBalance: jest.fn(),
     decimals: 18,
@@ -71,21 +73,22 @@ beforeAll(() => {
     abi: [],
     tokenAddress: '0x5111AFDacdac',
     tokenAbi: [],
+    decimals: 18,
   })
 
-  SwapApp.swaps['USDT'] = new UsdtSwap({
+  app.swaps['USDT'] = new UsdtSwap({
     fetchBalance: jest.fn(address => 100),
     fetchUnspents: jest.fn(address => fixtures.unspents),
     broadcastTx: jest.fn(),
     fetchTx: jest.fn(),
   })
 
-  SwapApp.swaps['SWAP']._initSwap()
-  SwapApp.swaps['USDT']._initSwap()
+  app.swaps['SWAP']._initSwap(app)
+  app.swaps['USDT']._initSwap(app)
 })
 
 test('create swap', () => {
-  const swap = new Swap("Qm-1231231", _ORDER)
+  const swap = new Swap("Qm-1231231", app, _ORDER)
 
   expect(swap.flow.state.step).toBe(0)
 })
@@ -94,14 +97,14 @@ describe('full flow', () => {
   let swap
   const _roomId = { fromPeer: 'Qmbbb', swapId: 'Qm-1231231' }
   beforeAll(() => {
-    swap = new Swap("Qm-1231231", _ORDER)
+    swap = new Swap("Qm-1231231", app, _ORDER)
   })
 
   test('gets message sign swap', async () => {
     await timeout(100)
     expect(swap.flow.state.step).toBe(1)
 
-    SwapApp.services.room.emit('swap sign', _roomId)
+    app.services.room.emit('swap sign', _roomId)
 
     await timeout(500)
     expect(swap.flow.state.step).toBe(2)
@@ -118,22 +121,22 @@ describe('full flow', () => {
   })
 
   test('tried to fetch balance', async () => {
-    expect(SwapApp.swaps['USDT'].fetchBalance).toHaveBeenCalled()
-    expect(SwapApp.swaps['USDT'].fetchUnspents).toHaveBeenCalledWith('1Kf1dtmZGUoy482yXeoUuhfAJVKyD9JpWS')
+    expect(app.swaps['USDT'].fetchBalance).toHaveBeenCalled()
+    expect(app.swaps['USDT'].fetchUnspents).toHaveBeenCalledWith('1Kf1dtmZGUoy482yXeoUuhfAJVKyD9JpWS')
   })
 
   test('locks atomic swap script', async () => {
     await timeout(1000)
-    expect(SwapApp.swaps['USDT'].broadcastTx).toHaveBeenCalled()
-    // expect(SwapApp.swaps['USDT'].fetchUnspents).toHaveBeenCalledWith('3KmDaeEb6xnkiVhZd5w7uPwm7KBFzdiGQp')
-    expect(SwapApp.swaps['USDT'].fetchUnspents).toHaveBeenCalledWith('1Kf1dtmZGUoy482yXeoUuhfAJVKyD9JpWS')
+    expect(app.swaps['USDT'].broadcastTx).toHaveBeenCalled()
+    // expect(app.swaps['USDT'].fetchUnspents).toHaveBeenCalledWith('3KmDaeEb6xnkiVhZd5w7uPwm7KBFzdiGQp')
+    expect(app.swaps['USDT'].fetchUnspents).toHaveBeenCalledWith('1Kf1dtmZGUoy482yXeoUuhfAJVKyD9JpWS')
     // decode broadcasted tx and check
   })
 
   xtest('does not withdraw ETH when swap doesnt exist', async () => {
     swap.flow.ethTokenSwap.contract.state.swapExists = false
 
-    SwapApp.services.room.emit('create eth contract', { ethSwapCreationTransactionHash: '555abcdef333', ..._roomId })
+    app.services.room.emit('create eth contract', { ethSwapCreationTransactionHash: '555abcdef333', ..._roomId })
 
     await timeout(100)
 
@@ -145,7 +148,7 @@ describe('full flow', () => {
     swap.flow.ethTokenSwap.contract.state.swapExists = true
 
     swap.flow.steps[6]() // not for production use
-    SwapApp.services.room.emit('create eth contract', { ethSwapCreationTransactionHash: '555abcdef333', ..._roomId })
+    app.services.room.emit('create eth contract', { ethSwapCreationTransactionHash: '555abcdef333', ..._roomId })
 
     await timeout(100)
 

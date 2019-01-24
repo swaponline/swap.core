@@ -21,17 +21,20 @@ class EosSwap extends SwapInterface {
     this.eos = null
   }
 
-  _initSwap() {
+  _initSwap(app) {
+    super._initSwap(app)
+
+    this.app = app
   }
 
   _lazyInit() {
-    return SwapApp.env.eos.getInstance().then((eosInstance) => {
+    return this.app.env.eos.getInstance().then((eosInstance) => {
       this.eos = eosInstance
     })
   }
 
   _getAccounts = () => ({
-    userAccount: SwapApp.services.auth.getPublicData().eos.address,
+    userAccount: this.app.services.auth.getPublicData().eos.address,
     swapAccount: this.swapAccount,
     tokenAccount: 'eosio.token',
   })

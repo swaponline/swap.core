@@ -265,7 +265,7 @@ export default (tokenName) => {
 
           const balanceCheckError = await flow.ethTokenSwap.checkBalance({
             ownerAddress: participant.eth.address,
-            participantAddress: SwapApp.services.auth.accounts.eth.address,
+            participantAddress: this.app.services.auth.accounts.eth.address,
             expectedValue: buyAmount,
             expectedHash: secretHash,
           })
@@ -280,7 +280,7 @@ export default (tokenName) => {
           const targetWallet = await flow.ethTokenSwap.getTargetWallet( participant.eth.address )
           const needTargetWallet = (flow.swap.destinationBuyAddress)
             ? flow.swap.destinationBuyAddress
-            : SwapApp.services.auth.accounts.eth.address
+            : this.app.services.auth.accounts.eth.address
 
           if (targetWallet != needTargetWallet) {
             console.error(
@@ -494,7 +494,7 @@ export default (tokenName) => {
 
       const scriptValues = {
         secretHash:         secretHash,
-        ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
+        ownerPublicKey:     this.app.services.auth.accounts.btc.getPublicKey(),
         recipientPublicKey: participant.btc.publicKey,
         lockTime:           getLockTime(),
       }
@@ -519,7 +519,7 @@ export default (tokenName) => {
         isBalanceFetching: true,
       })
 
-      const balance = await this.btcSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
+      const balance = await this.btcSwap.fetchBalance(this.app.services.auth.accounts.btc.getAddress())
       const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
       if (!isEnoughMoney) {

@@ -24,16 +24,16 @@ class SwapRoom extends ServiceInterface {
   }
 
   initService() {
-    if (!SwapApp.env.Ipfs) {
+    if (!this.app.env.Ipfs) {
       throw new Error('SwapRoomService: Ipfs required')
     }
-    if (!SwapApp.env.IpfsRoom) {
+    if (!this.app.env.IpfsRoom) {
       throw new Error('SwapRoomService: IpfsRoom required')
     }
 
     const { roomName, EXPERIMENTAL, ...config } = this._config
 
-    const ipfs = new SwapApp.env.Ipfs({
+    const ipfs = new this.app.env.Ipfs({
       EXPERIMENTAL: {
         pubsub: true,
       },
@@ -66,7 +66,7 @@ class SwapRoom extends ServiceInterface {
 
     this.peer = peer
 
-    const defaultRoomName = SwapApp.isMainNet()
+    const defaultRoomName = this.app.isMainNet()
                   ? 'swap.online'
                   : 'testnet.swap.online'
 
@@ -74,7 +74,7 @@ class SwapRoom extends ServiceInterface {
 
     debug('swap.core:room')(`Using room: ${this.roomName}`)
 
-    this.connection = SwapApp.env.IpfsRoom(ipfsConnection, this.roomName, {
+    this.connection = this.app.env.IpfsRoom(ipfsConnection, this.roomName, {
       pollInterval: 1000,
     })
 
@@ -141,34 +141,39 @@ class SwapRoom extends ServiceInterface {
 
   on(eventName, handler) {
     this._events.subscribe(eventName, handler)
+    return this
   }
 
   off(eventName, handler) {
     this._events.unsubscribe(eventName, handler)
+    return this
   }
 
   once(eventName, handler) {
     this._events.once(eventName, handler)
+    return this
   }
 
   subscribe (eventName, handler) {
     this._events.subscribe(eventName, handler)
+    return this
   }
 
   unsubscribe (eventName, handler) {
     this._events.unsubscribe(eventName, handler)
+    return this
   }
 
   _recoverMessage(message, sign) {
-    const hash      = SwapApp.env.web3.utils.soliditySha3(JSON.stringify(message))
-    const recover   = SwapApp.env.web3.eth.accounts.recover(hash, sign.signature)
+    const hash      = this.app.env.web3.utils.soliditySha3(JSON.stringify(message))
+    const recover   = this.app.env.web3.eth.accounts.recover(hash, sign.signature)
 
     return recover
   }
 
   _signMessage(message) {
-    const hash  = SwapApp.env.web3.utils.soliditySha3(JSON.stringify(message))
-    const sign  = SwapApp.env.web3.eth.accounts.sign(hash, SwapApp.services.auth.accounts.eth.privateKey)
+    const hash  = this.app.env.web3.utils.soliditySha3(JSON.stringify(message))
+    const sign  = this.app.env.web3.eth.accounts.sign(hash, this.app.services.auth.accounts.eth.privateKey)
 
     return sign
   }
@@ -263,7 +268,7 @@ class SwapRoom extends ServiceInterface {
     const sign = this._signMessage(data)
 
     this.connection.sendTo(peer, JSON.stringify({
-      fromAddress: SwapApp.services.auth.accounts.eth.address,
+      fromAddress: this.app.services.auth.accounts.eth.address,
       data,
       event,
       sign,
@@ -277,7 +282,7 @@ class SwapRoom extends ServiceInterface {
     const sign = this._signMessage(data)
 
     this.connection.broadcast(JSON.stringify({
-      fromAddress: SwapApp.services.auth.accounts.eth.address,
+      fromAddress: this.app.services.auth.accounts.eth.address,
       data,
       event,
       sign,
