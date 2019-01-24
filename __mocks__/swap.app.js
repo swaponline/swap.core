@@ -109,6 +109,11 @@ const mockSwapApp = {
       getItem: (key) => storage[key],
       setItem: (key, value) => storage[key] = value,
     },
+    sessionStorage: {
+      getItem: (key) => storage[key],
+      setItem: (key, value) => storage[key] = value,
+      remoteItem: (key, value) => delete storage[key],
+    },
     eos: {
       getInstance: () => {
         return Promise.resolve(eosMockProvider())
