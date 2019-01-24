@@ -57,4 +57,4 @@ SwapApp.setup({
   ],
 })
 
-exports = module.exports = SwapApp
+exports = module.exports = SwapApp.shared()
