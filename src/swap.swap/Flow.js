@@ -28,7 +28,7 @@ class Flow {
 
   static read(app, { id } = {}) {
     SwapApp.required(app)
-    
+
     if (!id) {
       debug('swap.core:swap')(`FlowReadError: id not given: ${id}`)
       return {}
@@ -38,7 +38,7 @@ class Flow {
   }
 
   _persistState() {
-    const state = Flow.read(this.swap)
+    const state = Flow.read(this.app, this.swap)
 
     if (state) {
       this.state = {

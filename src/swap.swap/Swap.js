@@ -87,7 +87,7 @@ class Swap {
       throw new Error(`Flow with name "${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}" not found in SwapApp.flows`)
     }
 
-    data.flow = Flow.read(data)
+    data.flow = Flow.read(app, data)
 
     return data
   }
