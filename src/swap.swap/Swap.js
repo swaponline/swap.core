@@ -1,3 +1,4 @@
+import debug from 'debug'
 import BigNumber from 'bignumber.js'
 import SwapApp, { Events, util,  } from 'swap.app'
 import Room from './Room'
@@ -50,17 +51,41 @@ class Swap {
 
     // Change destination address on run time
     this.room.on('set destination buy address', (data) => {
-      console.log("Other side change destination buy address", data);
+      debug('swap.core:swap')("Other side change destination buy address", data);
       this.update({
         destinationSellAddress: data.address
       })
     });
     this.room.on('set destination sell address', (data) => {
-      console.log("Other side change destination sell address", data);
+      debug('swap.core:swap')("Other side change destination sell address", data);
       this.update({
         destinationBuyAddress: data.address
       })
     });
+  }
+
+  static read({ id } = {}) {
+    if (!id) {
+      debug('swap.core:swap')(`SwapReadError: id not given: ${id}`)
+      return {}
+    }
+
+    const data = SwapApp.env.storage.getItem(`swap.${id}`)
+
+    if (!data) {
+      debug('swap.core:swap')(`SwapReadError: No swap with id=${id}`)
+      return {}
+    }
+
+    const Flow = SwapApp.flows[`${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}`]
+
+    if (!Flow) {
+      throw new Error(`Flow with name "${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}" not found in SwapApp.flows`)
+    }
+
+    data.flow = Flow.read(data)
+
+    return data
   }
 
   _getDataFromOrder(order) {
@@ -76,11 +101,11 @@ class Swap {
       'sellCurrency',
       'buyAmount',
       'sellAmount',
-      'destinationBuyAddress',
-      'destinationSellAddress',
+      'destination',
     )
 
-    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, destinationBuyAddress, destinationSellAddress, ...rest } = data
+    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, destination, ...rest } = data
+    const { ownerAddress, participantAddress } = destination
 
     const swap = {
       ...rest,
@@ -89,8 +114,8 @@ class Swap {
       sellCurrency: isMy ? sellCurrency : buyCurrency,
       buyAmount: isMy ? buyAmount : sellAmount,
       sellAmount: isMy ? sellAmount : buyAmount,
-      destinationBuyAddress: isMy ? destinationBuyAddress : destinationSellAddress,
-      destinationSellAddress: isMy ? destinationSellAddress : destinationBuyAddress
+      destinationBuyAddress: isMy ? ownerAddress : participantAddress,
+      destinationSellAddress: isMy ? participantAddress : ownerAddress,
     }
 
     if (!swap.participant && !isMy) {
