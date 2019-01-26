@@ -1,4 +1,5 @@
 /* eslint-disable no-await-in-loop */
+import debug from 'debug'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
@@ -21,7 +22,7 @@ const transactionHandlers = (flow) => ({
 
     let btcWithdrawTx = null
     while (!btcWithdrawTx) {
-      console.log('try withdraw btc...')
+      debug('swap.core:flow')('try withdraw btc...')
       try {
         btcWithdrawTx = await flow.btcSwap.withdraw({ scriptValues, secret }, null, null, 'sha256')
       } catch (err) {
@@ -59,7 +60,7 @@ const pullHandlers = (flow) => ({
 
     let errorMessage = true
     while (errorMessage) {
-      console.log('try verify script...')
+      debug('swap.core:flow')('try verify script...')
       errorMessage = await flow.btcSwap.checkScript(scriptValues, {
         value,
         recipientPublicKey,
@@ -79,7 +80,7 @@ const pullHandlers = (flow) => ({
 
     let secret = null
     while (!secret) {
-      console.log('try fetch secret...')
+      debug('swap.core:flow')('try fetch secret...')
       secret = await flow.eosSwap.fetchSecret({ eosOwner, btcOwner })
       if (!secret) {
         await sleep(5000)

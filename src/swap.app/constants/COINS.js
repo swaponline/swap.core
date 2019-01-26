@@ -1,12 +1,13 @@
-export default {
+export const NATIVE = {
   eth: 'ETH',
   btc: 'BTC',
   ltc: 'LTC',
   eos: 'EOS',
   nim: 'NIM',
   usdt: 'USDT',
+}
 
-  // ETH Tokens
+export const ETH_TOKENS = {
   noxon: 'NOXON',
   jot: 'JOT',
   swap: 'SWAP',
@@ -48,4 +49,9 @@ export default {
   time: 'TIME',
   mth: 'MTH',
   cbt: 'CBT',
+}
+
+export default {
+  ...NATIVE,
+  ...ETH_TOKENS,
 }
