@@ -258,10 +258,10 @@ class EthSwap extends SwapInterface {
       return `Expected hash: ${expectedHash}, got: ${_secretHash}`
     }
 
-    const expectedValueWei = BigNumber(expectedValue).times(1e18).toNumber()
+    const expectedValueWei = BigNumber(expectedValue).multipliedBy(1e18)
 
-    if (expectedValueWei < balance) {
-      return `Expected value: ${expectedValueWei}, got: ${balance}`
+    if (expectedValueWei.isGreaterThan(balance)) {
+      return `Expected value: ${expectedValueWei.toString()}, got: ${balance}`
     }
   }
 
