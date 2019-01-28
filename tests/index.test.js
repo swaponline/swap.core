@@ -32,6 +32,7 @@ const btcSwap = new BtcSwap({
   broadcastTx: (tx) => btcOwnerBitcoin.broadcastTx(tx),
 })
 
+btcSwap._initSwap(SwapApp.shared())
 
 const btcOwnerData = btcOwnerBitcoin.login(btcOwner.privateKey)
 const ethOwnerData = ethOwnerBitcoin.login(ethOwner.privateKey)

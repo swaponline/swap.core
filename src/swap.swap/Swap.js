@@ -1,3 +1,4 @@
+import debug from 'debug'
 import BigNumber from 'bignumber.js'
 import SwapApp, { Events, util,  } from 'swap.app'
 import Room from './Room'
@@ -5,7 +6,7 @@ import Room from './Room'
 
 class Swap {
 
-  constructor(id, order) {
+  constructor(id, app, order) {
     this.id                     = null
     this.isMy                   = null
     this.owner                  = null
@@ -18,11 +19,14 @@ class Swap {
     this.participantSwap        = null
     this.destinationBuyAddress  = null
     this.destinationSellAddress = null
+    this.app                    = null
 
-    let data = SwapApp.env.storage.getItem(`swap.${id}`)
+    this._attachSwapApp(app)
+
+    let data = this.app.env.storage.getItem(`swap.${id}`)
 
     if (!data) {
-      order = order || SwapApp.services.orders.getByKey(id)
+      order = order || this.app.services.orders.getByKey(id)
 
       data = this._getDataFromOrder(order)
     }
@@ -31,16 +35,15 @@ class Swap {
 
     this.events = new Events()
 
-    this.room = new Room({
+    this.room = new Room(app, {
       swapId: id,
       participantPeer: this.participant.peer,
     })
 
-    this.ownerSwap        = SwapApp.swaps[data.buyCurrency.toUpperCase()]
-    this.participantSwap  = SwapApp.swaps[data.sellCurrency.toUpperCase()]
+    this.ownerSwap        = this.app.swaps[data.buyCurrency.toUpperCase()]
+    this.participantSwap  = this.app.swaps[data.sellCurrency.toUpperCase()]
 
-    const Flow = SwapApp.flows[`${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}`]
-
+    const Flow = this.app.flows[`${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}`]
 
     if (!Flow) {
       throw new Error(`Flow with name "${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}" not found in SwapApp.flows`)
@@ -50,17 +53,49 @@ class Swap {
 
     // Change destination address on run time
     this.room.on('set destination buy address', (data) => {
-      console.log("Other side change destination buy address", data);
+      debug('swap.core:swap')("Other side change destination buy address", data);
       this.update({
         destinationSellAddress: data.address
       })
     });
     this.room.on('set destination sell address', (data) => {
-      console.log("Other side change destination sell address", data);
+      debug('swap.core:swap')("Other side change destination sell address", data);
       this.update({
         destinationBuyAddress: data.address
       })
     });
+  }
+
+  static read(app, { id } = {}) {
+    SwapApp.required(app)
+
+    if (!id) {
+      debug('swap.core:swap')(`SwapReadError: id not given: ${id}`)
+      return {}
+    }
+
+    const data = app.env.storage.getItem(`swap.${id}`)
+
+    if (!data) {
+      debug('swap.core:swap')(`SwapReadError: No swap with id=${id}`)
+      return {}
+    }
+
+    const Flow = app.flows[`${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}`]
+
+    if (!Flow) {
+      throw new Error(`Flow with name "${data.sellCurrency.toUpperCase()}2${data.buyCurrency.toUpperCase()}" not found in SwapApp.flows`)
+    }
+
+    data.flow = Flow.read(app, data)
+
+    return data
+  }
+
+  _attachSwapApp(app) {
+    SwapApp.required(app)
+
+    this.app = app
   }
 
   _getDataFromOrder(order) {
@@ -76,11 +111,11 @@ class Swap {
       'sellCurrency',
       'buyAmount',
       'sellAmount',
-      'destinationBuyAddress',
-      'destinationSellAddress',
+      'destination',
     )
 
-    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, destinationBuyAddress, destinationSellAddress, ...rest } = data
+    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, destination, ...rest } = data
+    const { ownerAddress, participantAddress } = destination
 
     const swap = {
       ...rest,
@@ -89,8 +124,8 @@ class Swap {
       sellCurrency: isMy ? sellCurrency : buyCurrency,
       buyAmount: isMy ? buyAmount : sellAmount,
       sellAmount: isMy ? sellAmount : buyAmount,
-      destinationBuyAddress: isMy ? destinationBuyAddress : destinationSellAddress,
-      destinationSellAddress: isMy ? destinationSellAddress : destinationBuyAddress
+      destinationBuyAddress: isMy ? ownerAddress : participantAddress,
+      destinationSellAddress: isMy ? participantAddress : ownerAddress,
     }
 
     if (!swap.participant && !isMy) {
@@ -119,7 +154,7 @@ class Swap {
   _saveState() {
     const data = this._pullRequiredData(this)
 
-    SwapApp.env.storage.setItem(`swap.${this.id}`, data)
+    this.app.env.storage.setItem(`swap.${this.id}`, data)
   }
 
   setDestinationBuyAddress(address) {

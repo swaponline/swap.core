@@ -1,12 +1,17 @@
+import SwapApp from 'swap.app'
+
 class SwapInterface {
 
   constructor() {
-    // service name, within it will be stored in SwapApp.swaps
+    // service name, within it will be stored in this.app.swaps
     this._swapName = null
   }
 
-  _initSwap() {
+  _initSwap(app) {
     // init service on SwapApp mounting
+    SwapApp.required(app)
+
+    this.accounts = app.services.auth.accounts
   }
 }
 
