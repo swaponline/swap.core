@@ -531,6 +531,21 @@ export default (tokenName) => {
         }, {step: 'withdraw-btc'})
         throw new Error(`Already withdrawn: address=${scriptAddress},balance=${balance}`)
       }
+
+      await this.btcSwap.withdraw({
+        scriptValues: btcScriptValues,
+        secret: _secret,
+      }, (hash) => {
+        debug('swap.core:flow')(`TX hash=${hash}`)
+        this.setState({
+          btcSwapWithdrawTransactionHash: hash,
+        })
+      })
+      debug('swap.core:flow')(`TX withdraw sent: ${this.state.btcSwapWithdrawTransactionHash}`)
+
+      this.finishStep({
+        isBtcWithdrawn: true,
+      }, { step: 'withdraw-btc' })
     }
   }
 
