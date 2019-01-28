@@ -518,7 +518,7 @@ export default (tokenName) => {
       const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
 
       if (secretHash != _secretHash)
-        console.warn(`Hash does not match!`)
+        console.warn(`Hash does not match! state: ${secretHash}, given: ${_secretHash}`)
 
       const {scriptAddress} = this.btcSwap.createScript(btcScriptValues)
       const balance = await this.btcSwap.getBalance(scriptAddress)
