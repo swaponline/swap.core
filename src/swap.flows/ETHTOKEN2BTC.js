@@ -500,7 +500,8 @@ export default (tokenName) => {
     }
 
     async tryWithdraw(_secret) {
-      const {secret, secretHash, isEthWithdrawn, isBtcWithdrawn, btcScriptValues} = this.state
+      const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, btcScriptValues } = this.state
+
       if (!_secret)
         throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
 

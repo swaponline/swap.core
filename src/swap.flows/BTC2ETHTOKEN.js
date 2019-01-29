@@ -561,7 +561,7 @@ export default (tokenName) => {
         })
     }
 
-    tryWithdraw(_secret) {
+    async tryWithdraw(_secret) {
       const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn } = this.state
 
       if (!_secret)
