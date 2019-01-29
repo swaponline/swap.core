@@ -18,6 +18,8 @@
     "dev:umd": "NODE_ENV=development webpack --config webpack.config.babel.js --watch",
     "build:umd": "NODE_ENV=production webpack --config webpack.config.babel.js",
     "build:umd:win": "webpack --config webpack.config.babel.js",
+    "preversion": "npm run build",
+    "postversion": "npm publish",
     "docs": "jsdoc src -r -d docs"
   },
   "peerDependencies": {
