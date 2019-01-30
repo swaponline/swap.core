@@ -23,6 +23,7 @@ const tokenSwap = require('./tokenSwap')
 
 const setupLocalStorage = require('./setupLocalStorage')
 const { LocalStorage } = require('node-localstorage')
+const sessionStorage = require('node-sessionstorage')
 
 module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom }) => {
   config = {
@@ -63,6 +64,7 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
       Ipfs,
       IpfsRoom,
       storage,
+      sessionStorage,
       ...config.env,
     },
     services: [

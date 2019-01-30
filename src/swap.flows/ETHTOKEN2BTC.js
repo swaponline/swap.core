@@ -80,6 +80,13 @@ export default (tokenName) => {
 
       super._persistSteps()
       this._persistState()
+
+      const flow = this
+      flow.swap.room.once('request withdraw', () => {
+        flow.setState({
+          withdrawRequestIncoming: true,
+        })
+      })
     }
 
     _persistState() {
@@ -137,7 +144,7 @@ export default (tokenName) => {
 
           const scriptCheckResult = await flow.btcSwap.checkScript(flow.state.btcScriptValues, {
             value: buyAmount,
-            recipientPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
+            recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
             lockTime: getLockTime(),
           })
 
@@ -152,13 +159,25 @@ export default (tokenName) => {
             participantAddress: participant.eth.address,
             secretHash,
             amount: sellAmount,
-            targetWallet: flow.swap.destinationSellAddress
+            targetWallet: flow.swap.destinationSellAddress,
+            calcFee: true,
           }
+
+          // TODO fee after allowance
+          // EthTokenSwap -> approve need gas too
+          /* calc create contract fee and save this */
+          /*
+          flow.setState({
+            createSwapFee: await flow.ethTokenSwap.create(swapData),
+          })
+          */
+          swapData.calcFee = false
+          //debug('swap.core:flow')('create swap fee', flow.state.createSwapFee)
 
           const tryCreateSwapKeyName = `${flow.swap.id}.tryCreateSwap`
 
           const tryCreateSwap = async (currentKey) => {
-            if (!util.actualKey.compare(tryCreateSwapKeyName, currentKey)) {
+            if (!util.actualKey.compare(this.app, tryCreateSwapKeyName, currentKey)) {
               return false
             }
 
@@ -166,7 +185,7 @@ export default (tokenName) => {
               try {
                 debug('swap.core:flow')('fetching allowance')
                 const allowance = await flow.ethTokenSwap.checkAllowance({
-                  spender: SwapApp.services.auth.getPublicData().eth.address,
+                  spender: this.app.services.auth.getPublicData().eth.address,
                 })
 
                 debug('swap.core:flow')('allowance', allowance)
@@ -193,7 +212,7 @@ export default (tokenName) => {
                   })
 
                   debug('swap.core:flow')('created swap!', hash)
-                  util.actualKey.remove(tryCreateSwapKeyName)
+                  util.actualKey.remove(this.app, tryCreateSwapKeyName)
                 })
               } catch (err) {
                 if ( /known transaction/.test(err.message) ) {
@@ -215,7 +234,7 @@ export default (tokenName) => {
             return true
           }
 
-          const tryCreateSwapKey = util.actualKey.create(tryCreateSwapKeyName)
+          const tryCreateSwapKey = util.actualKey.create(this.app, tryCreateSwapKeyName)
 
           const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
             tryCreateSwap(tryCreateSwapKey),
@@ -337,11 +356,44 @@ export default (tokenName) => {
       ]
     }
 
+    acceptWithdrawRequest() {
+      const flow = this
+
+      if (this.state.withdrawRequestAccepted) return
+      this.setState({
+        withdrawRequestAccepted: true,
+      })
+
+      this.swap.room.once('do withdraw', async ({secret}) => {
+        try {
+          const data = {
+            participantAddress: flow.swap.participant.eth.address,
+            secret,
+          }
+
+          await flow.ethTokenSwap.withdrawNoMoney(data, (hash) => {
+            flow.swap.room.sendMessage({
+              event: 'withdraw ready',
+              data: {
+                ethSwapWithdrawTransactionHash: hash,
+              }
+            })
+          })
+        } catch (err) {
+          debug('swap.core:flow')(err.message)
+        }
+      })
+
+      this.swap.room.sendMessage({
+        event: 'accept withdraw request'
+      })
+    }
+
     _checkSwapAlreadyExists() {
       const {participant} = this.swap
 
       const swapData = {
-        ownerAddress: SwapApp.services.auth.accounts.eth.address,
+        ownerAddress: this.app.services.auth.accounts.eth.address,
         participantAddress: participant.eth.address
       }
 
@@ -406,7 +458,7 @@ export default (tokenName) => {
         isBalanceFetching: true,
       })
 
-      const balance = await this.ethTokenSwap.fetchBalance(SwapApp.services.auth.accounts.eth.address)
+      const balance = await this.ethTokenSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
       const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
       if (isEnoughMoney) {

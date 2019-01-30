@@ -1,6 +1,3 @@
-const swap = require('swap.core')
-const { EthTokenSwap } = swap.swaps
-
 const ethereum = require('../instances/ethereum')
 const ERC20 = require('./ERC20')
 

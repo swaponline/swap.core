@@ -6,25 +6,38 @@ class Room {
 
   // TODO add destroy method with all events unsubscribe (when swap is finished)
 
-  constructor({ swapId, participantPeer }) {
+  constructor(app, { swapId, participantPeer }) {
     this.swapId           = swapId
     this.peer  = participantPeer
     this._events          = new Events()
+    this.app              = null
+
+    this._attachSwapApp(app)
   }
 
+  _attachSwapApp(app) {
+    SwapApp.required(app)
 
-  getOnlineParticipant =  () => {
-    const online = SwapApp.services.room.connection.hasPeer(this.peer)
+    this.app = app
+  }
 
-    if (!online) {
-      this._events.dispatch('participant is offline', this.peer)
+  getOnlineParticipant = () => {
+    try {
+      const online = this.app.services.room.connection.hasPeer(this.peer)
+
+      if (!online) {
+        this._events.dispatch('participant is offline', this.peer)
+      }
+
+      return online
+    } catch (err) {
+      console.error(err)
+      return false
     }
-
-    return online
   }
 
   on(eventName, handler) {
-    SwapApp.services.room.on(eventName, ({ fromPeer, swapId, ...values }) => {
+    this.app.services.room.on(eventName, ({ fromPeer, swapId, ...values }) => {
       debug('swap.core:room')(`on ${eventName} from ${fromPeer} at swap ${swapId}`)
       if (fromPeer === this.peer && swapId === this.swapId) {
         handler(values)
@@ -35,7 +48,7 @@ class Room {
   once(eventName, handler) {
     const self = this
 
-    SwapApp.services.room.on(eventName, function ({ fromPeer, swapId, ...values }) {
+    this.app.services.room.on(eventName, function ({ fromPeer, swapId, ...values }) {
       debug('swap.core:room')(`once ${eventName} from ${fromPeer} at swap ${swapId}`)
       if (fromPeer === self.peer && swapId === self.swapId) {
         this.unsubscribe()
@@ -53,7 +66,7 @@ class Room {
 
     const { event, data } = message
 
-    SwapApp.services.room.sendConfirmation(this.peer, {
+    this.app.services.room.sendConfirmation(this.peer, {
       event,
       action: 'active',
       data: {

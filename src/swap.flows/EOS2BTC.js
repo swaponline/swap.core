@@ -52,7 +52,7 @@ const pullHandlers = (flow) => ({
   verifyScript: async () => {
     const { buyAmount: value } = flow.swap
     const { scriptValues } = flow.state
-    const recipientPublicKey = SwapApp.services.auth.accounts.btc.getPublicKey()
+    const recipientPublicKey = this.app.services.auth.accounts.btc.getPublicKey()
 
     const eosLockPeriod = flow.eosSwap.getLockPeriod()
     const now = Math.floor(Date.now() / 1000)
@@ -137,8 +137,8 @@ class EOS2BTC extends Flow {
 
     this._flowName = EOS2BTC.getName()
 
-    this.eosSwap = SwapApp.swaps[constants.COINS.eos]
-    this.btcSwap = SwapApp.swaps[constants.COINS.btc]
+    this.eosSwap = this.app.swaps[constants.COINS.eos]
+    this.btcSwap = this.app.swaps[constants.COINS.btc]
 
     this.state = {
       ...this.state,

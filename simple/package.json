@@ -1,6 +1,6 @@
 {
   "name": "simple.swap.core",
-  "version": "0.3.0-rc20",
+  "version": "0.3.1-rc22",
   "description": "A wrapper around swap.core library",
   "main": "lib/index.js",
   "scripts": {
@@ -29,8 +29,9 @@
     "ipfs": "^0.33.1",
     "ipfs-pubsub-room": "^1.4.0",
     "node-localstorage": "^1.3.1",
+    "node-sessionstorage": "^1.0.0",
     "request-promise-native": "^1.0.5",
-    "swap.core": "^0.3.1-b8",
+    "swap.core": "^0.3.1-b11",
     "web3": "^1.0.0-beta.34"
   },
   "devDependencies": {

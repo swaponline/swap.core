@@ -134,7 +134,7 @@ class ETH2LTC extends Flow {
 
         const scriptCheckResult = await flow.ltcSwap.checkScript(flow.state.ltcScriptValues, {
           value: buyAmount,
-          recipientPublicKey: SwapApp.services.auth.accounts.ltc.getPublicKey(),
+          recipientPublicKey: this.app.services.auth.accounts.ltc.getPublicKey(),
           lockTime: getLockTime(),
         })
 
@@ -250,7 +250,7 @@ class ETH2LTC extends Flow {
     const { participant } = this.swap
 
     const swapData = {
-      ownerAddress:       SwapApp.services.auth.accounts.eth.address,
+      ownerAddress:       this.app.services.auth.accounts.eth.address,
       participantAddress: participant.eth.address
     }
 
@@ -310,7 +310,7 @@ class ETH2LTC extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.ethSwap.fetchBalance(SwapApp.services.auth.accounts.eth.address)
+    const balance = await this.ethSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
     if (isEnoughMoney) {

@@ -265,7 +265,7 @@ export default (tokenName) => {
 
           const balanceCheckError = await flow.ethTokenSwap.checkBalance({
             ownerAddress: participant.eth.address,
-            participantAddress: SwapApp.services.auth.accounts.eth.address,
+            participantAddress: this.app.services.auth.accounts.eth.address,
             expectedValue: buyAmount,
             expectedHash: secretHash,
           })
@@ -280,7 +280,7 @@ export default (tokenName) => {
           const targetWallet = await flow.ethTokenSwap.getTargetWallet( participant.eth.address )
           const needTargetWallet = (flow.swap.destinationBuyAddress)
             ? flow.swap.destinationBuyAddress
-            : SwapApp.services.auth.accounts.eth.address
+            : this.app.services.auth.accounts.eth.address
 
           if (targetWallet != needTargetWallet) {
             console.error(
@@ -297,15 +297,45 @@ export default (tokenName) => {
             return
           }
 
+          const onWithdrawReady = () => {
+            flow.swap.room.on('request ethWithdrawTxHash', () => {
+              flow.swap.room.sendMessage({
+                event: 'ethWithdrawTxHash',
+                data: {
+                  ethSwapWithdrawTransactionHash: flow.state.ethSwapWithdrawTransactionHash,
+                },
+              })
+            })
+
+            flow.swap.room.sendMessage({
+              event: 'finish eth withdraw',
+            })
+
+            flow.finishStep({
+              isEthWithdrawn: true,
+            })
+          }
+
           const tryWithdrawKeyName = `${flow.swap.id}.tryWithdraw`
 
           const tryWithdraw = async (currentKey) => {
-            if (!util.actualKey.compare(tryWithdrawKeyName, currentKey)) {
+            if (!util.actualKey.compare(this.app, tryWithdrawKeyName, currentKey)) {
               return false
             }
 
             if (!flow.state.isEthWithdrawn) {
               try {
+                const withdrawNeededGas = await flow.ethTokenSwap.withdraw({
+                  ownerAddress: data.ownerAddress,
+                  secret: data.secret,
+                  calcFee: true
+                })
+                flow.setState({
+                  withdrawFee: withdrawNeededGas
+                })
+
+                debug('swap.core:flow')('withdraw gas fee', withdrawNeededGas)
+
                 await flow.ethTokenSwap.withdraw(data, (hash) => {
                   flow.setState({
                     ethSwapWithdrawTransactionHash: hash,
@@ -320,13 +350,27 @@ export default (tokenName) => {
                     }
                   })
 
-                  util.actualKey.remove(tryWithdrawKeyName)
+                  util.actualKey.remove(this.app, tryWithdrawKeyName)
                 })
               } catch (err) {
                 if ( /known transaction/.test(err.message) ) {
                   console.error(`known tx: ${err.message}`)
                 } else if ( /out of gas/.test(err.message) ) {
                   console.error(`tx failed (wrong secret?): ${err.message}`)
+                } else if ( /insufficient funds for gas/.test(err.message) ) {
+                  console.error(`insufficient fund for gas: $(err.message)`)
+                  debug('swap.core:flow')('insufficient fund for gas... wait fund or request other side to withdraw')
+
+                  flow.setState({
+                    requireWithdrawFee: true,
+                  })
+
+                  flow.swap.room.once('withdraw ready', ({ethSwapWithdrawTransactionHash}) => {
+                    flow.setState({
+                      ethSwapWithdrawTransactionHash,
+                    })
+                    onWithdrawReady()
+                  })
                 } else {
                   console.error(err)
                 }
@@ -342,29 +386,14 @@ export default (tokenName) => {
             return true
           }
 
-          const tryWithdrawKey = util.actualKey.create(tryWithdrawKeyName)
+          const tryWithdrawKey = util.actualKey.create(this.app, tryWithdrawKeyName)
 
           const isEthWithdrawn = await util.helpers.repeatAsyncUntilResult(() =>
             tryWithdraw(tryWithdrawKey),
           )
 
           if (isEthWithdrawn) {
-            flow.swap.room.on('request ethWithdrawTxHash', () => {
-              flow.swap.room.sendMessage({
-                event: 'ethWithdrawTxHash',
-                data: {
-                  ethSwapWithdrawTransactionHash: flow.state.ethSwapWithdrawTransactionHash,
-                },
-              })
-            })
-
-            flow.swap.room.sendMessage({
-              event: 'finish eth withdraw',
-            })
-
-            flow.finishStep({
-              isEthWithdrawn,
-            })
+            onWithdrawReady()
           }
         },
 
@@ -383,6 +412,30 @@ export default (tokenName) => {
 
         }
       ]
+    }
+
+    sendWithdrawRequest() {
+      const flow = this
+
+      if (!this.state.requireWithdrawFee) return
+      if (this.state.requireWithdrawFeeSended) return
+
+      this.setState({
+        requireWithdrawFeeSended: true,
+      })
+
+      this.swap.room.on('accept withdraw request', () => {
+        flow.swap.room.sendMessage({
+          event: 'do withdraw',
+          data: {
+            secret: flow.state.secret,
+          }
+        })
+      })
+
+      this.swap.room.sendMessage({
+        event: 'request withdraw',
+      })
     }
 
     async waitEthBalance() {
@@ -441,7 +494,7 @@ export default (tokenName) => {
 
       const scriptValues = {
         secretHash:         secretHash,
-        ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
+        ownerPublicKey:     this.app.services.auth.accounts.btc.getPublicKey(),
         recipientPublicKey: participant.btc.publicKey,
         lockTime:           getLockTime(),
       }
@@ -466,7 +519,7 @@ export default (tokenName) => {
         isBalanceFetching: true,
       })
 
-      const balance = await this.btcSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
+      const balance = await this.btcSwap.fetchBalance(this.app.services.auth.accounts.btc.getAddress())
       const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
       if (!isEnoughMoney) {

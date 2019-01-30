@@ -22,7 +22,7 @@ class Order {
    * @param {number}  data.buyAmount
    * @param {number}  data.sellAmount
    */
-  constructor(parent, data) {
+  constructor(app, parentCollection, data) {
     this.id             = data.id
     this.isMy           = null
     this.owner          = null
@@ -33,7 +33,7 @@ class Order {
     this.buyAmount      = null
     this.sellAmount     = null
 
-    this.collection       = parent
+    this.collection       = parentCollection
     this.requests         = [] // income requests
     this.isRequested      = false // outcome request status
     this.isProcessing     = false // if swap isProcessing
@@ -46,23 +46,32 @@ class Order {
 
     this.destination = null
 
+
+    this._attachSwapApp(app)
+
     this._update({
       ...data,
-      isMy: data.owner.peer === SwapApp.services.room.peer,
+      isMy: data.owner.peer === this.app.services.room.peer,
     })
 
     this._onMount()
   }
 
+  _attachSwapApp(app) {
+    SwapApp.required(app)
+
+    this.app = app
+  }
+
   _onMount() {
-    SwapApp.services.room.on('request swap', ({ orderId, participant, participantMetadata, destination }) => {
+    this.app.services.room.on('request swap', ({ orderId, participant, participantMetadata, destination }) => {
       if (orderId === this.id && this.requests.length < 10 && !this.requests.find(({ participant: { peer } }) => peer === participant.peer)) {
         let reputation = 0
 
         try {
           // todo: check other blockchains
           if (participant.eth.address === participantMetadata.address || participant.btc.address === participantMetadata.address) {
-            reputation = SwapApp.env.swapsExplorer.getVerifiedReputation(participantMetadata)
+            reputation = this.app.env.swapsExplorer.getVerifiedReputation(participantMetadata)
           }
         } catch (err) {
           debug('swap.core:order')(err)
@@ -79,7 +88,7 @@ class Order {
       }
     })
 
-    SwapApp.services.room.on('request partial fulfilment', ({ orderId, participant, updatedOrder }) => {
+    this.app.services.room.on('request partial fulfilment', ({ orderId, participant, updatedOrder }) => {
       if (orderId === this.id) {
         const { buyAmount, sellAmount } = updatedOrder
 
@@ -176,14 +185,14 @@ class Order {
 
     const self = this
 
-    if (SwapApp.services.room.peer === this.owner.peer) {
+    if (this.app.services.room.peer === this.owner.peer) {
       console.warn('You are the owner of this Order. You can\'t send request to yourself.')
       return
     }
 
-    const participant = SwapApp.services.auth.getPublicData()
+    const participant = this.app.services.auth.getPublicData()
 
-    SwapApp.services.room.sendMessagePeer(this.owner.peer, {
+    this.app.services.room.sendMessagePeer(this.owner.peer, {
       event: 'request partial fulfilment',
       data: {
         orderId: this.id,
@@ -192,7 +201,7 @@ class Order {
       },
     })
 
-    SwapApp.services.room.on('accept partial fulfilment', function ({ orderId, newOrderId, newOrder }) {
+    this.app.services.room.on('accept partial fulfilment', function ({ orderId, newOrderId, newOrder }) {
       if (orderId === self.id) {
         this.unsubscribe()
 
@@ -229,7 +238,7 @@ class Order {
       }
     })
 
-    SwapApp.services.room.on('decline partial fulfilment', function ({ orderId }) {
+    this.app.services.room.on('decline partial fulfilment', function ({ orderId }) {
       if (orderId === self.id) {
         this.unsubscribe()
 
@@ -251,7 +260,7 @@ class Order {
       participantMetadata,
     } = requestOptions
 
-    if (SwapApp.services.room.peer === this.owner.peer) {
+    if (this.app.services.room.peer === this.owner.peer) {
       console.warn('You are the owner of this Order. You can\'t send request to yourself.')
       return
     }
@@ -265,9 +274,9 @@ class Order {
       isRequested: true,
     })
 
-    const participant = SwapApp.services.auth.getPublicData()
+    const participant = this.app.services.auth.getPublicData()
 
-    SwapApp.services.room.sendMessagePeer(this.owner.peer, {
+    this.app.services.room.sendMessagePeer(this.owner.peer, {
       event: 'request swap',
       data: {
         orderId: this.id,
@@ -279,7 +288,7 @@ class Order {
       },
     })
 
-    SwapApp.services.room.on('accept swap request', function ({ orderId }) {
+    this.app.services.room.on('accept swap request', function ({ orderId }) {
       if (orderId === self.id) {
         this.unsubscribe()
 
@@ -296,7 +305,7 @@ class Order {
       }
     })
 
-    SwapApp.services.room.on('decline swap request', function ({ orderId }) {
+    this.app.services.room.on('decline swap request', function ({ orderId }) {
       if (orderId === self.id) {
         this.unsubscribe()
 
@@ -335,7 +344,7 @@ class Order {
       sellCurrency,
     })
 
-    SwapApp.services.room.sendMessagePeer(participantPeer, {
+    this.app.services.room.sendMessagePeer(participantPeer, {
       event: 'accept partial fulfilment',
       data: {
         orderId: this.id,
@@ -355,7 +364,7 @@ class Order {
       requests: updatedRequests,
     })
 
-    SwapApp.services.room.sendMessagePeer(participantPeer, {
+    this.app.services.room.sendMessagePeer(participantPeer, {
       event: 'decline partial fulfilment',
       data: {
         orderId: this.id,
@@ -396,7 +405,7 @@ class Order {
       requests: [],
     })
 
-    SwapApp.services.room.sendMessagePeer(participantPeer, {
+    this.app.services.room.sendMessagePeer(participantPeer, {
       event: 'accept swap request',
       data: {
         orderId: this.id,
@@ -405,26 +414,16 @@ class Order {
   }
 
   declineRequest(participantPeer) {
-    let index
-
-    this.requests.some(({ participant: { peer } }, _index) => {
-      if (peer === participantPeer) {
-        index = _index
-      }
-      return index !== undefined
+    const updatedRequests = this.requests.filter(({ participant: { peer } }) => {
+      return peer !== participantPeer
     })
-
-    const requests = [
-      ...this.requests.slice(0, index),
-      ...this.requests.slice(index + 1)
-    ]
 
     this.update({
       isRequested: false,
-      requests,
+      requests: updatedRequests,
     })
 
-    SwapApp.services.room.sendMessagePeer(participantPeer, {
+    this.app.services.room.sendMessagePeer(participantPeer, {
       event: 'decline swap request',
       data: {
         orderId: this.id,

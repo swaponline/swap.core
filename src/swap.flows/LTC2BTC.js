@@ -137,7 +137,7 @@ class LTC2BTC extends Flow {
 
         const scriptCheckResult = await flow.btcSwap.checkScript(flow.state.btcScriptValues, {
           value: buyAmount,
-          recipientPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
+          recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
           lockTime: getLockTime(),
         })
 
@@ -149,7 +149,7 @@ class LTC2BTC extends Flow {
 
         const scriptValues = {
           secretHash:         flow.state.secretHash,
-          ownerPublicKey:     SwapApp.services.auth.accounts.ltc.getPublicKey(),
+          ownerPublicKey:     this.app.services.auth.accounts.ltc.getPublicKey(),
           recipientPublicKey: participant.ltc.publicKey,
           lockTime:           getLockTime(),
         }
@@ -269,7 +269,7 @@ class LTC2BTC extends Flow {
     const { participant } = this.swap
 
     const swapData = {
-      ownerAddress:       SwapApp.services.auth.accounts.ltc.address,
+      ownerAddress:       this.app.services.auth.accounts.ltc.address,
       participantAddress: participant.ltc.address
     }
 
@@ -333,7 +333,7 @@ class LTC2BTC extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.ltcSwap.fetchBalance(SwapApp.services.auth.accounts.ltc.getAddress())
+    const balance = await this.ltcSwap.fetchBalance(this.app.services.auth.accounts.ltc.getAddress())
 
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 

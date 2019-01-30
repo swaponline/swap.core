@@ -8,6 +8,7 @@ class Flow {
   constructor(swap) {
     this.swap     = swap
     this.steps    = []
+    this.app      = null
 
     this.stepNumbers = {}
 
@@ -15,19 +16,29 @@ class Flow {
       step: 0,
       isWaitingForOwner: false,
     }
+
+    this._attachSwapApp(swap.app)
   }
 
-  static read({ id } = {}) {
+  _attachSwapApp(app) {
+    SwapApp.required(app)
+
+    this.app = app
+  }
+
+  static read(app, { id } = {}) {
+    SwapApp.required(app)
+
     if (!id) {
       debug('swap.core:swap')(`FlowReadError: id not given: ${id}`)
       return {}
     }
 
-    return SwapApp.env.storage.getItem(`flow.${id}`)
+    return app.env.storage.getItem(`flow.${id}`)
   }
 
   _persistState() {
-    const state = Flow.read(this.swap)
+    const state = Flow.read(this.app, this.swap)
 
     if (state) {
       this.state = {
@@ -73,7 +84,7 @@ class Flow {
             isWaitingForOwner: true,
           })
 
-          SwapApp.services.room.on('new orders', function ({ orders }) {
+          this.app.services.room.on('new orders', function ({ orders }) {
             const order = orders.find(({ id }) => id === orderId)
 
             if (order) {
@@ -107,7 +118,7 @@ class Flow {
   }
 
   _saveState() {
-    SwapApp.env.storage.setItem(`flow.${this.swap.id}`, this.state)
+    this.app.env.storage.setItem(`flow.${this.swap.id}`, this.state)
   }
   finishStep(data, constraints) {
     debug('swap.core:swap')(`on step ${this.state.step}, constraints =`, constraints)

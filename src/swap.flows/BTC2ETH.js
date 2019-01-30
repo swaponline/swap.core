@@ -276,7 +276,7 @@ class BTC2ETH extends Flow {
 
         const balanceCheckError = await flow.ethSwap.checkBalance({
           ownerAddress: participant.eth.address,
-          participantAddress: SwapApp.services.auth.accounts.eth.address,
+          participantAddress: this.app.services.auth.accounts.eth.address,
           expectedValue: buyAmount,
           expectedHash: secretHash,
         })
@@ -292,7 +292,7 @@ class BTC2ETH extends Flow {
           const targetWallet = await flow.ethSwap.getTargetWallet( participant.eth.address )
           const needTargetWallet = (flow.swap.destinationBuyAddress)
             ? flow.swap.destinationBuyAddress
-            : SwapApp.services.auth.accounts.eth.address
+            : this.app.services.auth.accounts.eth.address
 
           if (targetWallet !== needTargetWallet) {
             console.error(
@@ -312,7 +312,7 @@ class BTC2ETH extends Flow {
         const tryWithdrawKeyName = `${flow.swap.id}.tryWithdraw`
 
         const tryWithdraw = async (currentKey) => {
-          if (!util.actualKey.compare(tryWithdrawKeyName, currentKey)) {
+          if (!util.actualKey.compare(this.app, tryWithdrawKeyName, currentKey)) {
             return false
           }
 
@@ -332,7 +332,7 @@ class BTC2ETH extends Flow {
                   }
                 })
 
-                util.actualKey.remove(tryWithdrawKeyName)
+                util.actualKey.remove(this.app, tryWithdrawKeyName)
               })
             } catch (err) {
               if ( /known transaction/.test(err.message) ) {
@@ -354,7 +354,7 @@ class BTC2ETH extends Flow {
           return true
         }
 
-        const tryWithdrawKey = util.actualKey.create(tryWithdrawKeyName)
+        const tryWithdrawKey = util.actualKey.create(this.app, tryWithdrawKeyName)
 
         const isEthWithdrawn = await util.helpers.repeatAsyncUntilResult(() =>
           tryWithdraw(tryWithdrawKey),
@@ -430,7 +430,7 @@ class BTC2ETH extends Flow {
 
     const scriptValues = {
       secretHash:         secretHash,
-      ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
+      ownerPublicKey:     this.app.services.auth.accounts.btc.getPublicKey(),
       recipientPublicKey: participant.btc.publicKey,
       lockTime:           getLockTime(),
     }
@@ -451,7 +451,7 @@ class BTC2ETH extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.btcSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
+    const balance = await this.btcSwap.fetchBalance(this.app.services.auth.accounts.btc.getAddress())
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
     if (!isEnoughMoney) {
