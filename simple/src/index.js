@@ -13,4 +13,6 @@ const setup = require('./setup')
 const helpers = require('./helpers')
 const config = require('./config')
 
-module.exports = { setup, helpers, config }
+const { constants } = require('swap.core')
+
+module.exports = { setup, helpers, config, constants }

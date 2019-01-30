@@ -500,7 +500,8 @@ export default (tokenName) => {
     }
 
     async tryWithdraw(_secret) {
-      const {secret, secretHash, isEthWithdrawn, isBtcWithdrawn, btcScriptValues} = this.state
+      const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, btcScriptValues } = this.state
+
       if (!_secret)
         throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
 
@@ -518,7 +519,7 @@ export default (tokenName) => {
       const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
 
       if (secretHash != _secretHash)
-        console.warn(`Hash does not match!`)
+        console.warn(`Hash does not match! state: ${secretHash}, given: ${_secretHash}`)
 
       const {scriptAddress} = this.btcSwap.createScript(btcScriptValues)
       const balance = await this.btcSwap.getBalance(scriptAddress)
@@ -531,6 +532,21 @@ export default (tokenName) => {
         }, {step: 'withdraw-btc'})
         throw new Error(`Already withdrawn: address=${scriptAddress},balance=${balance}`)
       }
+
+      await this.btcSwap.withdraw({
+        scriptValues: btcScriptValues,
+        secret: _secret,
+      }, (hash) => {
+        debug('swap.core:flow')(`TX hash=${hash}`)
+        this.setState({
+          btcSwapWithdrawTransactionHash: hash,
+        })
+      })
+      debug('swap.core:flow')(`TX withdraw sent: ${this.state.btcSwapWithdrawTransactionHash}`)
+
+      this.finishStep({
+        isBtcWithdrawn: true,
+      }, { step: 'withdraw-btc' })
     }
   }
 
