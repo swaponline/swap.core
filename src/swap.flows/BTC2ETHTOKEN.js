@@ -560,6 +560,46 @@ export default (tokenName) => {
           })
         })
     }
+
+    async tryWithdraw(_secret) {
+      const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn } = this.state
+
+      if (!_secret)
+        throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
+
+      if (secret && secret != _secret)
+        console.warn(`Secret already known and is different. Are you sure?`)
+
+      if (isEthWithdrawn)
+        console.warn(`Looks like money were already withdrawn, are you sure?`)
+
+      debug('swap.core:flow')(`WITHDRAW using secret = ${_secret}`)
+
+      const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
+
+      if (secretHash != _secretHash)
+        console.warn(`Hash does not match! state: ${secretHash}, given: ${_secretHash}`)
+
+      const { participant } = this.swap
+
+      const data = {
+        ownerAddress:   participant.eth.address,
+        secret:         _secret,
+      }
+
+      await this.ethTokenSwap.withdraw(data, (hash) => {
+        debug('swap.core:flow')(`TX hash=${hash}`)
+        this.setState({
+          ethSwapWithdrawTransactionHash: hash,
+          canCreateEthTransaction: true,
+        })
+      }).then(() => {
+
+        this.finishStep({
+          isEthWithdrawn: true,
+        }, 'withdraw-eth')
+      })
+    }
   }
 
   return BTC2ETHTOKEN

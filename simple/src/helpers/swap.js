@@ -8,7 +8,7 @@ import on from './on'
 
 export const read = Swap.read
 
-export const get = id => new Swap(id)
+export const get = (app, id) => new Swap(id, app)
 
 export const onStep = (swap, _step) => new Promise(async resolve => {
   if (_step <= swap.flow.state.step)
@@ -52,10 +52,10 @@ export const start = (swap) =>
     resolve()
   })
 
-export const refund = (swapID) =>
+export const refund = (app, swapID) =>
   new Promise(async resolve => {
     debug('swap.core:simple:swap')('Swap id =', swapID)
-    const swap = get(swapID)
+    const swap = get(app, swapID)
 
     if (swap.flow.state.isRefunded) {
       debug('swap.core:simple:swap')('This swap is refunded')
@@ -77,4 +77,3 @@ export const refund = (swapID) =>
       resolve(false)
     }
   })
-
