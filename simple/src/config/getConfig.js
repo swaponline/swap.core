@@ -57,6 +57,7 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
 
   return {
     network: config.network,
+    constants,
     env: {
       web3,
       bitcoin,
