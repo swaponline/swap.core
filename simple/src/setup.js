@@ -6,10 +6,7 @@ const configFactory = require('./config')
 
 const network = process.env.NETWORK
 
-let app
-
 module.exports = settings => {
-  if (app) return app
 
   const getConfig = configFactory[network || 'testnet']
 
@@ -21,7 +18,7 @@ module.exports = settings => {
 
   const { auth, room, orders } = swapApp.services
 
-  app = {
+  const app = {
     app: swapApp,
     wallet,
     auth,
