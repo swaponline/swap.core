@@ -607,18 +607,16 @@ class EthTokenSwap extends SwapInterface {
    * @returns {Promise<any>}
    */
   getSecretFromTxhash = (transactionHash) =>
-    util.helpers.repeatAsyncUntilResult(() =>
-      this.app.env.web3.eth.getTransaction(transactionHash)
-        .then(txResult => {
-          try {
-            const bytes32 = this.decoder.decodeData(txResult.input)
-            return this.app.env.web3.utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
-          } catch (err) {
-            debug('swap.core:swaps')('Trying to fetch secret from tx: ' + err.message)
-            return
-          }
-        })
-    )
+    this.app.env.web3.eth.getTransaction(transactionHash)
+      .then(txResult => {
+        try {
+          const bytes32 = this.decoder.decodeData(txResult.input)
+          return this.app.env.web3.utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
+        } catch (err) {
+          debug('swap.core:swaps')('Trying to fetch secret from tx: ' + err.message)
+          return
+        }
+      })
 
 }
 
