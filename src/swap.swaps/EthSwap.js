@@ -316,7 +316,44 @@ class EthSwap extends SwapInterface {
    * @returns {Promise}
    */
   async withdraw(data, handleTransactionHash) {
-    const { ownerAddress, secret } = data
+    return this.withdrawOther({
+      ownerAddress: data.ownerAddress,
+      participantAddress: this.app.services.auth.accounts.eth.address,
+      secret: data.secret,
+      calcFee: data.calcFee,
+    } , handleTransactionHash)
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secret
+   * @param {string} data.participantAddress
+   * @param {function} handleTransactionHash
+   * @returns {Promise}
+   */
+  async withdrawNoMoney(data, handleTransactionHash) {
+    const { participantAddress, secret, calcFee } = data
+
+    return this.withdrawOther({
+      ownerAddress: this.app.services.auth.eth.address,
+      participantAddress: data.participantAddress,
+      secret: data.secret,
+      calcFee: data.calcFee
+    }, handleTransactionHash)
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secret
+   * @param {string} data.ownerAddress
+   * @param {string} data.participantAddress
+   * @param {function} handleTransactionHash
+   * @returns {Promise}
+   */
+  async withdrawOther(data, handleTransactionHash) {
+    const { ownerAddress, participantAddress, secret, calcFee } = data
 
     await this.updateGas()
 
@@ -329,21 +366,31 @@ class EthSwap extends SwapInterface {
         gasPrice: this.gasPrice,
       }
 
-      const gasFee = await this.contract.methods.withdraw(_secret, ownerAddress).estimateGas(params);
-      console.log("EthSwap -> withdraw -> gasFee",gasFee);
-      params.gas = gasFee;
+      try {
+        const gasFee = await this.contract.methods.withdrawOther(_secret, ownerAddress, participantAddress).estimateGas(params);
+        debug('swap.core:swaps')("EthSwap -> withdrawOther -> gasFee",gasFee);
 
-      const receipt = await this.contract.methods.withdraw(_secret, ownerAddress).send(params)
-        .on('transactionHash', (hash) => {
-          if (typeof handleTransactionHash === 'function') {
-            handleTransactionHash(hash)
-          }
-        })
-        .on('error', (err) => {
-          reject(err)
-        })
+        if (calcFee) {
+          resolve(gasFee)
+          return
+        }
 
-      resolve(receipt)
+        params.gas = gasFee;
+        const result = await this.contract.methods.withdrawOther(_secret, ownerAddress, participantAddress).send(params)
+          .on('transactionHash', (hash) => {
+            if (typeof handleTransactionHash === 'function') {
+              handleTransactionHash(hash)
+            }
+          })
+          .on('error', (err) => {
+            reject(err)
+          })
+
+        resolve(result)
+      }
+      catch (err) {
+        reject(err)
+      }
     })
   }
 
