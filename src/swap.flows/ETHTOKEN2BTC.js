@@ -146,6 +146,7 @@ export default (tokenName) => {
             value: buyAmount,
             recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
             lockTime: getLockTime(),
+            confidence: 0.8,
           })
 
           if (scriptCheckResult) {
