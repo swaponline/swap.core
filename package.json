@@ -1,6 +1,6 @@
 {
   "name": "swap.core",
-  "version": "0.3.0b1",
+  "version": "0.3.1-b11",
   "description": "Swap Core",
   "homepage": "https://github.com/swaponline/swap.core",
   "author": "Pavel Ivanov <grammka@gmail.com> (https://github.com/pavelivanov)",
@@ -11,13 +11,15 @@
   },
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest tests/*.test.js",
     "dev": "babel -w ./src --out-dir ./lib",
     "clean": "rimraf ./lib",
     "build": "npm run clean && babel ./src --out-dir ./lib",
     "dev:umd": "NODE_ENV=development webpack --config webpack.config.babel.js --watch",
     "build:umd": "NODE_ENV=production webpack --config webpack.config.babel.js",
     "build:umd:win": "webpack --config webpack.config.babel.js",
+    "preversion": "npm run build",
+    "postversion": "npm publish",
     "docs": "jsdoc src -r -d docs"
   },
   "peerDependencies": {
@@ -29,6 +31,9 @@
     "babel-runtime": "^6.26.0",
     "bignumber.js": "^7.2.1",
     "bitcoinjs-lib": "^3.3.2",
+    "command-line-args": "^5.0.2",
+    "command-line-usage": "^5.0.5",
+    "debug": "^4.1.0",
     "eosjs": "^15.0.3",
     "ethereum-input-data-decoder": "0.0.12",
     "node-gyp": "^3.8.0",
@@ -58,7 +63,7 @@
     "node-localstorage": "^1.3.1",
     "rimraf": "^2.6.2",
     "superagent": "^3.8.3",
-    "web3": "^1.0.0-beta.35",
+    "web3": "1.0.0-beta.37",
     "webpack": "^4.6.0",
     "webpack-cli": "^3.0.3",
     "webpack-raw-bundler": "^1.3.6"

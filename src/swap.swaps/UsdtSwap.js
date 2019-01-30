@@ -1,3 +1,4 @@
+import debug from 'debug'
 import SwapApp, { SwapInterface, constants } from 'swap.app'
 
 const FEE_VALUE = 2000 // satoshis TODO how to get this value
@@ -38,14 +39,18 @@ class UsdtSwap extends SwapInterface {
     this.getRecommendedFees = options.getRecommendedFees || (() => {})
   }
 
-  _initSwap() {
+  _initSwap(app) {
+    super._initSwap(app)
+
+    this.app = app
+
     this.network = (
-      SwapApp.isMainNet()
-        ? SwapApp.env.bitcoin.networks.bitcoin
-        : SwapApp.env.bitcoin.networks.testnet
+      this.app.isMainNet()
+        ? this.app.env.bitcoin.networks.bitcoin
+        : this.app.env.bitcoin.networks.testnet
     )
 
-    if (!SwapApp.isMainNet()) {
+    if (!this.app.isMainNet()) {
       throw new Error(`Sorry, USDT does not yet works on testnet!`)
     }
   }
@@ -61,14 +66,14 @@ class UsdtSwap extends SwapInterface {
   _signTransaction(data, inputIndex = 0) {
     const { script, txRaw, secret } = data
 
-    const hashType      = SwapApp.env.bitcoin.Transaction.SIGHASH_ALL
+    const hashType      = this.app.env.bitcoin.Transaction.SIGHASH_ALL
     const signatureHash = txRaw.hashForSignature(inputIndex, script, hashType)
-    const signature     = SwapApp.services.auth.accounts.btc.sign(signatureHash).toScriptSignature(hashType)
+    const signature     = this.app.services.auth.accounts.btc.sign(signatureHash).toScriptSignature(hashType)
 
-    const scriptSig = SwapApp.env.bitcoin.script.scriptHash.input.encode(
+    const scriptSig = this.app.env.bitcoin.script.scriptHash.input.encode(
       [
         signature,
-        SwapApp.services.auth.accounts.btc.getPublicKeyBuffer(),
+        this.app.services.auth.accounts.btc.getPublicKeyBuffer(),
         Buffer.from(secret.replace(/^0x/, ''), 'hex'),
       ],
       script,
@@ -89,34 +94,34 @@ class UsdtSwap extends SwapInterface {
   createScript(data) {
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
 
-    console.log('DATA', data)
+    debug('swap.core:swaps')('DATA', data)
 
-    const script = SwapApp.env.bitcoin.script.compile([
+    const script = this.app.env.bitcoin.script.compile([
 
-      SwapApp.env.bitcoin.opcodes.OP_RIPEMD160,
+      this.app.env.bitcoin.opcodes.OP_RIPEMD160,
       Buffer.from(secretHash, 'hex'),
-      SwapApp.env.bitcoin.opcodes.OP_EQUALVERIFY,
+      this.app.env.bitcoin.opcodes.OP_EQUALVERIFY,
 
       Buffer.from(recipientPublicKey, 'hex'),
-      SwapApp.env.bitcoin.opcodes.OP_EQUAL,
-      SwapApp.env.bitcoin.opcodes.OP_IF,
+      this.app.env.bitcoin.opcodes.OP_EQUAL,
+      this.app.env.bitcoin.opcodes.OP_IF,
 
       Buffer.from(recipientPublicKey, 'hex'),
-      SwapApp.env.bitcoin.opcodes.OP_CHECKSIG,
+      this.app.env.bitcoin.opcodes.OP_CHECKSIG,
 
-      SwapApp.env.bitcoin.opcodes.OP_ELSE,
+      this.app.env.bitcoin.opcodes.OP_ELSE,
 
-      SwapApp.env.bitcoin.script.number.encode(lockTime),
-      SwapApp.env.bitcoin.opcodes.OP_CHECKLOCKTIMEVERIFY,
-      SwapApp.env.bitcoin.opcodes.OP_DROP,
+      this.app.env.bitcoin.script.number.encode(lockTime),
+      this.app.env.bitcoin.opcodes.OP_CHECKLOCKTIMEVERIFY,
+      this.app.env.bitcoin.opcodes.OP_DROP,
       Buffer.from(ownerPublicKey, 'hex'),
-      SwapApp.env.bitcoin.opcodes.OP_CHECKSIG,
+      this.app.env.bitcoin.opcodes.OP_CHECKSIG,
 
-      SwapApp.env.bitcoin.opcodes.OP_ENDIF,
+      this.app.env.bitcoin.opcodes.OP_ENDIF,
     ])
 
-    const scriptPubKey  = SwapApp.env.bitcoin.script.scriptHash.output.encode(SwapApp.env.bitcoin.crypto.hash160(script))
-    const scriptAddress = SwapApp.env.bitcoin.address.fromOutputScript(scriptPubKey, this.network)
+    const scriptPubKey  = this.app.env.bitcoin.script.scriptHash.output.encode(this.app.env.bitcoin.crypto.hash160(script))
+    const scriptAddress = this.app.env.bitcoin.address.fromOutputScript(scriptPubKey, this.network)
 
     return {
       scriptAddress,
@@ -158,7 +163,7 @@ class UsdtSwap extends SwapInterface {
       console.error(err)
       return `Can't get funding tx outputs ${fundingTxHash}`
     }
-    console.log(outputs)
+    debug('swap.core:swaps')(outputs)
 
     if (!outputs || outputs.length < 2) {
       return `Expected at least 2 outputs at funding tx ${fundingTxHash}, got: ${outputs}`
@@ -182,10 +187,10 @@ class UsdtSwap extends SwapInterface {
     try {
       const omniScript = omniOutput.scriptPubKey.asm
       const expectedOmniScript = createOmniScript(expected.amount)
-      const expectedOmniOutput = SwapApp.env.bitcoin.script.toASM(expectedOmniScript)
+      const expectedOmniOutput = this.app.env.bitcoin.script.toASM(expectedOmniScript)
 
       if (expectedOmniOutput !== omniScript) {
-        console.log(expectedOmniOutput, omniScript)
+        debug('swap.core:swaps')(expectedOmniOutput, omniScript)
         return `Expected first output value: `
         + expectedOmniOutput
         + `, got: `
@@ -220,7 +225,7 @@ class UsdtSwap extends SwapInterface {
         const { ownerPublicKey, recipientPublicKey } = scriptValues
 
         const dialog = {
-          owner: SwapApp.services.auth.accounts.btc,
+          owner: this.app.services.auth.accounts.btc,
           party: Buffer.from(recipientPublicKey, 'hex')
         }
 
@@ -255,7 +260,7 @@ class UsdtSwap extends SwapInterface {
         const { ownerPublicKey, recipientPublicKey } = scriptValues
 
 
-        const redeem_tx = new SwapApp.env.bitcoin.TransactionBuilder(this.network)
+        const redeem_tx = new this.app.env.bitcoin.TransactionBuilder(this.network)
 
         const { script, scriptAddress } = createScript(
           secretHash,
@@ -263,8 +268,8 @@ class UsdtSwap extends SwapInterface {
           recipientPublicKey,
           lockTime)
 
-        console.log('script address', scriptAddress)
-        const keyPair = SwapApp.services.auth.accounts.btc
+        debug('swap.core:swaps')('script address', scriptAddress)
+        const keyPair = this.app.services.auth.accounts.btc
         const myBtcAddress = keyPair.getAddress()
 
         const myUnspents      = await this.fetchUnspents(myBtcAddress)
@@ -272,7 +277,7 @@ class UsdtSwap extends SwapInterface {
 
 
         const unspents  = [ ...scriptUnspents, ...myUnspents ]
-        console.log('unspents', unspents)
+        debug('swap.core:swaps')('unspents', unspents)
         const fundValue = DUST
         const feeValue  = 5000
 
@@ -318,8 +323,8 @@ class UsdtSwap extends SwapInterface {
 
         const tx = txRaw
 
-        console.log('redeem tx hash', tx.getId())
-        console.log(`redeem tx hex ${tx.toHex()}`)
+        debug('swap.core:swaps')('redeem tx hash', tx.getId())
+        debug('swap.core:swaps')(`redeem tx hex ${tx.toHex()}`)
 
         if (typeof handleTransactionHash === 'function') {
           handleTransactionHash(tx.getId())

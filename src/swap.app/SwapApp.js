@@ -4,6 +4,8 @@ import StorageFactory from './StorageFactory'
 
 class SwapApp {
 
+  static _swapAppInstance = null
+
   /**
    *
    * @param {object}  options
@@ -13,7 +15,7 @@ class SwapApp {
    * @param {array}   options.swaps
    * @param {array}   options.flows
    */
-  setup(options) {
+  constructor(options) {
     this.network    = options.network || constants.NETWORKS.TESTNET
     this.env        = {}
     this.services   = {}
@@ -28,6 +30,23 @@ class SwapApp {
     this._addFlows(options.flows || [])
   }
 
+  static init(options) {
+    return new SwapApp(options)
+  }
+
+  static setup(options, forceFreshSetup = false) {
+    if (SwapApp._swapAppInstance && !forceFreshSetup) {
+      throw new Error(`Shared instance already initialized. Use SwapApp.shared() to access it.`)
+    }
+
+    SwapApp._swapAppInstance = new SwapApp(options)
+  }
+
+  static shared() {
+    SwapApp.required(SwapApp._swapAppInstance, `Shared instance not initialized. Call SwapApp.setup(config) first.`)
+    return SwapApp._swapAppInstance
+  }
+
   // Configure -------------------------------------------------------- /
 
   _addEnv(env) {
@@ -37,8 +56,11 @@ class SwapApp {
       }
     })
 
+    env.storage = new StorageFactory(env.storage)
+
+    // SwapApp.env = env
+
     this.env = env
-    this.env.storage = new StorageFactory(env.storage)
   }
 
   _addService(service) {
@@ -50,6 +72,7 @@ class SwapApp {
       throw new Error(`SwapApp service should contain "_serviceName" property should be one of ${Object.values(constants.SERVICES)}, got "${service._serviceName}"`)
     }
 
+    service._attachSwapApp(this)
     this.services[service._serviceName] = service
   }
 
@@ -74,7 +97,7 @@ class SwapApp {
     this.swaps[swap._swapName] = swap
 
     if (typeof swap._initSwap === 'function') {
-      swap._initSwap()
+      swap._initSwap(this)
     }
   }
 
@@ -115,7 +138,21 @@ class SwapApp {
   isLocalNet() {
     return this.network.toLowerCase() === constants.NETWORKS.LOCALNET
   }
+
+  isSwapApp() {
+    return true
+  }
+
+  static is(app) {
+    return app && app.isSwapApp && app.isSwapApp() && app instanceof SwapApp
+  }
+
+  static required(app, errorMessage = ``) {
+    if (!SwapApp.is(app)) {
+      throw new Error(`SwapApp required, got: ${app}. ${errorMessage}`)
+    }
+  }
 }
 
 
-export default new SwapApp()
+export default SwapApp
