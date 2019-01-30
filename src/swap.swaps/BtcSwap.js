@@ -66,7 +66,7 @@ class BtcSwap extends SwapInterface {
    * @returns {BigNumber|Number}
    * @public
    */
-  async getTxFee({ inSatoshis, size = 550, speed = 'normal' } = {}) {
+  async getTxFee({ inSatoshis, size = 550, speed = 'fast' } = {}) {
     try {
       const estimatedRate = await this.estimateFeeRate({ speed })
       const estimatedFee = Math.max(DUST, Math.ceil(estimatedRate * size / 1024))
@@ -93,7 +93,9 @@ class BtcSwap extends SwapInterface {
    * @private
    */
   async filterConfidentUnspents(unspents, expectedConfidenceLevel = 0.95) {
-    const currentFastestFee = await this.getTxFee({ inSatoshis: true })
+    const currentFastestFee = await this.getTxFee({ inSatoshis: true, speed: 'fast' })
+
+    debug('swap.core:swaps')(`currentFastestFee: ${currentFastestFee}`)
 
     const feesToConfidence = (fees, size) =>
       fees < currentFastestFee ? (fees / currentFastestFee) : 1
@@ -102,9 +104,13 @@ class BtcSwap extends SwapInterface {
 
     const fetchConfidence = async ({ txid, confirmations }) => {
       try {
-        const { confidence, fees, size } = await this.fetchTxInfo(txid)
+        const info = await this.fetchTxInfo(txid)
 
-        if (confidence) {
+        const { confidence, fees, size } = info
+
+        debug('swap.core:swaps')(`tx ${txid}:`, { confidence, confirmations, fees, size })
+
+        if (confidence && !Number.isNaN(Number(confidence))) {
           return confidence
         }
 
@@ -112,10 +118,10 @@ class BtcSwap extends SwapInterface {
           return feesToConfidence(fees, size)
         }
 
-        throw new Error(`confidence=${confidence},fees=${fees}`)
+        throw new Error(`txinfo=${{ confidence, confirmations, fees, size }}`)
 
       } catch (err) {
-        console.error(`BtcSwap: Error fetching confidence: using confirmations > 0`, err.message)
+        console.error(`BtcSwap: Error fetching confidence: using confirmations > 0:`, err.message)
         return confirmationsToConfidence(confirmations)
       }
     }
@@ -123,6 +129,7 @@ class BtcSwap extends SwapInterface {
     const confidences = await Promise.all(unspents.map(fetchConfidence))
 
     return unspents.filter((utxo, index) => {
+      debug('swap.core:swaps')(`confidence[${index}]:`, confidences[index])
       return BigNumber(confidences[index]).isGreaterThan(expectedConfidenceLevel)
     })
   }
@@ -220,7 +227,7 @@ class BtcSwap extends SwapInterface {
     const { recipientPublicKey, lockTime } = data
     const { scriptAddress, script } = this.createScript(data, hashName)
 
-    const expectedConfidence = expected.confidence || 0.99
+    const expectedConfidence = expected.confidence || 0.95
     const unspents      = await this.fetchUnspents(scriptAddress)
     const expectedValue = expected.value.multipliedBy(1e8).integerValue()
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
