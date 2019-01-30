@@ -1,5 +1,15 @@
 {
-  "presets": [ [ "es2015" ] ],
+  "presets": [
+    [
+      "env",
+      {
+        "targets": {
+          "chrome": "60",
+          "node": "current"
+        }
+      }
+    ]
+  ],
   "plugins": [
     "add-module-exports",
     "transform-runtime",
