@@ -32,7 +32,7 @@
     "node-sessionstorage": "^1.0.0",
     "request-promise-native": "^1.0.5",
     "swap.core": "^0.3.1-b12",
-    "web3": "1.0.0-beta.37"
+    "web3": "^1.0.0-beta.35"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
