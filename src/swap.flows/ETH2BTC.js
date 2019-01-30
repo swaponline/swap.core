@@ -221,7 +221,13 @@ class ETH2BTC extends Flow {
             ethSwapWithdrawTransactionHash,
           })
 
-          const secret = await flow.ethSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
+          const secret = await util.helpers.repeatAsyncUntilResult(() => {
+            if (flow.state.secret) {
+              return flow.state.secret
+            } else {
+              return flow.ethSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
+            }
+          })
 
           if (!flow.state.isEthWithdrawn && secret) {
             const _secret = `0x${secret.replace(/^0x/, '')}`
