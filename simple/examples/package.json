@@ -4,7 +4,7 @@
   "description": "",
   "main": "bot.js",
   "dependencies": {
-    "simple.swap.core": "^0.3.1-rc31"
+    "simple.swap.core": "^0.3.1"
   },
   "devDependencies": {},
   "scripts": {
