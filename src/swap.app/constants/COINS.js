@@ -50,6 +50,7 @@ export const ETH_TOKENS = {
   mth: 'MTH',
   cbt: 'CBT',
   ddm: 'DDM',
+  wbtc: 'WBTC'
 }
 
 export default {
