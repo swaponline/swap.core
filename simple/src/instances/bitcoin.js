@@ -157,19 +157,34 @@ class Bitcoin {
       ? BLOCKCYPHER_API_TESTNET
       : BLOCKCYPHER_API
 
-    return request
-      .get(`${API_ROOT}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`)
-      .catch(err => {
-        if (!/transaction hasalready been confirmed/.test(err.message)
-        &&  !/API calls limits/.test(err.message)
-        &&  !/Confidence factor limits/.test(err.message)) {
-          debug('swap.core:bitcoin')(`bitcoin error: fetch tx info: ${err.message}`)
-          throw err
+    return Promise.all([
+      request
+        .get(`${API_ROOT}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`)
+        .then(json => JSON.parse(json))
+        .catch(err => err),
+      request
+        .get(`${API_ROOT}/txs/${hash}`)
+        .then(json => JSON.parse(json))
+        .catch(err => err),
+    ]).then(([ tx_info_confidence, tx_info_other ]) => {
+        return {
+          ...tx_info_other,
+          ...tx_info_confidence,
         }
-
-        return request.get(`${API_ROOT}/txs/${hash}`)
       })
-      .then(json => JSON.parse(json))
+      .then(info => {
+        if (info.error) {
+          debug('swap.core:bitcoin')(`BlockCypherError: ${info.error}`)
+        }
+        
+        if (info.confidence || info.fees) {
+          return info
+        } else if (info.error) {
+          throw new Error(`BlockCypherError: ${info.error}`)
+        } else {
+          throw new Error(`BlockCypherError: No response`)
+        }
+      })
       .catch(error => filterError(error))
   }
 

@@ -1,9 +1,22 @@
 import SwapApp from 'swap.app'
 import debug from 'debug'
 
+let app
+
+const checkHistoryInit = (_app) => {
+  if (!_app) throw new Error(`history not initialized: call history.init(app)`)
+}
+
+const init = (_app) => {
+  SwapApp.required(_app)
+
+  app = _app
+}
 
 const save = (swapID, storageKey = 'history') => {
-  const storage = SwapApp.env.storage
+  checkHistoryInit(app)
+
+  const storage = app.env.storage
 
   const history = storage.getItem(storageKey) || []
 
@@ -24,7 +37,9 @@ const save = (swapID, storageKey = 'history') => {
 }
 
 const remove = (swapID, storageKey = 'history') => {
-  const storage = SwapApp.env.storage
+  checkHistoryInit(app)
+
+  const storage = app.env.storage
 
   const history = storage.getItem(storageKey) || []
 
@@ -45,7 +60,9 @@ const remove = (swapID, storageKey = 'history') => {
 }
 
 const getAll = (storageKey = 'history') => {
-  const storage = SwapApp.env.storage
+  checkHistoryInit(app)
+
+  const storage = app.env.storage
 
   const history = storage.getItem(storageKey) || []
 
@@ -63,6 +80,8 @@ export const removeFinished = (swapID) => remove(swapID, 'history.finished')
 export const getAllFinished = () => getAll('history.finished')
 
 module.exports = {
+  init,
+
   save,
   remove,
   getAll,

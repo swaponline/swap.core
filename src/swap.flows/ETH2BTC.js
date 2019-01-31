@@ -136,6 +136,7 @@ class ETH2BTC extends Flow {
           value: buyAmount,
           recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
           lockTime: getLockTime(),
+          confidence: 0.8,
         })
 
         if (scriptCheckResult) {
@@ -220,7 +221,13 @@ class ETH2BTC extends Flow {
             ethSwapWithdrawTransactionHash,
           })
 
-          const secret = await flow.ethSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
+          const secret = await util.helpers.repeatAsyncUntilResult(() => {
+            if (flow.state.secret) {
+              return flow.state.secret
+            } else {
+              return flow.ethSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
+            }
+          })
 
           if (!flow.state.isEthWithdrawn && secret) {
             const _secret = `0x${secret.replace(/^0x/, '')}`
@@ -433,7 +440,8 @@ class ETH2BTC extends Flow {
   }
 
   async tryWithdraw(_secret) {
-  const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, btcScriptValues } = this.state
+    const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, btcScriptValues } = this.state
+
     if (!_secret)
       throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
 
@@ -450,7 +458,7 @@ class ETH2BTC extends Flow {
 
     const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
     if (secretHash != _secretHash)
-      console.warn(`Hash does not match!`)
+      console.warn(`Hash does not match! state: ${secretHash}, given: ${_secretHash}`)
 
     const { scriptAddress } = this.btcSwap.createScript(btcScriptValues)
     const balance = await this.btcSwap.getBalance(scriptAddress)

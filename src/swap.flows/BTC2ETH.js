@@ -1,3 +1,4 @@
+import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants, util } from 'swap.app'
 import { Flow } from 'swap.swap'
@@ -377,7 +378,7 @@ class BTC2ETH extends Flow {
 
           flow.finishStep({
             isEthWithdrawn,
-          })
+          }, 'withdraw-eth')
         }
       },
 
@@ -420,9 +421,10 @@ class BTC2ETH extends Flow {
 
   createWorkBTCScript(secretHash) {
     if (this.state.btcScriptValues) {
-      debug('swap.core:flow')('BTC Script already generated', this.state.btcScriptValues);
-      return;
+      debug('swap.core:flow')('BTC Script already generated', this.state.btcScriptValues)
+      return
     }
+
     const { participant } = this.swap
     // TODO move this somewhere!
     const utcNow = () => Math.floor(Date.now() / 1000)
@@ -434,14 +436,14 @@ class BTC2ETH extends Flow {
       recipientPublicKey: participant.btc.publicKey,
       lockTime:           getLockTime(),
     }
-    const scriptData = this.btcSwap.createScript(scriptValues)
+    const { scriptAddress } = this.btcSwap.createScript(scriptValues)
 
-    this.setState( {
-      scriptAddress : scriptData.scriptAddress,
+    this.setState({
+      scriptAddress: scriptAddress,
       btcScriptValues: scriptValues,
-      scriptBalance : 0,
-      scriptUnspendBalance : 0
-    } );
+      scriptBalance: 0,
+      scriptUnspendBalance: 0
+    })
   }
 
   async syncBalance() {
@@ -491,6 +493,46 @@ class BTC2ETH extends Flow {
           isSwapExist: false,
         })
       })
+  }
+
+  async tryWithdraw(_secret) {
+    const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn } = this.state
+
+    if (!_secret)
+      throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
+
+    if (secret && secret != _secret)
+      console.warn(`Secret already known and is different. Are you sure?`)
+
+    if (isEthWithdrawn)
+      console.warn(`Looks like money were already withdrawn, are you sure?`)
+
+    debug('swap.core:flow')(`WITHDRAW using secret = ${_secret}`)
+
+    const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
+
+    if (secretHash != _secretHash)
+      console.warn(`Hash does not match! state: ${secretHash}, given: ${_secretHash}`)
+
+    const { participant } = this.swap
+
+    const data = {
+      ownerAddress:   participant.eth.address,
+      secret:         _secret,
+    }
+
+    await this.ethSwap.withdraw(data, (hash) => {
+      debug('swap.core:flow')(`TX hash=${hash}`)
+      this.setState({
+        ethSwapWithdrawTransactionHash: hash,
+        canCreateEthTransaction: true,
+      })
+    }).then(() => {
+
+      this.finishStep({
+        isEthWithdrawn: true,
+      }, 'withdraw-eth')
+    })
   }
 }
 
