@@ -1,3 +1,4 @@
+import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
@@ -84,7 +85,7 @@ class LTC2ETH extends Flow {
     //   ownerAddress: this.swap.participant.eth.address,
     // })
     //   .then((balance) => {
-    //     console.log('balance:', balance)
+    //     debug('swap.core:flow')('balance:', balance)
     //   })
   }
 
@@ -144,7 +145,7 @@ class LTC2ETH extends Flow {
 
         const scriptValues = {
           secretHash:         flow.state.secretHash,
-          ownerPublicKey:     SwapApp.services.auth.accounts.ltc.getPublicKey(),
+          ownerPublicKey:     this.app.services.auth.accounts.ltc.getPublicKey(),
           recipientPublicKey: participant.ltc.publicKey,
           lockTime:           getLockTime(),
         }
@@ -330,7 +331,7 @@ class LTC2ETH extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.ltcSwap.fetchBalance(SwapApp.services.auth.accounts.ltc.getAddress())
+    const balance = await this.ltcSwap.fetchBalance(this.app.services.auth.accounts.ltc.getAddress())
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
     if (isEnoughMoney) {

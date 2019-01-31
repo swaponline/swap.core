@@ -59,11 +59,18 @@ const accounts = {
 }
 
 const mockSwapApp = {
+  // static
+  required: app => true,
+  shared: () => mockSwapApp,
+  is: app => true,
+
+  isSwapApp: () => true,
   isMainNet: () => true,
   env: {
     bitcoin,
     web3: {
       eth: {
+        getGasPrice: jest.fn(gas => Promise.resolve(2e9)),
         getBalance: jest.fn(address => 3e18),
         Contract: function () {
           const view = (getValue, state = {}) => () => ({
@@ -73,6 +80,7 @@ const mockSwapApp = {
 
           const action = (emitter) => () => ({
             send: jest.fn(() => emitter),
+            estimateGas: jest.fn(() => 1e5),
             emitter,
           })
 
@@ -80,7 +88,10 @@ const mockSwapApp = {
 
           this.methods = {
             swaps:      jest.fn(view(
-              () => ({ balance: this.state.swapExists ? '2' : '0' }),
+              () => ({
+                secretHash: 'c0933f9be51a284acb6b1a6617a48d795bdeaa80',
+                balance: this.state.swapExists ? '2' : '0',
+              }),
               { swapExists: false }
             )),
             getBalance: jest.fn(view(
@@ -104,6 +115,11 @@ const mockSwapApp = {
       getItem: (key) => storage[key],
       setItem: (key, value) => storage[key] = value,
     },
+    sessionStorage: {
+      getItem: (key) => storage[key],
+      setItem: (key, value) => storage[key] = value,
+      remoteItem: (key, value) => delete storage[key],
+    },
     eos: {
       getInstance: () => {
         return Promise.resolve(eosMockProvider())
@@ -126,8 +142,8 @@ const util = {
   pullProps: (obj, ...keys) => obj,
 }
 
-const SwapInterface = function () {
-
+class SwapInterface {
+  _initSwap(app) {}
 }
 
 const constants = {

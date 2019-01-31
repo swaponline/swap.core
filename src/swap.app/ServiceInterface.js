@@ -5,7 +5,7 @@ class ServiceInterface {
 
   // _constructor for aggregation
   _constructor() {
-    // service name, within it will be stored in SwapApp.services
+    // service name, within it will be stored in this.app.services
     this._serviceName     = null
     this._dependsOn       = null
     this._spyHandlers     = []
@@ -15,7 +15,15 @@ class ServiceInterface {
     this._constructor()
   }
 
+  _attachSwapApp(app) {
+    SwapApp.required(app)
+
+    this.app = app
+  }
+
   _waitRelationsResolve() {
+    SwapApp.required(this.app)
+
     if (this._dependsOn && this._dependsOn.length) {
       const dependsOnMap = {}
 
@@ -24,7 +32,7 @@ class ServiceInterface {
           initialized: false,
         }
 
-        SwapApp.services[Service.name]._addWaitRelationHandler(() => {
+        this.app.services[Service.name]._addWaitRelationHandler(() => {
           dependsOnMap[Service.name].initialized = true
 
           const areAllExpectsInitialized = Object.keys(dependsOnMap).every((serviceName) => (
@@ -44,6 +52,9 @@ class ServiceInterface {
   }
 
   _tryInitService() {
+    // init service on SwapApp mounting
+    SwapApp.required(this.app)
+
     if (!this._dependsOn || !this._dependsOn.length) {
       this.initService()
       this._spyHandlers.forEach((handler) => handler())
