@@ -110,7 +110,7 @@ class EventAggregator {
     const event = this.getEvent(name)
 
     if (event) {
-      debug('swap.core:events')('dispatch event', name)
+      debug('swap.verbose:events')('dispatch event', name)
       event.call(...eventArgs)
     }
   }
