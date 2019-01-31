@@ -325,10 +325,9 @@ export default (tokenName) => {
 
             if (!flow.state.isEthWithdrawn) {
               try {
-                const withdrawNeededGas = await flow.ethTokenSwap.withdraw({
+                const withdrawNeededGas = await flow.ethTokenSwap.calcWithdrawGas({
                   ownerAddress: data.ownerAddress,
                   secret: data.secret,
-                  calcFee: true
                 })
                 flow.setState({
                   withdrawFee: withdrawNeededGas
