@@ -6,10 +6,10 @@ import NETWORKS from './NETWORKS'
 
 
 export default {
-	COINS,
-	NATIVE,
-	ETH_TOKENS,
-	COINS_PRECISION,
+  COINS,
+  NATIVE,
+  ETH_TOKENS,
+  COINS_PRECISION,
 
   ENV,
   SERVICES,
