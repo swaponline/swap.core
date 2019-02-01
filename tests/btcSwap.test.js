@@ -20,7 +20,7 @@ const txInfo = {
     fees: 3000,
   },
   'd98b57b3266c19dec66ded0a5d661b93584466e7c84db3d50ed5505f6eb60667': {
-    fees: 5500,
+    fees: 50000,
   },
 }
 

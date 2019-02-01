@@ -21,7 +21,7 @@ const ethSwap = new EthSwap({
   estimateGasPrice: ({ speed } = {}) => mainnet().estimateGasPrice({ speed }),
 })
 
-test('ethSwaps can estimate tx fee', async () => {
+xtest('ethSwaps can estimate tx fee', async () => {
   const result = await ethSwap.estimateGasPrice({ speed: 'normal '})
   const expected = 1e9
 

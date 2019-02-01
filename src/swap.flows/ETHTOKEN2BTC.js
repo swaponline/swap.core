@@ -146,6 +146,7 @@ export default (tokenName) => {
             value: buyAmount,
             recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
             lockTime: getLockTime(),
+            confidence: 0.8,
           })
 
           if (scriptCheckResult) {
@@ -256,7 +257,13 @@ export default (tokenName) => {
               ethSwapWithdrawTransactionHash,
             })
 
-            const secret = await flow.ethTokenSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
+            const secret = await util.helpers.repeatAsyncUntilResult(() => {
+              if (flow.state.secret) {
+                return flow.state.secret
+              } else {
+                return flow.ethTokenSwap.getSecretFromTxhash(ethSwapWithdrawTransactionHash)
+              }
+            })
 
             const _secret = `0x${secret.replace(/^0x/, '')}`
 

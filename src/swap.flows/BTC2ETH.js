@@ -1,3 +1,4 @@
+import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants, util } from 'swap.app'
 import { Flow } from 'swap.swap'
@@ -420,9 +421,10 @@ class BTC2ETH extends Flow {
 
   createWorkBTCScript(secretHash) {
     if (this.state.btcScriptValues) {
-      debug('swap.core:flow')('BTC Script already generated', this.state.btcScriptValues);
-      return;
+      debug('swap.core:flow')('BTC Script already generated', this.state.btcScriptValues)
+      return
     }
+
     const { participant } = this.swap
     // TODO move this somewhere!
     const utcNow = () => Math.floor(Date.now() / 1000)
@@ -434,14 +436,14 @@ class BTC2ETH extends Flow {
       recipientPublicKey: participant.btc.publicKey,
       lockTime:           getLockTime(),
     }
-    const scriptData = this.btcSwap.createScript(scriptValues)
+    const { scriptAddress } = this.btcSwap.createScript(scriptValues)
 
-    this.setState( {
-      scriptAddress : scriptData.scriptAddress,
+    this.setState({
+      scriptAddress: scriptAddress,
       btcScriptValues: scriptValues,
-      scriptBalance : 0,
-      scriptUnspendBalance : 0
-    } );
+      scriptBalance: 0,
+      scriptUnspendBalance: 0
+    })
   }
 
   async syncBalance() {

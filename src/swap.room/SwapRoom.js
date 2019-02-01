@@ -99,7 +99,7 @@ class SwapRoom extends ServiceInterface {
 
   _handleNewMessage = (message) => {
     const { from, data: rawData } = message
-    debug('swap.core:room')('message from', from)
+    debug('swap.verbose:room')('message from', from)
 
     if (from === this.peer) {
       return
@@ -120,7 +120,7 @@ class SwapRoom extends ServiceInterface {
       return
     }
 
-    // debug('swap.core:room')('parsedData', parsedData)
+    // debug('swap.verbose:room')('parsedData', parsedData)
 
     const recover = this._recoverMessage(data, sign)
 
@@ -261,8 +261,8 @@ class SwapRoom extends ServiceInterface {
       return
     }
 
-    debug('swap.core:room')('sent message to peer', peer)
-    // debug('swap.core:room')('message', message)
+    debug('swap.verbose:room')('sent message to peer', peer)
+    // debug('swap.verbose:room')('message', message)
 
     const { data, event }  = message
     const sign = this._signMessage(data)
