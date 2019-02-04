@@ -1,3 +1,5 @@
+import debug from 'debug'
+
 class Event {
 
   /**
@@ -108,7 +110,7 @@ class EventAggregator {
     const event = this.getEvent(name)
 
     if (event) {
-      console.log('event', name)
+      debug('swap.verbose:events')('dispatch event', name)
       event.call(...eventArgs)
     }
   }

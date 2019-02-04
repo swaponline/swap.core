@@ -1,3 +1,4 @@
+import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
@@ -21,11 +22,11 @@ export default (tokenName) => {
 
       this._flowName = USDT2ETHTOKEN.getName()
 
-      this.ethTokenSwap = SwapApp.swaps[tokenName.toUpperCase()]
-      this.usdtSwap      = SwapApp.swaps[constants.COINS.usdt]
+      this.ethTokenSwap = this.app.swaps[tokenName.toUpperCase()]
+      this.usdtSwap      = this.app.swaps[constants.COINS.usdt]
 
-      this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
-      this.myEthAddress = SwapApp.services.auth.accounts.eth.address
+      this.myBtcAddress = this.app.services.auth.accounts.btc.getAddress()
+      this.myEthAddress = this.app.services.auth.accounts.eth.address
 
       this.stepNumbers = {
         'sign': 1,
@@ -94,14 +95,14 @@ export default (tokenName) => {
 
         () => {
           flow.swap.room.once('swap sign', () => {
-            console.log('swap sign!')
+            debug('swap.core:flow')('swap sign!')
             flow.finishStep({
               isParticipantSigned: true,
             }, { step: 'sign', silentError: true })
           })
 
           flow.swap.room.once('swap exists', () => {
-            console.log(`swap already exists`)
+            debug('swap.core:flow')(`swap already exists`)
           })
 
           // if I came late and he ALREADY send this, I request AGAIN
@@ -137,7 +138,7 @@ export default (tokenName) => {
           if (!usdtScriptValues) {
             scriptValues = {
               secretHash:         flow.state.secretHash,
-              ownerPublicKey:     SwapApp.services.auth.accounts.btc.getPublicKey(),
+              ownerPublicKey:     this.app.services.auth.accounts.btc.getPublicKey(),
               recipientPublicKey: participant.btc.publicKey,
               lockTime:           getLockTime(),
             }
@@ -149,8 +150,8 @@ export default (tokenName) => {
             scriptValues = usdtScriptValues
           }
 
-          console.log('sellAmount', sellAmount)
-          console.log('scriptValues', scriptValues)
+          debug('swap.core:flow')('sellAmount', sellAmount)
+          debug('swap.core:flow')('scriptValues', scriptValues)
 
           let usdtFundingTransactionHash, usdtFunding
 
@@ -258,7 +259,7 @@ export default (tokenName) => {
 
           try {
             await flow.ethTokenSwap.withdraw(data, (hash) => {
-              console.log('withdraw tx hash', hash)
+              debug('swap.core:flow')('withdraw tx hash', hash)
 
               flow.setState({
                 ethSwapWithdrawTransactionHash: hash,
@@ -318,7 +319,7 @@ export default (tokenName) => {
         isBalanceFetching: true,
       })
 
-      const balance = await this.usdtSwap.fetchBalance(SwapApp.services.auth.accounts.btc.getAddress())
+      const balance = await this.usdtSwap.fetchBalance(this.app.services.auth.accounts.btc.getAddress())
       const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
       if (isEnoughMoney) {

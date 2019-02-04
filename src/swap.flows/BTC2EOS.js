@@ -19,9 +19,9 @@ const transactionHandlers = (flow) => ({
 
     const scriptValues = {
       secretHash: flow.state.secretHash,
-      ownerPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
+      ownerPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
       recipientPublicKey: eosOwner.btc.publicKey,
-      lockTime,
+      lockTime: lockTime
     }
 
     return new Promise(async (resolve, reject) => {
@@ -120,8 +120,8 @@ class BTC2EOS extends Flow {
 
     this._flowName = BTC2EOS.getName()
 
-    this.btcSwap = SwapApp.swaps[constants.COINS.btc]
-    this.eosSwap = SwapApp.swaps[constants.COINS.eos]
+    this.btcSwap = this.app.swaps[constants.COINS.btc]
+    this.eosSwap = this.app.swaps[constants.COINS.eos]
 
     this.state = {
       ...this.state,
