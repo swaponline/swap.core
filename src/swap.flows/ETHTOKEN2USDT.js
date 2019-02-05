@@ -409,6 +409,7 @@ export default (tokenName) => {
       await this.usdtSwap.withdraw({
         scriptValues: usdtScriptValues,
         secret: _secret,
+        amount: this.swap.buyAmount,
       }, (hash) => {
         debug('swap.core:flow')(`TX hash=${hash}`)
         this.setState({
@@ -426,8 +427,6 @@ export default (tokenName) => {
     async tryRefund() {
       const { participant } = this.swap
       let { secret, usdtScriptValues } = this.state
-
-      secret = 'c0809ce9f484fdcdfb2d5aabd609768ce0374ee97a1a5618ce4cd3f16c00a078'
 
       try {
         debug('swap.core:flow')('TRYING REFUND!')
@@ -470,6 +469,7 @@ export default (tokenName) => {
 
       try {
         await this.usdtSwap.withdraw({
+          amount: this.swap.buyAmount,
           scriptValues: this.state.usdtScriptValues,
           secret,
         }, (hash) => {
