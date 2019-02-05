@@ -352,6 +352,7 @@ export default (tokenName) => {
 
     tryRefund() {
       return this.usdtSwap.refund({
+        amount: this.swap.sellAmount.toNumber(),
         scriptValues: this.state.usdtScriptValues,
         secret: this.state.secret,
       }, (hash) => {
