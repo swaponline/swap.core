@@ -93,12 +93,13 @@ class BtcSwap extends SwapInterface {
    * @private
    */
   async filterConfidentUnspents(unspents, expectedConfidenceLevel = 0.95) {
-    const currentFastestFee = await this.getTxFee({ inSatoshis: true, speed: 'fast' })
+    const feesToConfidence = async (fees, size) => {
+      const currentFastestFee = await this.getTxFee({ inSatoshis: true, size, speed: 'fast' })
 
-    debug('swap.core:swaps')(`currentFastestFee: ${currentFastestFee}`)
+      debug('swap.core:swaps')(`currentFastestFee: ${currentFastestFee}`)
 
-    const feesToConfidence = (fees, size) =>
-      fees < currentFastestFee ? (fees / currentFastestFee) : 1
+      return fees < currentFastestFee ? (fees / currentFastestFee) : 1
+    }
 
     const confirmationsToConfidence = confs => confs > 0 ? 1 : 0
 
@@ -115,7 +116,7 @@ class BtcSwap extends SwapInterface {
         }
 
         if (fees) {
-          return feesToConfidence(fees, size)
+          return await feesToConfidence(fees, size)
         }
 
         throw new Error(`txinfo=${{ confidence, confirmations, fees, size }}`)
@@ -245,7 +246,7 @@ class BtcSwap extends SwapInterface {
       return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
     }
     if (expectedValue.isGreaterThan(totalConfidentUnspent)) {
-      return `Expected script value: ${expectedValue.toNumber()} with confidence above ${expectedConfidence}, got: ${totalConfidentUnspent}`
+      return `Expected script value: ${expectedValue.toString()} with confidence above ${expectedConfidence}, got: ${totalConfidentUnspent}`
     }
   }
 
