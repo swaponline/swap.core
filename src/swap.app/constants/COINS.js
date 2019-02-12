@@ -51,6 +51,7 @@ export const ETH_TOKENS = {
   cbt: 'CBT',
   ddm: 'DDM',
   wbtc: 'WBTC',
+  abyss: 'ABYSS',
 }
 
 export default {
