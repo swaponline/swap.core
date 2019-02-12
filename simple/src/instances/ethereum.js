@@ -3,12 +3,17 @@ const debug = require('debug')
 
 const Web3 = require('web3')
 
+// const MAINNET_PROVIDER = `https://mainnet.infura.io/JCnK5ifEPH9qcQkX0Ahl`
+// const TESTNET_PROVIDER = `https://rinkeby.infura.io/JCnK5ifEPH9qcQkX0Ahl`
+
+const MAINNET_PROVIDER = process.env.WEB3_MAINNET_PROVIDER || `https://geth.swaponline.site`
+const TESTNET_PROVIDER = process.env.WEB3_TESTNET_PROVIDER || `https://tgeth.swaponline.site`
+const LOCAL_PROVIDER = process.env.WEB3_LOCAL_PROVIDER || `http://localhost:7545`
+
 const WEB3_PROVIDERS = {
-  // mainnet: new Web3.providers.HttpProvider(`https://mainnet.infura.io/JCnK5ifEPH9qcQkX0Ahl`),
-  // testnet: new Web3.providers.HttpProvider(`https://rinkeby.infura.io/JCnK5ifEPH9qcQkX0Ahl`),
-  testnet: new Web3.providers.HttpProvider(`https://tgeth.swaponline.site`),
-  mainnet: new Web3.providers.HttpProvider(`https://geth.swaponline.site`),
-  localnet: new Web3.providers.HttpProvider(`http://localhost:7545`),
+  mainnet: new Web3.providers.HttpProvider(MAINNET_PROVIDER),
+  testnet: new Web3.providers.HttpProvider(TESTNET_PROVIDER),
+  localnet: new Web3.providers.HttpProvider(LOCAL_PROVIDER),
 }
 
 const ETHERCHAIN_API = `https://www.etherchain.org/api/gasPriceOracle`
