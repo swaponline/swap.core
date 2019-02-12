@@ -1,3 +1,4 @@
+import debug from 'debug'
 import BigNumber from 'bignumber.js'
 import SwapApp, { Collection, ServiceInterface, util, constants } from 'swap.app'
 import SwapRoom from 'swap.room'
@@ -5,11 +6,6 @@ import aggregation from './aggregation'
 import events from './events'
 import Order from './Order'
 
-
-const getUniqueId = (() => {
-  let id = Date.now()
-  return () => `${SwapApp.services.room.peer}-${++id}`
-})()
 
 const checkIncomeOrderFormat = (order) => {
   const format = {
@@ -35,15 +31,17 @@ const checkIncomeOrderFormat = (order) => {
     exchangeRate: util.typeforce.t.maybe(util.typeforce.isNumeric),
     isProcessing: '?Boolean',
     isRequested: '?Boolean',
-    isPartialClosure: '?Boolean',
-    destinationBuyAddress: util.typeforce.t.maybe('String'),
-    destinationSellAddress: util.typeforce.t.maybe('String'),
+    isPartial: '?Boolean',
+    destination: util.typeforce.t.maybe({
+      ownerAddress: '?String',
+      participantAddress: '?String',
+    }),
   }
 
   const isValid = util.typeforce.check(format, order, true)
 
   if (!isValid) {
-    console.log('Wrong income order format. Excepted:', format, 'got:', order)
+    debug('swap.core:orders')('Wrong income order format. Excepted:', format, 'got:', order)
   }
 
   return isValid
@@ -71,15 +69,22 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
 
     this._serviceName = 'orders'
     this._dependsOn   = [ SwapRoom ]
+
+    this.getUniqueId = () => {}
   }
 
   initService() {
-    SwapApp.services.room.on('ready', this._handleReady)
-    SwapApp.services.room.on('user online', this._handleUserOnline)
-    SwapApp.services.room.on('user offline', this._handleUserOffline)
-    SwapApp.services.room.on('new orders', this._handleNewOrders)
-    SwapApp.services.room.on('new order', this._handleNewOrder)
-    SwapApp.services.room.on('remove order', this._handleRemoveOrder)
+    this.app.services.room.on('ready', this._handleReady)
+    this.app.services.room.on('user online', this._handleUserOnline)
+    this.app.services.room.on('user offline', this._handleUserOffline)
+    this.app.services.room.on('new orders', this._handleNewOrders)
+    this.app.services.room.on('new order', this._handleNewOrder)
+    this.app.services.room.on('remove order', this._handleRemoveOrder)
+
+    this.getUniqueId = (() => {
+      let id = Date.now()
+      return () => `${this.app.services.room.peer}-${++id}`
+    })()
   }
 
   _handleReady = () => {
@@ -102,12 +107,11 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
         'sellAmount',
         'isRequested',
         'isProcessing',
-        'isPartialClosure',
-        'destinationBuyAddress',
-        'destinationSellAddress',
+        'isPartial',
+        'destination',
       ))
 
-      SwapApp.services.room.sendMessagePeer(peer,
+      this.app.services.room.sendMessagePeer(peer,
         {
           event: 'new orders',
           data: {
@@ -179,8 +183,8 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
   _create(data) {
     const { id, buyAmount, sellAmount, buyCurrency, sellCurrency, ...rest } = data
 
-    const order = new Order(this, {
-      id: id || getUniqueId(),
+    const order = new Order(this.app, this, {
+      id: id || this.getUniqueId(),
       buyAmount: new BigNumber(String(buyAmount)),
       sellAmount: new BigNumber(String(sellAmount)),
       buyCurrency: buyCurrency.toUpperCase(),
@@ -234,7 +238,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
   }
 
   _saveMyOrders() {
-    let myOrders = this.items.filter(({ owner: { peer } }) => peer === SwapApp.services.room.peer)
+    let myOrders = this.items.filter(({ owner: { peer } }) => peer === this.app.services.room.peer)
 
     // clean orders from other additional props
     // TODO need to add functionality to sync `requests` for users who going offline / online
@@ -254,16 +258,15 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
       'requests',
       'isRequested',
       'isProcessing',
-      'isPartialClosure',
-      'destinationBuyAddress',
-      'destinationSellAddress',
+      'isPartial',
+      'destination',
     ))
 
-    SwapApp.env.storage.setItem('myOrders', myOrders)
+    this.app.env.storage.setItem('myOrders', myOrders)
   }
 
   getMyOrders() {
-    return SwapApp.env.storage.getItem('myOrders') || []
+    return this.app.env.storage.getItem('myOrders') || []
   }
 
   getPeerOrders(peer) {
@@ -281,11 +284,11 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
   create(data) {
     const order = this._create({
       ...data,
-      owner: SwapApp.services.auth.getPublicData(),
+      owner: this.app.services.auth.getPublicData(),
     })
     this._saveMyOrders()
 
-    SwapApp.services.room.sendMessageRoom({
+    this.app.services.room.sendMessageRoom({
       event: 'new order',
       data: {
         order: util.pullProps(
@@ -299,9 +302,8 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
           'sellAmount',
           'isRequested',
           'isProcessing',
-          'isPartialClosure',
-          'destinationBuyAddress',
-          'destinationSellAddress'
+          'isPartial',
+          'destination',
         ),
       },
     })
@@ -315,7 +317,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
    */
   remove(orderId) {
     this.removeByKey(orderId)
-    SwapApp.services.room.sendMessageRoom({
+    this.app.services.room.sendMessageRoom({
       event: 'remove order',
       data: {
         orderId,
@@ -332,7 +334,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
    * @param {function} callback
    */
   requestToPeer(event, peer, data, callback) {
-    SwapApp.services.room.sendMessagePeer(peer, {
+    this.app.services.room.sendMessagePeer(peer, {
       event,
       data,
     })
@@ -341,18 +343,18 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
       return
     }
 
-    SwapApp.services.room.on('accept request', function ({ fromPeer, orderId }) {
-      console.log('requestToPeer accept request', fromPeer)
+    this.app.services.room.on('accept request', function ({ fromPeer, orderId }) {
+      debug('swap.core:orders')('requestToPeer accept request', fromPeer)
       if (peer === fromPeer) {
         this.unsubscribe()
 
-        console.log('requestToPeer IF')
+        debug('swap.core:orders')('requestToPeer IF')
 
         callback(orderId)
       }
     })
 
-    SwapApp.services.room.on('decline request', function ({ fromPeer }) {
+    this.app.services.room.on('decline request', function ({ fromPeer }) {
       if (peer === fromPeer) {
         this.unsubscribe()
 

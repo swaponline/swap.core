@@ -1,3 +1,4 @@
+import debug from 'debug'
 import SwapApp, { SwapInterface, constants } from 'swap.app'
 import BigNumber from 'bignumber.js'
 
@@ -20,17 +21,20 @@ class EosSwap extends SwapInterface {
     this.eos = null
   }
 
-  _initSwap() {
+  _initSwap(app) {
+    super._initSwap(app)
+
+    this.app = app
   }
 
   _lazyInit() {
-    return SwapApp.env.eos.getInstance().then((eosInstance) => {
+    return this.app.env.eos.getInstance().then((eosInstance) => {
       this.eos = eosInstance
     })
   }
 
   _getAccounts = () => ({
-    userAccount: SwapApp.services.auth.getPublicData().eos.address,
+    userAccount: this.app.services.auth.getPublicData().eos.address,
     swapAccount: this.swapAccount,
     tokenAccount: 'eosio.token',
   })
@@ -101,7 +105,7 @@ class EosSwap extends SwapInterface {
     const findSwapID = () => this._findOpenSwapID({ btcOwner, eosOwner })
 
     const depositFunds = (swapID) => {
-      console.log('depositFunds', swapID)
+      debug('swap.core:swaps')('depositFunds', swapID)
 
       return this.eos.transaction({
         actions: [
