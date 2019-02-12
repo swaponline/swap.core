@@ -1,18 +1,18 @@
-export default {
+export const NATIVE = {
   eth: 'ETH',
   btc: 'BTC',
   ltc: 'LTC',
   eos: 'EOS',
   nim: 'NIM',
   usdt: 'USDT',
+}
 
-  // ETH Tokens
+export const ETH_TOKENS = {
   noxon: 'NOXON',
   jot: 'JOT',
   swap: 'SWAP',
   btrm: 'BTRM',
   syc: 'SYC',
-  drt: 'DRT',
   yup: 'YUP',
   lev: 'LEV',
   arn: 'ARN',
@@ -22,18 +22,14 @@ export default {
   dcn: 'DCN',
   mbrs: 'MBRS',
   sct: 'SCT',
-  nexo: 'NEXO',
   bnty: 'BNTY',
   syc2: 'SYC2',
   pbl: 'PBL',
   senc: 'SENC',
-  xnk: 'XNK',
-  xyo: 'XYO',
   star: 'STAR',
   loc: 'LOC',
   key: 'KEY',
   dai: 'DAI',
-  tnt: 'TNT',
   avt: 'AVT',
   hbt: 'HBT',
   deb: 'DEB',
@@ -42,7 +38,6 @@ export default {
   cs: 'CS',
   pix: 'PIX',
   gen: 'GEN',
-  data: 'DATA',
   emtv: 'EMTV',
   gai: 'GAI',
   mot: 'MOT',
@@ -53,5 +48,13 @@ export default {
   lif: 'LIF',
   time: 'TIME',
   mth: 'MTH',
-  zcn: 'ZCN',
+  cbt: 'CBT',
+  ddm: 'DDM',
+  wbtc: 'WBTC',
+  abyss: 'ABYSS',
+}
+
+export default {
+  ...NATIVE,
+  ...ETH_TOKENS,
 }
