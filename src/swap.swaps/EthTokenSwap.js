@@ -89,7 +89,9 @@ class EthTokenSwap extends SwapInterface {
    */
   async approve(data, handleTransactionHash) {
     const { amount } = data
-    const newAmount = new BigNumber(String(amount)).times(new BigNumber(10).pow(this.decimals)).decimalPlaces(this.decimals).toNumber()
+    // const newAmount = this.app.env.web3.utils.toWei(amount)
+    //
+    const newAmount = BigNumber(amount).times(BigNumber(10).pow(this.decimals)).integerValue()
 
     await this.updateGas()
 
@@ -168,7 +170,8 @@ class EthTokenSwap extends SwapInterface {
    */
   async createSwap(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount, calcFee } = data
-    const newAmount = new BigNumber(String(amount)).times(new BigNumber(10).pow(this.decimals)).decimalPlaces(this.decimals).toNumber()
+
+    const newAmount = BigNumber(amount).times(BigNumber(10).pow(this.decimals)).integerValue()
 
     await this.updateGas()
 
@@ -222,7 +225,8 @@ class EthTokenSwap extends SwapInterface {
    */
   async createSwapTarget(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount , targetWallet, calcFee } = data
-    const newAmount = new BigNumber(String(amount)).times(new BigNumber(10).pow(this.decimals)).decimalPlaces(this.decimals).toNumber()
+
+    const newAmount = BigNumber(amount).times(BigNumber(10).pow(this.decimals)).integerValue()
 
     await this.updateGas()
 
