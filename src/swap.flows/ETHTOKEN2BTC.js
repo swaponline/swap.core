@@ -142,7 +142,7 @@ export default (tokenName) => {
           const utcNow = () => Math.floor(Date.now() / 1000)
           const getLockTime = () => utcNow() + 3600 * 1 // 1 hour from now
 
-          await util.repeatAsyncUntilResult(async () => {
+          await util.helpers.repeatAsyncUntilResult(async () => {
             const scriptCheckError = await flow.btcSwap.checkScript(flow.state.btcScriptValues, {
               value: buyAmount,
               recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
