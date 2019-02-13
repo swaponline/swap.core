@@ -142,19 +142,23 @@ export default (tokenName) => {
           const utcNow = () => Math.floor(Date.now() / 1000)
           const getLockTime = () => utcNow() + 3600 * 1 // 1 hour from now
 
-          const scriptCheckResult = await flow.btcSwap.checkScript(flow.state.btcScriptValues, {
-            value: buyAmount,
-            recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
-            lockTime: getLockTime(),
-            confidence: 0.8,
+          await util.helpers.repeatAsyncUntilResult(async () => {
+            const scriptCheckError = await flow.btcSwap.checkScript(flow.state.btcScriptValues, {
+              value: buyAmount,
+              recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
+              lockTime: getLockTime(),
+              confidence: 0.8,
+            })
+
+            if (scriptCheckError) {
+              console.error(`Btc script check error:`, scriptCheckError)
+              flow.swap.events.dispatch('btc script check error', scriptCheckError)
+
+              return false
+            } else {
+              return true
+            }
           })
-
-          if (scriptCheckResult) {
-            console.error(`Btc script check error:`, scriptCheckResult)
-            flow.swap.events.dispatch('btc script check error', scriptCheckResult)
-
-            return
-          }
 
           const swapData = {
             participantAddress: participant.eth.address,
