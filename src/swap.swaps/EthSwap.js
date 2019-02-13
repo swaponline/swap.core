@@ -95,8 +95,7 @@ class EthSwap extends SwapInterface {
 
     debug('swap.core:swaps')('create after', this.gasPrice)
 
-    const base = BigNumber(10).pow(18)
-    const newAmount = new BigNumber(amount.toString()).times(base).integerValue().toNumber()
+    const newAmount = this.app.env.web3.utils.toWei(amount.toString())
 
     return new Promise(async (resolve, reject) => {
       const hash = `0x${secretHash.replace(/^0x/, '')}`
@@ -145,8 +144,7 @@ class EthSwap extends SwapInterface {
 
     await this.updateGas()
 
-    const base = BigNumber(10).pow(18)
-    const newAmount = new BigNumber(amount.toString()).times(base).integerValue().toNumber()
+    const newAmount = this.app.env.web3.utils.toWei(amount.toString())
 
     return new Promise(async (resolve, reject) => {
       const hash = `0x${secretHash.replace(/^0x/, '')}`
