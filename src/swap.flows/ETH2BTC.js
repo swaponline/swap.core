@@ -132,7 +132,7 @@ class ETH2BTC extends Flow {
         const utcNow = () => Math.floor(Date.now() / 1000)
         const getLockTime = () => utcNow() + 3600 * 1 // 1 hour from now
 
-        await util.repeatAsyncUntilResult(() => {
+        await util.repeatAsyncUntilResult(async () => {
           const scriptCheckError = await flow.btcSwap.checkScript(flow.state.btcScriptValues, {
             value: buyAmount,
             recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
