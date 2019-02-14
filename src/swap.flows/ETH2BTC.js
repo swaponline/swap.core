@@ -97,13 +97,28 @@ class ETH2BTC extends Flow {
       // 2. Wait participant create, fund BTC Script
 
       () => {
-        flow.swap.room.once('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
+        const waitLockBtcKeyName = `${flow.swap.id}.waitLockBtc`
+        const waitLockBtcKey = util.actualKey.create(this.app, waitLockBtcKeyName)
+        const app = this.app
+
+        const waitLockBtc = ({ scriptValues, btcScriptCreatingTransactionHash }) => {
+          if (!util.actualKey.check(app, waitLockBtcKeyName)) {
+            flow.swap.room.off('create btc script', waitLockBtc)
+            return
+          }
+          if (!util.actualKey.compare(app, waitLockBtcKeyName, waitLockBtcKey)) {
+            return
+          }
+
+          util.actualKey.remove(app, waitLockBtcKeyName)
           flow.finishStep({
             secretHash: scriptValues.secretHash,
             btcScriptValues: scriptValues,
             btcScriptCreatingTransactionHash,
           }, { step: 'wait-lock-btc', silentError: true })
-        })
+        }
+
+        flow.swap.room.on('create btc script', waitLockBtc)
 
         flow.swap.room.sendMessage({
           event: 'request btc script',

@@ -45,6 +45,10 @@ class Room {
     })
   }
 
+  off(eventName, handler) {
+    this.app.services.room.off(eventName, handler)
+  }
+
   once(eventName, handler) {
     const self = this
 
