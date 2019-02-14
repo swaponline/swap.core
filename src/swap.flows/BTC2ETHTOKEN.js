@@ -169,7 +169,7 @@ export default (tokenName) => {
               onBTCFuncSuccess(hash)
             })
           } else {
-            const { scriptValues: btcScriptValues } = flow.state
+            const { btcScriptValues: scriptValues } = flow.state
 
             const checkBTCScriptBalanceName = `${flow.swap.id}.checkBTCScriptBalance`
 
