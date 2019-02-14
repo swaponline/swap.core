@@ -215,6 +215,36 @@ class BtcSwap extends SwapInterface {
 
   /**
    *
+   * @param {object} scriptValues
+   * @param {object} expected
+   * @param {number} expected.value
+   * @returns {Promise.<string>}
+   */
+  async checkScriptFunded(scriptValues, expected = {}) {
+    const { scriptAddress } = this.createScript(scriptValues)
+    const { value } = expected
+
+    const unspents = await this.fetchUnspents(scriptAddress)
+
+    if (unspents.length === 0) {
+      return false
+    }
+
+    const fundingTxHash = unspents[0].txid
+
+    const balance = unspents.reduce((sum, { satoshis }) => sum.plus(satoshis), BigNumber(0))
+
+    const isEnoughMoney = balance.isGreaterThanOrEqualTo(value)
+
+    if (!isEnoughMoney) {
+      return false
+    }
+
+    return fundingTxHash
+  }
+
+  /**
+   *
    * @param {object} data
    * @param {string} data.recipientPublicKey
    * @param {number} data.lockTime
