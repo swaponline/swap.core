@@ -52,6 +52,7 @@ export const ETH_TOKENS = {
   ddm: 'DDM',
   wbtc: 'WBTC',
   abyss: 'ABYSS',
+  msk: 'MSK',
 }
 
 export default {
