@@ -6,6 +6,7 @@ import EthToBtc from './EthToBtc'
 import EthTokenToBtc from './EthTokenToBtc'
 import BtcToEthToken from './BtcToEthToken'
 
+import app from '../../swapApp'
 
 const swapComponents = {
   'BTC2ETH': BtcToEth,
@@ -25,7 +26,7 @@ export default class SwapComponent extends Component {
       return null
     }
 
-    const swap = new Swap(orderId)
+    const swap = new Swap(orderId, app)
     const SwapComponent = swapComponents[swap.flow._flowName.toUpperCase()]
 
     return (
