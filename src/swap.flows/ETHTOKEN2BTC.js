@@ -179,13 +179,7 @@ export default (tokenName) => {
           swapData.calcFee = false
           //debug('swap.core:flow')('create swap fee', flow.state.createSwapFee)
 
-          const tryCreateSwapKeyName = `${flow.swap.id}.tryCreateSwap`
-
-          const tryCreateSwap = async (currentKey) => {
-            if (!util.actualKey.compare(this.app, tryCreateSwapKeyName, currentKey)) {
-              return false
-            }
-
+          const tryCreateSwap = async () => {
             if (!flow.state.isEthContractFunded) {
               try {
                 debug('swap.core:flow')('fetching allowance')
@@ -217,7 +211,6 @@ export default (tokenName) => {
                   })
 
                   debug('swap.core:flow')('created swap!', hash)
-                  util.actualKey.remove(this.app, tryCreateSwapKeyName)
                 })
               } catch (err) {
                 if ( /known transaction/.test(err.message) ) {
@@ -239,10 +232,8 @@ export default (tokenName) => {
             return true
           }
 
-          const tryCreateSwapKey = util.actualKey.create(this.app, tryCreateSwapKeyName)
-
           const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
-            tryCreateSwap(tryCreateSwapKey),
+            tryCreateSwap(),
           )
 
           if (isEthContractFunded) {

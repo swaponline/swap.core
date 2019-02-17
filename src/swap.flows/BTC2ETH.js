@@ -176,13 +176,7 @@ class BTC2ETH extends Flow {
         } else {
           let btcCheckTimer
 
-          const checkBTCScriptBalanceName = `${flow.swap.id}.checkBTCScriptBalance`
-
-          const checkBTCScriptBalance = async (currentKey) => {
-            if (!util.actualKey.compare(this.app, checkBTCScriptBalanceName, currentKey)) {
-              return false
-            }
-
+          const checkBTCScriptBalance = async () => {
             const { sellAmount } = flow.swap
             const unspends = await this.btcSwap.fetchUnspents(flow.state.scriptAddress)
             let txID = false
@@ -212,17 +206,14 @@ class BTC2ETH extends Flow {
             const isEnoughMoney = sellAmount.multipliedBy(1e8).isLessThanOrEqualTo(scriptBalanceSatoshis)
 
             if (isEnoughMoney && txID) {
-              util.actualKey.remove(this.app, checkBTCScriptBalanceName)
               return txID
             }
 
             return null
           }
 
-          const checkBTCScriptBalanceKey = util.actualKey.create(this.app, checkBTCScriptBalanceName)
-
           const txID = await util.helpers.repeatAsyncUntilResult(() =>
-            checkBTCScriptBalance(checkBTCScriptBalanceKey),
+            checkBTCScriptBalance(),
           )
 
           onBTCFuncSuccess(txID)
@@ -320,13 +311,7 @@ class BTC2ETH extends Flow {
           }
         }
 
-        const tryWithdrawKeyName = `${flow.swap.id}.tryWithdraw`
-
-        const tryWithdraw = async (currentKey) => {
-          if (!util.actualKey.compare(this.app, tryWithdrawKeyName, currentKey)) {
-            return false
-          }
-
+        const tryWithdraw = async () => {
           if (!flow.state.isEthWithdrawn) {
             try {
               await flow.ethSwap.withdraw(data, (hash) => {
@@ -342,8 +327,6 @@ class BTC2ETH extends Flow {
                     ethSwapWithdrawTransactionHash: hash,
                   }
                 })
-
-                util.actualKey.remove(this.app, tryWithdrawKeyName)
               })
             } catch (err) {
               if ( /known transaction/.test(err.message) ) {
@@ -365,10 +348,8 @@ class BTC2ETH extends Flow {
           return true
         }
 
-        const tryWithdrawKey = util.actualKey.create(this.app, tryWithdrawKeyName)
-
         const isEthWithdrawn = await util.helpers.repeatAsyncUntilResult(() =>
-          tryWithdraw(tryWithdrawKey),
+          tryWithdraw(),
         )
 
         if (isEthWithdrawn) {

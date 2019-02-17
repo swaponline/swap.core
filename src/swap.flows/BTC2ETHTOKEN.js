@@ -127,7 +127,7 @@ export default (tokenName) => {
           this.syncBalance()
         },
 
-        // 4. Fund BTC Script if balance enough - else infinity loop BTC balance check, notify participant
+        // 4. Create BTC Script, fund, notify participant
 
         async () => {
           const { sellAmount } = flow.swap
@@ -135,7 +135,6 @@ export default (tokenName) => {
           let btcScriptCreatingTransactionHash
 
           const onBTCFuncSuccess = (txID) => {
-
             flow.swap.room.on('request btc script', () => {
               flow.swap.room.sendMessage({
                 event:  'create btc script',
@@ -155,7 +154,7 @@ export default (tokenName) => {
             })
 
             flow.finishStep({
-              isBtcScriptFunded: true
+              isBtcScriptFunded: true,
             }, {  step: 'lock-btc' })
           }
 
@@ -174,47 +173,49 @@ export default (tokenName) => {
               onBTCFuncSuccess(hash)
             })
           } else {
-            let btcCheckTimer;
+            let btcCheckTimer
 
-            const checkBTCScriptBalance = () => {
-              btcCheckTimer = setTimeout( async () => {
-                const { sellAmount } = flow.swap
+            const checkBTCScriptBalance = async () => {
+              const { sellAmount } = flow.swap
+              const unspends = await this.btcSwap.fetchUnspents(flow.state.scriptAddress)
+              let txID = false
 
-                let txID = false
+              if (unspends.length !== 0) {
+                txID = unspends[0].txid
+              }
 
-                const unspends = await this.btcSwap.fetchUnspents(flow.state.scriptAddress);
-                if (unspends.length)
-                  txID = unspends[0].txID;
+              let scriptUnconfirmedBalance = new BigNumber(0)
+              let scriptBalance = new BigNumber(0)
+              let scriptBalanceSatoshis = 0
 
-                const unconfirmedTotalSatoshi = BigInt(unspends.reduce( ( summ, txData ) => {
-                  return summ + (!txData.confirmations) ? txData.satoshis : 0;
-                } , 0 ));
-                const unconfirmedTotal = unspends.reduce( ( summ, txData ) => {
-                  return summ + (!txData.confirmations) ? txData.amount : 0;
-                } , 0 );
-
-                const balanceSatoshi = await this.btcSwap.getBalance(flow.state.scriptAddress);
-
-                const balance = BigNumber(balanceSatoshi).dividedBy(1e8);
-
-                flow.setState({
-                  scriptBalance : Number(balance),
-                  scriptUnconfirmedBalance : unconfirmedTotal
-                });
-
-                //TODO miner fee
-                const balanceOnScript = balanceSatoshi
-                const isEnoughMoney = sellAmount.multipliedBy(1e8).isLessThanOrEqualTo( balanceOnScript );
-
-                console.log(balanceOnScript)
-                if (isEnoughMoney) {
-                  onBTCFuncSuccess(txID)
+              unspends.forEach((txData) => {
+                if (txData.confirmations === 0) {
+                  scriptUnconfirmedBalance.plus(txData.amount)
                 } else {
-                  checkBTCScriptBalance()
+                  scriptBalance.plus(txData.amount)
+                  scriptBalanceSatoshis += txData.satoshis
                 }
-              }, 20 * 1000)
+              })
+
+              flow.setState({
+                scriptBalance: scriptBalance.toNumber(),
+                scriptUnconfirmedBalance: scriptUnconfirmedBalance.toNumber(),
+              })
+
+              const isEnoughMoney = sellAmount.multipliedBy(1e8).isLessThanOrEqualTo(scriptBalanceSatoshis)
+
+              if (isEnoughMoney && txID) {
+                return txID
+              }
+
+              return null
             }
-            checkBTCScriptBalance();
+
+            const txID = await util.helpers.repeatAsyncUntilResult(() =>
+              checkBTCScriptBalance(),
+            )
+
+            onBTCFuncSuccess(txID)
           }
         },
 
@@ -316,13 +317,7 @@ export default (tokenName) => {
             })
           }
 
-          const tryWithdrawKeyName = `${flow.swap.id}.tryWithdraw`
-
-          const tryWithdraw = async (currentKey) => {
-            if (!util.actualKey.compare(this.app, tryWithdrawKeyName, currentKey)) {
-              return false
-            }
-
+          const tryWithdraw = async () => {
             if (!flow.state.isEthWithdrawn) {
               try {
                 const withdrawNeededGas = await flow.ethTokenSwap.calcWithdrawGas({
@@ -348,8 +343,6 @@ export default (tokenName) => {
                       ethSwapWithdrawTransactionHash: hash,
                     }
                   })
-
-                  util.actualKey.remove(this.app, tryWithdrawKeyName)
                 })
               } catch (err) {
                 if ( /known transaction/.test(err.message) ) {
@@ -385,10 +378,8 @@ export default (tokenName) => {
             return true
           }
 
-          const tryWithdrawKey = util.actualKey.create(this.app, tryWithdrawKeyName)
-
           const isEthWithdrawn = await util.helpers.repeatAsyncUntilResult(() =>
-            tryWithdraw(tryWithdrawKey),
+            tryWithdraw(),
           )
 
           if (isEthWithdrawn) {
