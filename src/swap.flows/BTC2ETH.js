@@ -133,15 +133,19 @@ class BTC2ETH extends Flow {
       async () => {
         const { sellAmount } = flow.swap
 
-        let btcScriptCreatingTransactionHash
+        const onTransactionHash = (txID) => {
+          if (flow.state.btcScriptCreatingTransactionHash) return
 
-        const onBTCFuncSuccess = (txID) => {
+          flow.setState({
+            btcScriptCreatingTransactionHash: txID,
+          })
+
           flow.swap.room.on('request btc script', () => {
             flow.swap.room.sendMessage({
               event:  'create btc script',
               data: {
-                scriptValues : flow.state.btcScriptValues,
-                btcScriptCreatingTransactionHash : txID,
+                scriptValues: flow.state.btcScriptValues,
+                btcScriptCreatingTransactionHash: txID,
               }
             })
           })
@@ -153,70 +157,56 @@ class BTC2ETH extends Flow {
               btcScriptCreatingTransactionHash : txID,
             }
           })
-
-          flow.finishStep({
-            isBtcScriptFunded: true,
-          }, {  step: 'lock-btc' })
         }
 
         // Balance on system wallet enough
         if (flow.state.isBalanceEnough) {
           await flow.btcSwap.fundScript({
-            scriptValues : flow.state.btcScriptValues,
+            scriptValues: flow.state.btcScriptValues,
             amount: sellAmount,
           }, (hash) => {
-            btcScriptCreatingTransactionHash = hash
+            onTransactionHash(hash)
 
-            flow.setState({
-              btcScriptCreatingTransactionHash: hash,
-            })
-
-            onBTCFuncSuccess(hash)
+            flow.finishStep({
+              isBtcScriptFunded: true,
+            }, { step: 'lock-btc' })
           })
         } else {
-          let btcCheckTimer
+          const { btcScriptValues: scriptValues } = flow.state
 
           const checkBTCScriptBalance = async () => {
-            const { sellAmount } = flow.swap
-            const unspends = await this.btcSwap.fetchUnspents(flow.state.scriptAddress)
-            let txID = false
+            const { scriptAddress } = this.btcSwap.createScript(scriptValues)
+            const unspents = await this.btcSwap.fetchUnspents(scriptAddress)
 
-            if (unspends.length !== 0) {
-              txID = unspends[0].txid
+            if (unspents.length === 0) {
+              return false
             }
 
-            let scriptUnconfirmedBalance = new BigNumber(0)
-            let scriptBalance = new BigNumber(0)
-            let scriptBalanceSatoshis = 0
+            const txID = unspents[0].txid
+            onTransactionHash(txID)
 
-            unspends.forEach((txData) => {
-              if (txData.confirmations === 0) {
-                scriptUnconfirmedBalance.plus(txData.amount)
-              } else {
-                scriptBalance.plus(txData.amount)
-                scriptBalanceSatoshis += txData.satoshis
-              }
-            })
+            const balance = await this.btcSwap.getBalance(scriptValues)
 
             flow.setState({
-              scriptBalance: scriptBalance.toNumber(),
-              scriptUnconfirmedBalance: scriptUnconfirmedBalance.toNumber(),
+              scriptBalance: BigNumber(balance).div(1e8).dp(8),
             })
 
-            const isEnoughMoney = sellAmount.multipliedBy(1e8).isLessThanOrEqualTo(scriptBalanceSatoshis)
+            const isEnoughMoney = BigNumber(balance).isGreaterThanOrEqualTo(sellAmount.times(1e8))
 
-            if (isEnoughMoney && txID) {
-              return txID
+            if (isEnoughMoney) {
+              return true
+            } else {
+              return false
             }
-
-            return null
           }
 
-          const txID = await util.helpers.repeatAsyncUntilResult(() =>
+          await util.helpers.repeatAsyncUntilResult(() =>
             checkBTCScriptBalance(),
           )
 
-          onBTCFuncSuccess(txID)
+          flow.finishStep({
+            isBtcScriptFunded: true,
+          }, { step: 'lock-btc' })
         }
       },
 

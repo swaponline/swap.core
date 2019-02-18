@@ -8,7 +8,7 @@ const repeatAsyncUntilResult = (action, delay = 5 * 1000) =>
     const iteration = async () => {
       const result = await action()
 
-      if (result === 0 || typeof result === 'undefined' || result === null || result === '0x0000000000000000000000000000000000000000') {
+      if (!result || result === 0 || typeof result === 'undefined' || result === null || result === '0x0000000000000000000000000000000000000000') {
         setTimeout(iteration, delay)
       } else {
         resolve(result)
