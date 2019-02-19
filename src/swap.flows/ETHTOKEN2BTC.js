@@ -502,7 +502,22 @@ export default (tokenName) => {
     }
 
     async tryRefund() {
-      const {participant} = this.swap
+      const { owner, participant } = this.swap
+      const { secretHash } = this.state
+
+      const currentSwap = await this.ethTokenSwap.swaps({
+        ownerAddress: owner.eth.address,
+        participantAddress: participant.eth.address,
+      })
+
+      const thisSecretHash = `0x${secretHash.replace(/^0x/, '')}`
+      const currentSecretHash = currentSwap.secretHash
+
+      const isCurrentSwap = thisSecretHash === currentSecretHash
+
+      if (!isCurrentSwap) {
+        throw new Error('This refund is not for current swap')
+      }
 
       return this.ethTokenSwap.refund({
         participantAddress: participant.eth.address,
