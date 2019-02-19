@@ -1,3 +1,4 @@
+import debug from 'debug'
 import SwapApp from 'swap.app'
 import Room from './Room'
 
@@ -7,6 +8,7 @@ class Flow {
   constructor(swap) {
     this.swap     = swap
     this.steps    = []
+    this.app      = null
 
     this.stepNumbers = {}
 
@@ -14,10 +16,29 @@ class Flow {
       step: 0,
       isWaitingForOwner: false,
     }
+
+    this._attachSwapApp(swap.app)
+  }
+
+  _attachSwapApp(app) {
+    SwapApp.required(app)
+
+    this.app = app
+  }
+
+  static read(app, { id } = {}) {
+    SwapApp.required(app)
+
+    if (!id) {
+      debug('swap.core:swap')(`FlowReadError: id not given: ${id}`)
+      return {}
+    }
+
+    return app.env.storage.getItem(`flow.${id}`)
   }
 
   _persistState() {
-    const state = SwapApp.env.storage.getItem(`flow.${this.swap.id}`)
+    const state = Flow.read(this.app, this.swap)
 
     if (state) {
       this.state = {
@@ -63,7 +84,7 @@ class Flow {
             isWaitingForOwner: true,
           })
 
-          SwapApp.services.room.on('new orders', function ({ orders }) {
+          this.app.services.room.on('new orders', function ({ orders }) {
             const order = orders.find(({ id }) => id === orderId)
 
             if (order) {
@@ -97,16 +118,16 @@ class Flow {
   }
 
   _saveState() {
-    SwapApp.env.storage.setItem(`flow.${this.swap.id}`, this.state)
+    this.app.env.storage.setItem(`flow.${this.swap.id}`, this.state)
   }
   finishStep(data, constraints) {
-    console.log(`on step ${this.state.step}, constraints =`, constraints)
+    debug('swap.core:swap')(`on step ${this.state.step}, constraints =`, constraints)
 
     if (constraints) {
       const { step, silentError } = constraints
 
       const n_step = this.stepNumbers[step]
-      console.log(`trying to finish step ${step} = ${n_step} when on step ${this.state.step}`)
+      debug('swap.core:swap')(`trying to finish step ${step} = ${n_step} when on step ${this.state.step}`)
 
       if (step && this.state.step != n_step) {
         if (silentError) {
@@ -119,7 +140,7 @@ class Flow {
       }
     }
 
-    console.log(`proceed to step ${this.state.step+1}, data=`, data)
+    debug('swap.core:swap')(`proceed to step ${this.state.step+1}, data=`, data)
 
     this.goNextStep(data)
   }
@@ -156,7 +177,15 @@ class Flow {
 
     this.swap.events.dispatch('state update', this.state, values)
   }
+
+  isClosed() {
+    console.log('sent')
+    this.swap.room.sendMessage({
+      event: 'stop swap'
+    })
+  }
 }
+
 
 
 export default Flow
