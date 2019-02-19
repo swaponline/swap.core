@@ -339,6 +339,12 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
   }
 
   hideMyOrders() {
+    this.items.forEach((order) => {
+      if (order && order.owner && order.owner.peer === this.app.services.room.peer) {
+        order.isHidden = true
+      }
+    })
+    this._saveMyOrders()
     this.app.services.room.sendMessageRoom({
       event: 'hide orders',
       data: {},
@@ -346,10 +352,21 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
   }
 
   showMyOrders() {
+    this.items.forEach((order) => {
+      if (order && order.owner && order.owner.peer === this.app.services.room.peer) {
+        order.isHidden = false
+      }
+    })
+    this._saveMyOrders()
     this.app.services.room.sendMessageRoom({
       event: 'show orders',
       data: {},
     })
+  }
+
+  hasHiddenOrders() {
+    let myHiddenOrders = this.items.filter(({ isHidden, owner: { peer } }) => (peer === this.app.services.room.peer && isHidden))
+    return myHiddenOrders.length ? true : false
   }
 
   /**
