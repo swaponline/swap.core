@@ -177,6 +177,12 @@ class Flow {
 
     this.swap.events.dispatch('state update', this.state, values)
   }
+  isClosed() {
+    console.log('sent')
+    this.swap.room.sendMessage({
+      event: 'stop swap'
+    })
+  }
 }
 
 
