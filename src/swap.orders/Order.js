@@ -38,6 +38,7 @@ class Order {
     this.isRequested      = false // outcome request status
     this.isProcessing     = false // if swap isProcessing
     this.isPartial        = false
+    this.isHidden         = false
 
     this.partialHandler   = {
       buyAmount: () => false,
