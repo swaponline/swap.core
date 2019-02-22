@@ -479,10 +479,10 @@ class ETH2BTC extends Flow {
 
   declineSwap() {
     this.setState({
-      isStopedSwap
+      isStopedSwap: true,
     })
   }
-
+  
   async tryWithdraw(_secret) {
     const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, btcScriptValues } = this.state
 

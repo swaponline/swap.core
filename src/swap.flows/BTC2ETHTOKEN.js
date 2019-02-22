@@ -551,12 +551,12 @@ export default (tokenName) => {
         })
     }
 
-    declineSwap(isStopedSwap) {
-      this.setState(() => ({
-        isStopedSwap
-      }))
+    declineSwap() {
+      this.setState({
+        isStopedSwap: true,
+      })
     }
-
+  
     async tryWithdraw(_secret) {
       const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn } = this.state
 

@@ -553,7 +553,7 @@ export default (tokenName) => {
 
     declineSwap() {
       this.setState({
-        isStopedSwap
+        isStopedSwap: true,
       })
     }
 

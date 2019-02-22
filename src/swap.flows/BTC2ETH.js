@@ -412,7 +412,7 @@ class BTC2ETH extends Flow {
 
   declineSwap() {
     this.setState({
-      isStopedSwap
+      isStopedSwap: true,
     })
   }
 
