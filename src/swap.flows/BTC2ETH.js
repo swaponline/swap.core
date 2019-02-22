@@ -135,6 +135,11 @@ class BTC2ETH extends Flow {
       async () => {
         const { sellAmount } = flow.swap
 
+        if (!stopSwap) {
+          console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+          return
+        }
+
         const onTransactionHash = (txID) => {
           if (flow.state.btcScriptCreatingTransactionHash) return
 
@@ -160,58 +165,56 @@ class BTC2ETH extends Flow {
             }
           })
         }
-        if (!stopSwap) {
-          // Balance on system wallet enough
-          if (flow.state.isBalanceEnough) {
-            await flow.btcSwap.fundScript({
-              scriptValues: flow.state.btcScriptValues,
-              amount: sellAmount,
-            }, (hash) => {
-              onTransactionHash(hash)
-              flow.finishStep({
-                isBtcScriptFunded: true,
-              }, { step: 'lock-btc' })
-            })
-          } else {
-            const { btcScriptValues: scriptValues } = flow.state
 
-            const checkBTCScriptBalance = async () => {
-              const { scriptAddress } = this.btcSwap.createScript(scriptValues)
-              const unspents = await this.btcSwap.fetchUnspents(scriptAddress)
+        // Balance on system wallet enough
+        if (flow.state.isBalanceEnough) {
+          await flow.btcSwap.fundScript({
+            scriptValues: flow.state.btcScriptValues,
+            amount: sellAmount,
+          }, (hash) => {
+            onTransactionHash(hash)
+            flow.finishStep({
+              isBtcScriptFunded: true,
+            }, { step: 'lock-btc' })
+          })
+        } else {
+          const { btcScriptValues: scriptValues } = flow.state
 
-              if (unspents.length === 0) {
-                return false
-              }
+          const checkBTCScriptBalance = async () => {
+            const { scriptAddress } = this.btcSwap.createScript(scriptValues)
+            const unspents = await this.btcSwap.fetchUnspents(scriptAddress)
 
-              const txID = unspents[0].txid
-              onTransactionHash(txID)
-
-              const balance = await this.btcSwap.getBalance(scriptValues)
-
-              flow.setState({
-                scriptBalance: BigNumber(balance).div(1e8).dp(8),
-              })
-
-              const isEnoughMoney = BigNumber(balance).isGreaterThanOrEqualTo(sellAmount.times(1e8))
-
-              if (isEnoughMoney) {
-                return true
-              } else {
-                return false
-              }
+            if (unspents.length === 0) {
+              return false
             }
 
-            await util.helpers.repeatAsyncUntilResult(() =>
-              checkBTCScriptBalance(),
-            )
-            if (!stopSwap) {
-              flow.finishStep({
-                isBtcScriptFunded: true,
-              }, { step: 'lock-btc' })
+            const txID = unspents[0].txid
+            onTransactionHash(txID)
+
+            const balance = await this.btcSwap.getBalance(scriptValues)
+
+            flow.setState({
+              scriptBalance: BigNumber(balance).div(1e8).dp(8),
+            })
+
+            const isEnoughMoney = BigNumber(balance).isGreaterThanOrEqualTo(sellAmount.times(1e8))
+
+            if (isEnoughMoney) {
+              return true
+            } else {
+              return false
             }
           }
-        } else {
-          console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+
+          await util.helpers.repeatAsyncUntilResult(() =>
+            checkBTCScriptBalance(),
+          )
+          if (!stopSwap) {
+            flow.finishStep({
+              isBtcScriptFunded: true,
+            }, { step: 'lock-btc' })
+          } else {
+          throw new Error(`The Swap ${this.swap.id} was stopped by one of the participants`)
         }
       },
 
@@ -406,7 +409,7 @@ class BTC2ETH extends Flow {
     }, { step: 'submit-secret' })
   }
 
-  declineSwap({ stopSwap }) {
+  declineSwap() {
     this.setState({
       stopSwap
     })

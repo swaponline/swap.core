@@ -141,6 +141,11 @@ export default (tokenName) => {
           const { participant, buyAmount, sellAmount } = flow.swap
           const { secretHash } = flow.state
 
+          if (!stopSwap) {
+            console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+            return
+          }
+
           // TODO move this somewhere!
           const utcNow = () => Math.floor(Date.now() / 1000)
           const getLockTime = () => utcNow() + 3600 * 1 // 1 hour from now
@@ -182,66 +187,62 @@ export default (tokenName) => {
           swapData.calcFee = false
           //debug('swap.core:flow')('create swap fee', flow.state.createSwapFee)
 
-          if (!stopSwap) {
-            const tryCreateSwap = async () => {
-              if (!flow.state.isEthContractFunded) {
-                try {
-                  debug('swap.core:flow')('fetching allowance')
-                  const allowance = await flow.ethTokenSwap.checkAllowance({
-                    spender: this.app.services.auth.getPublicData().eth.address,
+          const tryCreateSwap = async () => {
+            if (!flow.state.isEthContractFunded) {
+              try {
+                debug('swap.core:flow')('fetching allowance')
+                const allowance = await flow.ethTokenSwap.checkAllowance({
+                  spender: this.app.services.auth.getPublicData().eth.address,
+                })
+
+                debug('swap.core:flow')('allowance', allowance)
+                if (allowance < sellAmount) {
+                  debug('swap.core:flow')('allowance < sellAmount', allowance, sellAmount)
+                  await flow.ethTokenSwap.approve({
+                    amount: sellAmount,
                   })
+                }
 
-                  debug('swap.core:flow')('allowance', allowance)
-                  if (allowance < sellAmount) {
-                    debug('swap.core:flow')('allowance < sellAmount', allowance, sellAmount)
-                    await flow.ethTokenSwap.approve({
-                      amount: sellAmount,
-                    })
-                  }
-
-                  debug('swap.core:flow')('create swap', swapData)
-                  await flow.ethTokenSwap.create(swapData, async (hash) => {
-                    debug('swap.core:flow')('create swap tx hash', hash)
-                    flow.swap.room.sendMessage({
-                      event: 'create eth contract',
-                      data: {
-                        ethSwapCreationTransactionHash: hash,
-                      },
-                    })
-
-                    flow.setState({
+                debug('swap.core:flow')('create swap', swapData)
+                await flow.ethTokenSwap.create(swapData, async (hash) => {
+                  debug('swap.core:flow')('create swap tx hash', hash)
+                  flow.swap.room.sendMessage({
+                    event: 'create eth contract',
+                    data: {
                       ethSwapCreationTransactionHash: hash,
-                      canCreateEthTransaction: true,
-                    })
-
-                    debug('swap.core:flow')('created swap!', hash)
+                    },
                   })
-                } catch (err) {
-                  if ( /known transaction/.test(err.message) ) {
-                    console.error(`known tx: ${err.message}`)
-                  } else if ( /out of gas/.test(err.message) ) {
-                    console.error(`tx failed (wrong secret?): ${err.message}`)
-                  } else {
-                    console.error(err)
-                  }
 
                   flow.setState({
-                    canCreateEthTransaction: false,
+                    ethSwapCreationTransactionHash: hash,
+                    canCreateEthTransaction: true,
                   })
 
-                  return null
+                  debug('swap.core:flow')('created swap!', hash)
+                })
+              } catch (err) {
+                if ( /known transaction/.test(err.message) ) {
+                  console.error(`known tx: ${err.message}`)
+                } else if ( /out of gas/.test(err.message) ) {
+                  console.error(`tx failed (wrong secret?): ${err.message}`)
+                } else {
+                  console.error(err)
                 }
-              }
 
-              return true
+                flow.setState({
+                  canCreateEthTransaction: false,
+                })
+
+                return null
+              }
             }
 
-            const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
-              tryCreateSwap(),
-            )
-          } else {
-            console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+            return true
           }
+
+          const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
+            tryCreateSwap(),
+          )
 
           if (isEthContractFunded) {
             debug('swap.core:flow')(`finish step`)
@@ -249,6 +250,8 @@ export default (tokenName) => {
               flow.finishStep({
                 isEthContractFunded,
               }, {step: 'lock-eth'})
+            } else {
+              throw new Error(`The Swap ${this.swap.id} was stopped by one of the participants`)
             }
           }
         },
@@ -547,7 +550,7 @@ export default (tokenName) => {
         })
     }
 
-    declineSwap({ stopSwap }) {
+    declineSwap() {
       this.setState({
         stopSwap
       })

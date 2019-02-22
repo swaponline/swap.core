@@ -130,6 +130,10 @@ class ETH2BTC extends Flow {
       async () => {
         const { participant, buyAmount, sellAmount } = flow.swap
 
+        if (!stopSwap) {
+          console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+          return
+        }
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
         const getLockTime = () => utcNow() + 3600 * 1 // 1 hour from now
@@ -158,49 +162,45 @@ class ETH2BTC extends Flow {
           amount: sellAmount,
           targetWallet: flow.swap.destinationSellAddress
         }
-        if (!stopSwap) {
-          const tryCreateSwap = async () => {
-            if (!flow.state.isEthContractFunded) {
-              try {
-                debug('swap.core:flow')('create swap', swapData)
-                await this.ethSwap.create(swapData, (hash) => {
-                  debug('swap.core:flow')('create swap tx hash', hash)
-                  flow.swap.room.sendMessage({
-                    event: 'create eth contract',
-                    data: {
-                      ethSwapCreationTransactionHash: hash,
-                    },
-                  })
-
-                  flow.setState({
+        const tryCreateSwap = async () => {
+          if (!flow.state.isEthContractFunded) {
+            try {
+              debug('swap.core:flow')('create swap', swapData)
+              await this.ethSwap.create(swapData, (hash) => {
+                debug('swap.core:flow')('create swap tx hash', hash)
+                flow.swap.room.sendMessage({
+                  event: 'create eth contract',
+                  data: {
                     ethSwapCreationTransactionHash: hash,
-                    canCreateEthTransaction: true,
-                  })
+                  },
                 })
-              } catch (err) {
-                if ( /known transaction/.test(err.message) ) {
-                  console.error(`known tx: ${err.message}`)
-                } else if ( /out of gas/.test(err.message) ) {
-                  console.error(`tx failed (wrong secret?): ${err.message}`)
-                } else {
-                  console.error(err)
-                }
 
                 flow.setState({
-                  canCreateEthTransaction: false,
+                  ethSwapCreationTransactionHash: hash,
+                  canCreateEthTransaction: true,
                 })
-
-                return null
+              })
+            } catch (err) {
+              if ( /known transaction/.test(err.message) ) {
+                console.error(`known tx: ${err.message}`)
+              } else if ( /out of gas/.test(err.message) ) {
+                console.error(`tx failed (wrong secret?): ${err.message}`)
+              } else {
+                console.error(err)
               }
+
+              flow.setState({
+                canCreateEthTransaction: false,
+              })
+
+              return null
             }
-            return true
           }
-          const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
-            tryCreateSwap(),
-          )
-        } else {
-          console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+          return true
         }
+        const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
+          tryCreateSwap(),
+        )
 
         if (isEthContractFunded) {
           debug('swap.core:flow')(`finish step`)
@@ -208,6 +208,8 @@ class ETH2BTC extends Flow {
             flow.finishStep({
               isEthContractFunded,
             }, {step: 'lock-eth'})
+          } else {
+            throw new Error(`The Swap ${this.swap.id} was stopped by one of the participants`)
           }
         }
       },
@@ -474,7 +476,7 @@ class ETH2BTC extends Flow {
       })
   }
 
-  declineSwap({ stopSwap }) {
+  declineSwap() {
     this.setState({
       stopSwap
     })
