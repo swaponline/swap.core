@@ -46,6 +46,8 @@ class BTC2ETH extends Flow {
     this.state = {
       step: 0,
 
+      intention: false,
+
       signTransactionHash: null,
       isSignFetching: false,
       isParticipantSigned: false,
@@ -93,9 +95,9 @@ class BTC2ETH extends Flow {
 
       () => {
         flow.swap.room.once('swap sign', () => {
-          flow.finishStep({
-            isParticipantSigned: true,
-          }, { step: 'sign', silentError: true })
+            flow.finishStep({
+              isParticipantSigned: true,
+            }, { step: 'sign', silentError: true })
         })
 
         flow.swap.room.once('swap exists', () => {
@@ -166,10 +168,11 @@ class BTC2ETH extends Flow {
             amount: sellAmount,
           }, (hash) => {
             onTransactionHash(hash)
-
-            flow.finishStep({
-              isBtcScriptFunded: true,
-            }, { step: 'lock-btc' })
+            if (this.state.intention === false) {
+              flow.finishStep({
+                isBtcScriptFunded: true,
+              }, { step: 'lock-btc' })
+            }
           })
         } else {
           const { btcScriptValues: scriptValues } = flow.state
@@ -203,10 +206,11 @@ class BTC2ETH extends Flow {
           await util.helpers.repeatAsyncUntilResult(() =>
             checkBTCScriptBalance(),
           )
-
-          flow.finishStep({
-            isBtcScriptFunded: true,
-          }, { step: 'lock-btc' })
+          if (this.state.intention === false) {
+            flow.finishStep({
+              isBtcScriptFunded: true,
+            }, { step: 'lock-btc' })
+          }
         }
       },
 
@@ -247,10 +251,11 @@ class BTC2ETH extends Flow {
           if (!flow.state.isEthContractFunded) {
             clearTimeout(timer)
             timer = null
-
-            flow.finishStep({
-              isEthContractFunded: true,
-            }, { step: 'wait-lock-eth' })
+            if (this.state.intention === false) {
+              flow.finishStep({
+                isEthContractFunded: true,
+              }, { step: 'wait-lock-eth' })
+            }
           }
         })
       },
@@ -398,6 +403,12 @@ class BTC2ETH extends Flow {
       secret: _secret,
       secretHash,
     }, { step: 'submit-secret' })
+  }
+
+  declineSwap({ intention }) {
+    this.setState({
+      intention
+    })
   }
 
   createWorkBTCScript(secretHash) {

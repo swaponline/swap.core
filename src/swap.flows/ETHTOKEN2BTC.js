@@ -47,6 +47,8 @@ export default (tokenName) => {
       this.state = {
         step: 0,
 
+        intention: false,
+
         signTransactionHash: null,
         isSignFetching: false,
         isMeSigned: false,
@@ -108,11 +110,13 @@ export default (tokenName) => {
 
         () => {
           flow.swap.room.once('create btc script', ({scriptValues, btcScriptCreatingTransactionHash}) => {
-            flow.finishStep({
-              secretHash: scriptValues.secretHash,
-              btcScriptValues: scriptValues,
-              btcScriptCreatingTransactionHash,
-            }, {step: 'wait-lock-btc', silentError: true})
+            if (this.state.intention === false) {
+              flow.finishStep({
+                secretHash: scriptValues.secretHash,
+                btcScriptValues: scriptValues,
+                btcScriptCreatingTransactionHash,
+              }, {step: 'wait-lock-btc', silentError: true})
+            }
           })
 
           flow.swap.room.sendMessage({
@@ -238,9 +242,11 @@ export default (tokenName) => {
 
           if (isEthContractFunded) {
             debug('swap.core:flow')(`finish step`)
-            flow.finishStep({
-              isEthContractFunded,
-            }, {step: 'lock-eth'})
+            if (this.state.intention === false) {
+              flow.finishStep({
+                isEthContractFunded,
+              }, {step: 'lock-eth'})
+            }
           }
         },
 
@@ -536,6 +542,12 @@ export default (tokenName) => {
             isSwapExist: false,
           })
         })
+    }
+
+    declineSwap({ intention }) {
+      this.setState({
+        intention
+      })
     }
 
     async tryWithdraw(_secret) {

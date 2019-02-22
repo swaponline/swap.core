@@ -47,6 +47,8 @@ export default (tokenName) => {
       this.state = {
         step: 0,
 
+        intention: false,
+
         signTransactionHash: null,
         isSignFetching: false,
         isParticipantSigned: false,
@@ -91,9 +93,11 @@ export default (tokenName) => {
 
         () => {
           flow.swap.room.once('swap sign', () => {
-            flow.finishStep({
-              isParticipantSigned: true,
-            }, { step: 'sign', silentError: true })
+            if (this.state.intention === false) {
+              flow.finishStep({
+                isParticipantSigned: true,
+              }, { step: 'sign', silentError: true })
+            }
           })
 
           flow.swap.room.once('swap exists', () => {
@@ -165,10 +169,11 @@ export default (tokenName) => {
               amount: sellAmount,
             }, (hash) => {
               onTransactionHash(hash)
-
-              flow.finishStep({
-                isBtcScriptFunded: true,
-              }, { step: 'lock-btc' })
+              if (this.state.intention === false) {
+                flow.finishStep({
+                  isBtcScriptFunded: true,
+                }, { step: 'lock-btc' })
+              }
             })
           } else {
             const { btcScriptValues: scriptValues } = flow.state
@@ -202,10 +207,11 @@ export default (tokenName) => {
             await util.helpers.repeatAsyncUntilResult(() =>
               checkBTCScriptBalance(),
             )
-
-            flow.finishStep({
-              isBtcScriptFunded: true,
-            }, { step: 'lock-btc' })
+            if (this.state.intention === false) {
+              flow.finishStep({
+                isBtcScriptFunded: true,
+              }, { step: 'lock-btc' })
+            }
           }
         },
 
@@ -235,10 +241,11 @@ export default (tokenName) => {
             if (!flow.state.isEthContractFunded) {
               clearTimeout(timer)
               timer = null
-
-              flow.finishStep({
-                isEthContractFunded: true,
-              }, { step: 'wait-lock-eth' })
+              if (this.state.intention === false) {
+                flow.finishStep({
+                  isEthContractFunded: true,
+                }, { step: 'wait-lock-eth' })
+              }
             }
           })
         },
@@ -539,6 +546,12 @@ export default (tokenName) => {
             isSwapExist: false,
           })
         })
+    }
+
+    declineSwap(intention) {
+      this.setState(() => ({
+        intention
+      }))
     }
 
     async tryWithdraw(_secret) {

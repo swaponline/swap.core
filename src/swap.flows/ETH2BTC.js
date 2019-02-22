@@ -45,6 +45,8 @@ class ETH2BTC extends Flow {
     this.state = {
       step: 0,
 
+      intention: false,
+
       signTransactionHash: null,
       isSignFetching: false,
       isMeSigned: false,
@@ -98,11 +100,13 @@ class ETH2BTC extends Flow {
 
       () => {
         flow.swap.room.once('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
-          flow.finishStep({
-            secretHash: scriptValues.secretHash,
-            btcScriptValues: scriptValues,
-            btcScriptCreatingTransactionHash,
-          }, { step: 'wait-lock-btc', silentError: true })
+          if (!this.state.intention) {
+            flow.finishStep({
+              secretHash: scriptValues.secretHash,
+              btcScriptValues: scriptValues,
+              btcScriptCreatingTransactionHash,
+            }, { step: 'wait-lock-btc', silentError: true })
+          }
         })
 
         flow.swap.room.sendMessage({
@@ -195,15 +199,19 @@ class ETH2BTC extends Flow {
           return true
         }
 
-        const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
-          tryCreateSwap(),
-        )
+        if (this.state.intention === false) {
+          const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
+            tryCreateSwap(),
+          )
+        }
 
         if (isEthContractFunded) {
           debug('swap.core:flow')(`finish step`)
-          flow.finishStep({
-            isEthContractFunded,
-          }, {step: 'lock-eth'})
+          if (this.state.intention === false) {
+            flow.finishStep({
+              isEthContractFunded,
+            }, {step: 'lock-eth'})
+          }
         }
       },
 
@@ -231,6 +239,7 @@ class ETH2BTC extends Flow {
 
           if (!isEthWithdrawn && secretFromTxhash) {
             debug('swap.core:flow')('got secret from tx', ethSwapWithdrawTransactionHash, secretFromTxhash)
+            if (this.state.intention === false)
             flow.finishStep({
               isEthWithdrawn: true,
               secret: secretFromTxhash,
@@ -466,6 +475,12 @@ class ETH2BTC extends Flow {
           isSwapExist: false,
         })
       })
+  }
+
+  declineSwap({ intention }) {
+    this.setState({
+      intention
+    })
   }
 
   async tryWithdraw(_secret) {
