@@ -46,7 +46,7 @@ class BTC2ETH extends Flow {
     this.state = {
       step: 0,
 
-      intention: false,
+      stopSwap: false,
 
       signTransactionHash: null,
       isSignFetching: false,
@@ -88,7 +88,7 @@ class BTC2ETH extends Flow {
 
   _getSteps() {
     const flow = this
-
+    const { stopSwap } = flow.state
     return [
 
       // 1. Signs
@@ -160,57 +160,58 @@ class BTC2ETH extends Flow {
             }
           })
         }
+        if (!stopSwap) {
+          // Balance on system wallet enough
+          if (flow.state.isBalanceEnough) {
+            await flow.btcSwap.fundScript({
+              scriptValues: flow.state.btcScriptValues,
+              amount: sellAmount,
+            }, (hash) => {
+              onTransactionHash(hash)
+              flow.finishStep({
+                isBtcScriptFunded: true,
+              }, { step: 'lock-btc' })
+            })
+          } else {
+            const { btcScriptValues: scriptValues } = flow.state
 
-        // Balance on system wallet enough
-        if (flow.state.isBalanceEnough) {
-          await flow.btcSwap.fundScript({
-            scriptValues: flow.state.btcScriptValues,
-            amount: sellAmount,
-          }, (hash) => {
-            onTransactionHash(hash)
-            if (this.state.intention === false) {
+            const checkBTCScriptBalance = async () => {
+              const { scriptAddress } = this.btcSwap.createScript(scriptValues)
+              const unspents = await this.btcSwap.fetchUnspents(scriptAddress)
+
+              if (unspents.length === 0) {
+                return false
+              }
+
+              const txID = unspents[0].txid
+              onTransactionHash(txID)
+
+              const balance = await this.btcSwap.getBalance(scriptValues)
+
+              flow.setState({
+                scriptBalance: BigNumber(balance).div(1e8).dp(8),
+              })
+
+              const isEnoughMoney = BigNumber(balance).isGreaterThanOrEqualTo(sellAmount.times(1e8))
+
+              if (isEnoughMoney) {
+                return true
+              } else {
+                return false
+              }
+            }
+
+            await util.helpers.repeatAsyncUntilResult(() =>
+              checkBTCScriptBalance(),
+            )
+            if (!stopSwap) {
               flow.finishStep({
                 isBtcScriptFunded: true,
               }, { step: 'lock-btc' })
             }
-          })
+          }
         } else {
-          const { btcScriptValues: scriptValues } = flow.state
-
-          const checkBTCScriptBalance = async () => {
-            const { scriptAddress } = this.btcSwap.createScript(scriptValues)
-            const unspents = await this.btcSwap.fetchUnspents(scriptAddress)
-
-            if (unspents.length === 0) {
-              return false
-            }
-
-            const txID = unspents[0].txid
-            onTransactionHash(txID)
-
-            const balance = await this.btcSwap.getBalance(scriptValues)
-
-            flow.setState({
-              scriptBalance: BigNumber(balance).div(1e8).dp(8),
-            })
-
-            const isEnoughMoney = BigNumber(balance).isGreaterThanOrEqualTo(sellAmount.times(1e8))
-
-            if (isEnoughMoney) {
-              return true
-            } else {
-              return false
-            }
-          }
-
-          await util.helpers.repeatAsyncUntilResult(() =>
-            checkBTCScriptBalance(),
-          )
-          if (this.state.intention === false) {
-            flow.finishStep({
-              isBtcScriptFunded: true,
-            }, { step: 'lock-btc' })
-          }
+          console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
         }
       },
 
@@ -251,7 +252,7 @@ class BTC2ETH extends Flow {
           if (!flow.state.isEthContractFunded) {
             clearTimeout(timer)
             timer = null
-            if (this.state.intention === false) {
+            if (!stopSwap) {
               flow.finishStep({
                 isEthContractFunded: true,
               }, { step: 'wait-lock-eth' })
@@ -405,9 +406,9 @@ class BTC2ETH extends Flow {
     }, { step: 'submit-secret' })
   }
 
-  declineSwap({ intention }) {
+  declineSwap({ stopSwap }) {
     this.setState({
-      intention
+      stopSwap
     })
   }
 

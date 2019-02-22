@@ -45,7 +45,7 @@ class ETH2BTC extends Flow {
     this.state = {
       step: 0,
 
-      intention: false,
+      stopSwap: false,
 
       signTransactionHash: null,
       isSignFetching: false,
@@ -87,6 +87,7 @@ class ETH2BTC extends Flow {
 
   _getSteps() {
     const flow = this
+    const { stopSwap } = flow.state
 
     return [
 
@@ -100,15 +101,12 @@ class ETH2BTC extends Flow {
 
       () => {
         flow.swap.room.once('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
-          if (!this.state.intention) {
-            flow.finishStep({
-              secretHash: scriptValues.secretHash,
-              btcScriptValues: scriptValues,
-              btcScriptCreatingTransactionHash,
-            }, { step: 'wait-lock-btc', silentError: true })
-          }
+          flow.finishStep({
+            secretHash: scriptValues.secretHash,
+            btcScriptValues: scriptValues,
+            btcScriptCreatingTransactionHash,
+          }, { step: 'wait-lock-btc', silentError: true })
         })
-
         flow.swap.room.sendMessage({
           event: 'request btc script',
         })
@@ -160,54 +158,53 @@ class ETH2BTC extends Flow {
           amount: sellAmount,
           targetWallet: flow.swap.destinationSellAddress
         }
+        if (!stopSwap) {
+          const tryCreateSwap = async () => {
+            if (!flow.state.isEthContractFunded) {
+              try {
+                debug('swap.core:flow')('create swap', swapData)
+                await this.ethSwap.create(swapData, (hash) => {
+                  debug('swap.core:flow')('create swap tx hash', hash)
+                  flow.swap.room.sendMessage({
+                    event: 'create eth contract',
+                    data: {
+                      ethSwapCreationTransactionHash: hash,
+                    },
+                  })
 
-        const tryCreateSwap = async () => {
-          if (!flow.state.isEthContractFunded) {
-            try {
-              debug('swap.core:flow')('create swap', swapData)
-              await this.ethSwap.create(swapData, (hash) => {
-                debug('swap.core:flow')('create swap tx hash', hash)
-                flow.swap.room.sendMessage({
-                  event: 'create eth contract',
-                  data: {
+                  flow.setState({
                     ethSwapCreationTransactionHash: hash,
-                  },
+                    canCreateEthTransaction: true,
+                  })
                 })
+              } catch (err) {
+                if ( /known transaction/.test(err.message) ) {
+                  console.error(`known tx: ${err.message}`)
+                } else if ( /out of gas/.test(err.message) ) {
+                  console.error(`tx failed (wrong secret?): ${err.message}`)
+                } else {
+                  console.error(err)
+                }
 
                 flow.setState({
-                  ethSwapCreationTransactionHash: hash,
-                  canCreateEthTransaction: true,
+                  canCreateEthTransaction: false,
                 })
-              })
-            } catch (err) {
-              if ( /known transaction/.test(err.message) ) {
-                console.error(`known tx: ${err.message}`)
-              } else if ( /out of gas/.test(err.message) ) {
-                console.error(`tx failed (wrong secret?): ${err.message}`)
-              } else {
-                console.error(err)
+
+                return null
               }
-
-              flow.setState({
-                canCreateEthTransaction: false,
-              })
-
-              return null
             }
+            return true
           }
-
-          return true
-        }
-
-        if (this.state.intention === false) {
           const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
             tryCreateSwap(),
           )
+        } else {
+          console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
         }
 
         if (isEthContractFunded) {
           debug('swap.core:flow')(`finish step`)
-          if (this.state.intention === false) {
+          if (!stopSwap) {
             flow.finishStep({
               isEthContractFunded,
             }, {step: 'lock-eth'})
@@ -239,7 +236,7 @@ class ETH2BTC extends Flow {
 
           if (!isEthWithdrawn && secretFromTxhash) {
             debug('swap.core:flow')('got secret from tx', ethSwapWithdrawTransactionHash, secretFromTxhash)
-            if (this.state.intention === false)
+            if (!stopSwap)
             flow.finishStep({
               isEthWithdrawn: true,
               secret: secretFromTxhash,
@@ -477,9 +474,9 @@ class ETH2BTC extends Flow {
       })
   }
 
-  declineSwap({ intention }) {
+  declineSwap({ stopSwap }) {
     this.setState({
-      intention
+      stopSwap
     })
   }
 
