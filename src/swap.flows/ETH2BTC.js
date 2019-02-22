@@ -134,10 +134,7 @@ class ETH2BTC extends Flow {
           console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
           return
         }
-<<<<<<< HEAD
 
-=======
->>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
         const getLockTime = () => utcNow() + 3600 * 1 // 1 hour from now
@@ -202,16 +199,9 @@ class ETH2BTC extends Flow {
           }
           return true
         }
-<<<<<<< HEAD
-
-          const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
-            tryCreateSwap(),
-          )
-=======
         const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
           tryCreateSwap(),
         )
->>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
 
         if (isEthContractFunded) {
           debug('swap.core:flow')(`finish step`)
@@ -249,10 +239,6 @@ class ETH2BTC extends Flow {
 
           if (!isEthWithdrawn && secretFromTxhash) {
             debug('swap.core:flow')('got secret from tx', ethSwapWithdrawTransactionHash, secretFromTxhash)
-<<<<<<< HEAD
-=======
-            if (!stopSwap)
->>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
             flow.finishStep({
               isEthWithdrawn: true,
               secret: secretFromTxhash,
