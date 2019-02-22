@@ -47,7 +47,7 @@ export default (tokenName) => {
       this.state = {
         step: 0,
 
-        intention: false,
+        stopSwap: false,
 
         signTransactionHash: null,
         isSignFetching: false,
@@ -86,6 +86,7 @@ export default (tokenName) => {
 
     _getSteps() {
       const flow = this
+      const { stopSwap } = flow.state
 
       return [
 
@@ -93,11 +94,9 @@ export default (tokenName) => {
 
         () => {
           flow.swap.room.once('swap sign', () => {
-            if (this.state.intention === false) {
-              flow.finishStep({
-                isParticipantSigned: true,
-              }, { step: 'sign', silentError: true })
-            }
+            flow.finishStep({
+              isParticipantSigned: true,
+            }, { step: 'sign', silentError: true })
           })
 
           flow.swap.room.once('swap exists', () => {
@@ -136,6 +135,11 @@ export default (tokenName) => {
         async () => {
           const { sellAmount } = flow.swap
 
+          if (!stopSwap) {
+            console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+            return
+          }
+
           const onTransactionHash = (txID) => {
             if (flow.state.btcScriptCreatingTransactionHash) return
 
@@ -163,17 +167,15 @@ export default (tokenName) => {
           }
 
           // Balance on system wallet enough
-          if (flow.state.isBalanceEnough) {
+            if (flow.state.isBalanceEnough) {
             await flow.btcSwap.fundScript({
               scriptValues: flow.state.btcScriptValues,
               amount: sellAmount,
             }, (hash) => {
               onTransactionHash(hash)
-              if (this.state.intention === false) {
-                flow.finishStep({
-                  isBtcScriptFunded: true,
-                }, { step: 'lock-btc' })
-              }
+              flow.finishStep({
+                isBtcScriptFunded: true,
+              }, { step: 'lock-btc' })
             })
           } else {
             const { btcScriptValues: scriptValues } = flow.state
@@ -207,10 +209,12 @@ export default (tokenName) => {
             await util.helpers.repeatAsyncUntilResult(() =>
               checkBTCScriptBalance(),
             )
-            if (this.state.intention === false) {
+            if (!stopSwap) {
               flow.finishStep({
                 isBtcScriptFunded: true,
               }, { step: 'lock-btc' })
+            } else {
+              throw new Error(`The Swap ${this.swap.id} was stopped by one of the participants`)
             }
           }
         },
@@ -241,10 +245,12 @@ export default (tokenName) => {
             if (!flow.state.isEthContractFunded) {
               clearTimeout(timer)
               timer = null
-              if (this.state.intention === false) {
+              if (!stopSwap) {
                 flow.finishStep({
                   isEthContractFunded: true,
                 }, { step: 'wait-lock-eth' })
+              } else {
+                console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
               }
             }
           })
@@ -548,9 +554,9 @@ export default (tokenName) => {
         })
     }
 
-    declineSwap(intention) {
+    declineSwap(stopSwap) {
       this.setState(() => ({
-        intention
+        stopSwap
       }))
     }
 

@@ -45,7 +45,7 @@ class ETH2BTC extends Flow {
     this.state = {
       step: 0,
 
-      intention: false,
+      stopSwap: false,
 
       signTransactionHash: null,
       isSignFetching: false,
@@ -87,6 +87,7 @@ class ETH2BTC extends Flow {
 
   _getSteps() {
     const flow = this
+    const { stopSwap } = flow.state
 
     return [
 
@@ -100,13 +101,11 @@ class ETH2BTC extends Flow {
 
       () => {
         flow.swap.room.once('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
-          if (!this.state.intention) {
-            flow.finishStep({
-              secretHash: scriptValues.secretHash,
-              btcScriptValues: scriptValues,
-              btcScriptCreatingTransactionHash,
-            }, { step: 'wait-lock-btc', silentError: true })
-          }
+          flow.finishStep({
+            secretHash: scriptValues.secretHash,
+            btcScriptValues: scriptValues,
+            btcScriptCreatingTransactionHash,
+          }, { step: 'wait-lock-btc', silentError: true })
         })
 
         flow.swap.room.sendMessage({
@@ -131,6 +130,11 @@ class ETH2BTC extends Flow {
 
       async () => {
         const { participant, buyAmount, sellAmount } = flow.swap
+
+        if (!stopSwap) {
+          console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+          return
+        }
 
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
@@ -199,18 +203,18 @@ class ETH2BTC extends Flow {
           return true
         }
 
-        if (this.state.intention === false) {
           const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
             tryCreateSwap(),
           )
-        }
 
         if (isEthContractFunded) {
           debug('swap.core:flow')(`finish step`)
-          if (this.state.intention === false) {
+          if (!stopSwap) {
             flow.finishStep({
               isEthContractFunded,
             }, {step: 'lock-eth'})
+          } else {
+            throw new Error(`The Swap ${this.swap.id} was stopped by one of the participants`)
           }
         }
       },
@@ -239,7 +243,6 @@ class ETH2BTC extends Flow {
 
           if (!isEthWithdrawn && secretFromTxhash) {
             debug('swap.core:flow')('got secret from tx', ethSwapWithdrawTransactionHash, secretFromTxhash)
-            if (this.state.intention === false)
             flow.finishStep({
               isEthWithdrawn: true,
               secret: secretFromTxhash,
@@ -477,9 +480,9 @@ class ETH2BTC extends Flow {
       })
   }
 
-  declineSwap({ intention }) {
+  declineSwap() {
     this.setState({
-      intention
+      stopSwap
     })
   }
 

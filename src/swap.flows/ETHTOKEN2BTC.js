@@ -47,7 +47,7 @@ export default (tokenName) => {
       this.state = {
         step: 0,
 
-        intention: false,
+        stopSwap: false,
 
         signTransactionHash: null,
         isSignFetching: false,
@@ -97,6 +97,7 @@ export default (tokenName) => {
 
     _getSteps() {
       const flow = this
+      const { stopSwap } = flow.state
 
       return [
 
@@ -110,13 +111,11 @@ export default (tokenName) => {
 
         () => {
           flow.swap.room.once('create btc script', ({scriptValues, btcScriptCreatingTransactionHash}) => {
-            if (this.state.intention === false) {
-              flow.finishStep({
-                secretHash: scriptValues.secretHash,
-                btcScriptValues: scriptValues,
-                btcScriptCreatingTransactionHash,
-              }, {step: 'wait-lock-btc', silentError: true})
-            }
+            flow.finishStep({
+              secretHash: scriptValues.secretHash,
+              btcScriptValues: scriptValues,
+              btcScriptCreatingTransactionHash,
+            }, {step: 'wait-lock-btc', silentError: true})
           })
 
           flow.swap.room.sendMessage({
@@ -139,6 +138,11 @@ export default (tokenName) => {
         // 5. Create ETH Contract
 
         async () => {
+          if (!stopSwap) {
+            console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+            return
+          }
+
           const { participant, buyAmount, sellAmount } = flow.swap
           const { secretHash } = flow.state
 
@@ -182,7 +186,6 @@ export default (tokenName) => {
           */
           swapData.calcFee = false
           //debug('swap.core:flow')('create swap fee', flow.state.createSwapFee)
-
           const tryCreateSwap = async () => {
             if (!flow.state.isEthContractFunded) {
               try {
@@ -242,10 +245,12 @@ export default (tokenName) => {
 
           if (isEthContractFunded) {
             debug('swap.core:flow')(`finish step`)
-            if (this.state.intention === false) {
+            if (!stopSwap) {
               flow.finishStep({
                 isEthContractFunded,
               }, {step: 'lock-eth'})
+            } else {
+              throw new Error(`The Swap ${this.swap.id} was stopped by one of the participants`)
             }
           }
         },
@@ -544,9 +549,9 @@ export default (tokenName) => {
         })
     }
 
-    declineSwap({ intention }) {
+    declineSwap() {
       this.setState({
-        intention
+        stopSwap: true,
       })
     }
 
