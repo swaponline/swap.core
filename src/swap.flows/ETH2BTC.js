@@ -45,7 +45,7 @@ class ETH2BTC extends Flow {
     this.state = {
       step: 0,
 
-      stopSwap: false,
+      isStopedSwap: false,
 
       signTransactionHash: null,
       isSignFetching: false,
@@ -87,7 +87,7 @@ class ETH2BTC extends Flow {
 
   _getSteps() {
     const flow = this
-    const { stopSwap } = flow.state
+    const { isStopedSwap } = flow.state
 
     return [
 
@@ -130,7 +130,7 @@ class ETH2BTC extends Flow {
       async () => {
         const { participant, buyAmount, sellAmount } = flow.swap
 
-        if (!stopSwap) {
+        if (!isStopedSwap) {
           console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
           return
         }
@@ -204,7 +204,7 @@ class ETH2BTC extends Flow {
 
         if (isEthContractFunded) {
           debug('swap.core:flow')(`finish step`)
-          if (!stopSwap) {
+          if (!isStopedSwap) {
             flow.finishStep({
               isEthContractFunded,
             }, {step: 'lock-eth'})
@@ -238,7 +238,7 @@ class ETH2BTC extends Flow {
 
           if (!isEthWithdrawn && secretFromTxhash) {
             debug('swap.core:flow')('got secret from tx', ethSwapWithdrawTransactionHash, secretFromTxhash)
-            if (!stopSwap)
+            if (!isStopedSwap)
             flow.finishStep({
               isEthWithdrawn: true,
               secret: secretFromTxhash,
@@ -479,7 +479,7 @@ class ETH2BTC extends Flow {
 
   declineSwap() {
     this.setState({
-      stopSwap
+      isStopedSwap
     })
   }
 
