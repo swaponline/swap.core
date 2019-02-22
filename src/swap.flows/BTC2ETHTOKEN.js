@@ -551,9 +551,9 @@ export default (tokenName) => {
         })
     }
 
-    declineSwap(isStopedSwap) {
+    declineSwap() {
       this.setState(() => ({
-        isStopedSwap
+        isStopedSwap: true,
       }))
     }
 
