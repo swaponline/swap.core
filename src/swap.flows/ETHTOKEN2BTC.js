@@ -557,11 +557,7 @@ export default (tokenName) => {
 
     declineSwap() {
       this.setState({
-<<<<<<< HEAD
         stopSwap: true,
-=======
-        stopSwap
->>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
       })
     }
 

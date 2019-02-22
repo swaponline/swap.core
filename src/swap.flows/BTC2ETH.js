@@ -89,10 +89,6 @@ class BTC2ETH extends Flow {
   _getSteps() {
     const flow = this
     const { stopSwap } = flow.state
-<<<<<<< HEAD
-
-=======
->>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
     return [
 
       // 1. Signs
@@ -213,11 +209,6 @@ class BTC2ETH extends Flow {
           await util.helpers.repeatAsyncUntilResult(() =>
             checkBTCScriptBalance(),
           )
-<<<<<<< HEAD
-          flow.finishStep({
-            isBtcScriptFunded: true,
-          }, { step: 'lock-btc' })
-=======
           if (!stopSwap) {
             flow.finishStep({
               isBtcScriptFunded: true,
@@ -225,7 +216,6 @@ class BTC2ETH extends Flow {
           } else {
             throw new Error(`The Swap ${this.swap.id} was stopped by one of the participants`)
           }
->>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
         }
       },
 
