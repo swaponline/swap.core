@@ -47,7 +47,7 @@ export default (tokenName) => {
       this.state = {
         step: 0,
 
-        stopSwap: false,
+        isStopedSwap: false,
 
         signTransactionHash: null,
         isSignFetching: false,
@@ -87,7 +87,7 @@ export default (tokenName) => {
     _getSteps() {
       const flow = this
 
-      const { stopSwap } = flow.state
+      const { isStopedSwap } = flow.state
 
       return [
 
@@ -136,7 +136,7 @@ export default (tokenName) => {
         async () => {
           const { sellAmount } = flow.swap
 
-          if (!stopSwap) {
+          if (!isStopedSwap) {
             console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
             return
           }
@@ -242,7 +242,7 @@ export default (tokenName) => {
             if (!flow.state.isEthContractFunded) {
               clearTimeout(timer)
               timer = null
-              if (!stopSwap) {
+              if (!isStopedSwap) {
                 flow.finishStep({
                   isEthContractFunded: true,
                 }, { step: 'wait-lock-eth' })
@@ -551,9 +551,9 @@ export default (tokenName) => {
         })
     }
 
-    declineSwap(stopSwap) {
+    declineSwap(isStopedSwap) {
       this.setState(() => ({
-        stopSwap
+        isStopedSwap
       }))
     }
 
