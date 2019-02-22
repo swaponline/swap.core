@@ -340,7 +340,7 @@ export default (tokenName) => {
                 } else if ( /out of gas/.test(err.message) ) {
                   console.error(`tx failed (wrong secret?): ${err.message}`)
                 } else if ( /insufficient funds for gas/.test(err.message) ) {
-                  console.error(`insufficient fund for gas: $(err.message)`)
+                  console.error(`insufficient fund for gas: ${err.message}`)
                   debug('swap.core:flow')('insufficient fund for gas... wait fund or request other side to withdraw')
 
                   flow.setState({

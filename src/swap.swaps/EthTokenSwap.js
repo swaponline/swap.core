@@ -438,7 +438,7 @@ class EthTokenSwap extends SwapInterface {
    */
   async calcWithdrawNoMoneyGas(data) {
     return this.calcWithdrawOtherGas({
-      ownerAddress: this.app.services.auth.eth.address,
+      ownerAddress: this.app.services.auth.accounts.eth.address,
       participantAddress: data.participantAddress,
       secret: data.secret,
     })
@@ -454,7 +454,7 @@ class EthTokenSwap extends SwapInterface {
    */
   async withdrawNoMoney(data, handleTransactionHash) {
     return this.withdrawOther({
-      ownerAddress: this.app.services.auth.eth.address,
+      ownerAddress: this.app.services.auth.accounts.eth.address,
       participantAddress: data.participantAddress,
       secret: data.secret,
     }, handleTransactionHash)
