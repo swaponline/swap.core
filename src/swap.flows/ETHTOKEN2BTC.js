@@ -146,6 +146,11 @@ export default (tokenName) => {
           const { participant, buyAmount, sellAmount } = flow.swap
           const { secretHash } = flow.state
 
+          if (!stopSwap) {
+            console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+            return
+          }
+
           // TODO move this somewhere!
           const utcNow = () => Math.floor(Date.now() / 1000)
           const getLockTime = () => utcNow() + 3600 * 1 // 1 hour from now
@@ -301,14 +306,6 @@ export default (tokenName) => {
                 participantAddress: participant.eth.address,
               })
 
-              const { isEthWithdrawn } = flow.state
-
-              if (isEthWithdrawn) {
-                console.warn('Secret already exists')
-
-                return false
-              }
-
               if (secretFromContract) {
 
                 secretFromContract = `0x${secretFromContract.replace(/^0x/, '')}`
@@ -331,9 +328,18 @@ export default (tokenName) => {
             checkSecretExist()
           )
 
-          const secretFromContract = await util.helpers.repeatAsyncUntilResult(() =>
-            checkSecretExist()
-          )
+          const secretFromContract = await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
+            const { isEthWithdrawn } = flow.state
+
+            if (isEthWithdrawn) {
+              console.warn('Secret already exists')
+              stopRepeat()
+
+              return false
+            }
+
+            return checkSecretExist()
+          })
 
           if (secretFromContract) {
             debug('swap.core:flow')('got secret from smart contract', secretFromContract)
@@ -551,7 +557,11 @@ export default (tokenName) => {
 
     declineSwap() {
       this.setState({
+<<<<<<< HEAD
         stopSwap: true,
+=======
+        stopSwap
+>>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
       })
     }
 

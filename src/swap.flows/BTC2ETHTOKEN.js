@@ -88,6 +88,8 @@ export default (tokenName) => {
       const flow = this
       const { stopSwap } = flow.state
 
+      const { stopSwap } = flow.state
+
       return [
 
         // 1. Signs
@@ -165,14 +167,23 @@ export default (tokenName) => {
               }
             })
           }
+<<<<<<< HEAD
 
           // Balance on system wallet enough
             if (flow.state.isBalanceEnough) {
+=======
+            // Balance on system wallet enough
+          if (flow.state.isBalanceEnough) {
+>>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
             await flow.btcSwap.fundScript({
               scriptValues: flow.state.btcScriptValues,
               amount: sellAmount,
             }, (hash) => {
+<<<<<<< HEAD
               onTransactionHash(hash)
+=======
+            onTransactionHash(hash)
+>>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
               flow.finishStep({
                 isBtcScriptFunded: true,
               }, { step: 'lock-btc' })
@@ -209,6 +220,7 @@ export default (tokenName) => {
             await util.helpers.repeatAsyncUntilResult(() =>
               checkBTCScriptBalance(),
             )
+<<<<<<< HEAD
             if (!stopSwap) {
               flow.finishStep({
                 isBtcScriptFunded: true,
@@ -216,7 +228,13 @@ export default (tokenName) => {
             } else {
               throw new Error(`The Swap ${this.swap.id} was stopped by one of the participants`)
             }
+=======
+            flow.finishStep({
+              isBtcScriptFunded: true,
+            }, { step: 'lock-btc' })
+>>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
           }
+
         },
 
         // 5. Wait participant creates ETH Contract
@@ -250,7 +268,11 @@ export default (tokenName) => {
                   isEthContractFunded: true,
                 }, { step: 'wait-lock-eth' })
               } else {
+<<<<<<< HEAD
                 console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+=======
+                throw new Error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+>>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
               }
             }
           })
@@ -353,7 +375,7 @@ export default (tokenName) => {
                 } else if ( /out of gas/.test(err.message) ) {
                   console.error(`tx failed (wrong secret?): ${err.message}`)
                 } else if ( /insufficient funds for gas/.test(err.message) ) {
-                  console.error(`insufficient fund for gas: $(err.message)`)
+                  console.error(`insufficient fund for gas: ${err.message}`)
                   debug('swap.core:flow')('insufficient fund for gas... wait fund or request other side to withdraw')
 
                   flow.setState({

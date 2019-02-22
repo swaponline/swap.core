@@ -107,7 +107,6 @@ class ETH2BTC extends Flow {
             btcScriptCreatingTransactionHash,
           }, { step: 'wait-lock-btc', silentError: true })
         })
-
         flow.swap.room.sendMessage({
           event: 'request btc script',
         })
@@ -135,7 +134,10 @@ class ETH2BTC extends Flow {
           console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
           return
         }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
         const getLockTime = () => utcNow() + 3600 * 1 // 1 hour from now
@@ -164,7 +166,6 @@ class ETH2BTC extends Flow {
           amount: sellAmount,
           targetWallet: flow.swap.destinationSellAddress
         }
-
         const tryCreateSwap = async () => {
           if (!flow.state.isEthContractFunded) {
             try {
@@ -199,13 +200,18 @@ class ETH2BTC extends Flow {
               return null
             }
           }
-
           return true
         }
+<<<<<<< HEAD
 
           const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
             tryCreateSwap(),
           )
+=======
+        const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
+          tryCreateSwap(),
+        )
+>>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
 
         if (isEthContractFunded) {
           debug('swap.core:flow')(`finish step`)
@@ -243,6 +249,10 @@ class ETH2BTC extends Flow {
 
           if (!isEthWithdrawn && secretFromTxhash) {
             debug('swap.core:flow')('got secret from tx', ethSwapWithdrawTransactionHash, secretFromTxhash)
+<<<<<<< HEAD
+=======
+            if (!stopSwap)
+>>>>>>> 9f2c31865ab6e39a5328cd4a2f43cd56ce82dafa
             flow.finishStep({
               isEthWithdrawn: true,
               secret: secretFromTxhash,
@@ -264,14 +274,6 @@ class ETH2BTC extends Flow {
             let secretFromContract = await flow.ethSwap.getSecret({
               participantAddress: participant.eth.address,
             })
-
-            const { isEthWithdrawn } = flow.state
-
-            if (isEthWithdrawn) {
-              console.warn('Secret already exists')
-
-              return false
-            }
 
             if (secretFromContract) {
 
@@ -295,9 +297,18 @@ class ETH2BTC extends Flow {
           checkSecretExist()
         )
 
-        const secretFromContract = await util.helpers.repeatAsyncUntilResult(() =>
-          checkSecretExist()
-        )
+        const secretFromContract = await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
+          const { isEthWithdrawn } = flow.state
+
+          if (isEthWithdrawn) {
+            console.warn('Secret already exists')
+            stopRepeat()
+
+            return false
+          }
+
+          return checkSecretExist()
+        })
 
         if (secretFromContract) {
           debug('swap.core:flow')('got secret from smart contract', secretFromContract)
