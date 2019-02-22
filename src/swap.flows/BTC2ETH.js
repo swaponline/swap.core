@@ -214,7 +214,8 @@ class BTC2ETH extends Flow {
               isBtcScriptFunded: true,
             }, { step: 'lock-btc' })
           } else {
-          throw new Error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+            throw new Error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+          }
         }
       },
 
