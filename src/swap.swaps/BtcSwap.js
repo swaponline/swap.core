@@ -104,6 +104,12 @@ class BtcSwap extends SwapInterface {
     const confirmationsToConfidence = confs => confs > 0 ? 1 : 0
 
     const fetchConfidence = async ({ txid, confirmations }) => {
+      const confidenceFromConfirmations = confirmationsToConfidence(confirmations)
+
+      if (confidenceFromConfirmations > expectedConfidenceLevel) {
+        return confidenceFromConfirmations
+      }
+
       try {
         const info = await this.fetchTxInfo(txid)
 
@@ -123,7 +129,7 @@ class BtcSwap extends SwapInterface {
 
       } catch (err) {
         console.error(`BtcSwap: Error fetching confidence: using confirmations > 0:`, err.message)
-        return confirmationsToConfidence(confirmations)
+        return confidenceFromConfirmations
       }
     }
 
