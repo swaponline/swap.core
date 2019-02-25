@@ -233,7 +233,8 @@ class ETH2BTC extends Flow {
               isEthWithdrawn: true,
               secret: secretFromTxhash,
             }, {step: 'wait-withdraw-eth'})
-          })
+          }
+        })
 
         flow.swap.room.sendMessage({
           event: 'request ethWithdrawTxHash',
@@ -294,6 +295,7 @@ class ETH2BTC extends Flow {
           }, { step: 'wait-withdraw-eth' })
         }
       },
+
 
       // 7. Withdraw
 
