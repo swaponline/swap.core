@@ -5,10 +5,19 @@
  */
 const repeatAsyncUntilResult = (action, delay = 5 * 1000) =>
   new Promise(async (resolve) => {
+    let isStoped = false
+    const stop = () => {
+      isStoped = true
+    }
     const iteration = async () => {
-      const result = await action()
+      const result = await action(stop)
 
-      if (!result || result === 0 || typeof result === 'undefined' || result === null || result === '0x0000000000000000000000000000000000000000') {
+      if (!isStoped && (!result
+        || result === 0
+        || typeof result === 'undefined'
+        || result === null
+        || result === '0x0000000000000000000000000000000000000000')
+      ) {
         setTimeout(iteration, delay)
       } else {
         resolve(result)

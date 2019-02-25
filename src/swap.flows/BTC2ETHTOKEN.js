@@ -47,6 +47,8 @@ export default (tokenName) => {
       this.state = {
         step: 0,
 
+        isStoppedSwap: false,
+
         signTransactionHash: null,
         isSignFetching: false,
         isParticipantSigned: false,
@@ -157,15 +159,13 @@ export default (tokenName) => {
               }
             })
           }
-
-          // Balance on system wallet enough
+            // Balance on system wallet enough
           if (flow.state.isBalanceEnough) {
             await flow.btcSwap.fundScript({
               scriptValues: flow.state.btcScriptValues,
               amount: sellAmount,
             }, (hash) => {
-              onTransactionHash(hash)
-
+            onTransactionHash(hash)
               flow.finishStep({
                 isBtcScriptFunded: true,
               }, { step: 'lock-btc' })
@@ -202,11 +202,11 @@ export default (tokenName) => {
             await util.helpers.repeatAsyncUntilResult(() =>
               checkBTCScriptBalance(),
             )
-
             flow.finishStep({
               isBtcScriptFunded: true,
             }, { step: 'lock-btc' })
           }
+
         },
 
         // 5. Wait participant creates ETH Contract
@@ -235,7 +235,6 @@ export default (tokenName) => {
             if (!flow.state.isEthContractFunded) {
               clearTimeout(timer)
               timer = null
-
               flow.finishStep({
                 isEthContractFunded: true,
               }, { step: 'wait-lock-eth' })
@@ -340,7 +339,7 @@ export default (tokenName) => {
                 } else if ( /out of gas/.test(err.message) ) {
                   console.error(`tx failed (wrong secret?): ${err.message}`)
                 } else if ( /insufficient funds for gas/.test(err.message) ) {
-                  console.error(`insufficient fund for gas: $(err.message)`)
+                  console.error(`insufficient fund for gas: ${err.message}`)
                   debug('swap.core:flow')('insufficient fund for gas... wait fund or request other side to withdraw')
 
                   flow.setState({
@@ -495,6 +494,11 @@ export default (tokenName) => {
     async syncBalance() {
       const { sellAmount } = this.swap
 
+      if (this.state.isStoppedSwap) {
+        console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+        return
+      }
+
       this.setState({
         isBalanceFetching: true,
       })
@@ -539,6 +543,12 @@ export default (tokenName) => {
             isSwapExist: false,
           })
         })
+    }
+
+    stopSwapProcess() {
+      this.setState(() => ({
+        isStoppedSwap: true,
+      }))
     }
 
     async tryWithdraw(_secret) {
