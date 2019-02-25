@@ -47,6 +47,8 @@ export default (tokenName) => {
       this.state = {
         step: 0,
 
+        isStoppedSwap: false,
+
         signTransactionHash: null,
         isSignFetching: false,
         isMeSigned: false,
@@ -537,6 +539,12 @@ export default (tokenName) => {
             isSwapExist: false,
           })
         })
+    }
+
+    stopSwapProcess() {
+      this.setState({
+        isStoppedSwap: true,
+      })
     }
 
     async tryWithdraw(_secret) {

@@ -45,6 +45,8 @@ class ETH2BTC extends Flow {
     this.state = {
       step: 0,
 
+      isStoppedSwap: false,
+
       signTransactionHash: null,
       isSignFetching: false,
       isMeSigned: false,
@@ -104,7 +106,6 @@ class ETH2BTC extends Flow {
             btcScriptCreatingTransactionHash,
           }, { step: 'wait-lock-btc', silentError: true })
         })
-
         flow.swap.room.sendMessage({
           event: 'request btc script',
         })
@@ -156,7 +157,6 @@ class ETH2BTC extends Flow {
           amount: sellAmount,
           targetWallet: flow.swap.destinationSellAddress
         }
-
         const tryCreateSwap = async () => {
           if (!flow.state.isEthContractFunded) {
             try {
@@ -191,10 +191,8 @@ class ETH2BTC extends Flow {
               return null
             }
           }
-
           return true
         }
-
         const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
           tryCreateSwap(),
         )
@@ -297,6 +295,7 @@ class ETH2BTC extends Flow {
           }, { step: 'wait-withdraw-eth' })
         }
       },
+
 
       // 7. Withdraw
 
@@ -409,6 +408,11 @@ class ETH2BTC extends Flow {
   async syncBalance() {
     const { sellAmount } = this.swap
 
+    if (this.state.isStoppedSwap) {
+      console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
+      return
+    }
+
     this.setState({
       isBalanceFetching: true,
     })
@@ -467,6 +471,12 @@ class ETH2BTC extends Flow {
           isSwapExist: false,
         })
       })
+  }
+
+  stopSwapProcess() {
+    this.setState({
+      isStoppedSwap: true,
+    })
   }
 
   async tryWithdraw(_secret) {
