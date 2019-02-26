@@ -120,7 +120,7 @@ export default (tokenName) => {
         // 2. Create secret, secret hash and BTC script
 
         () => {
-          this.swap.room.once('swap is declining', ({ isStoppedSwap }) => {
+          this.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
             if (isStoppedSwap === true) {
               console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
               return

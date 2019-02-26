@@ -229,7 +229,7 @@ class BTC2ETH extends Flow {
           })
         })
 
-        flow.swap.room.once('swap is declining', ({ isStoppedSwap }) => {
+        flow.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
           if (isStoppedSwap === true) {
             console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
             return

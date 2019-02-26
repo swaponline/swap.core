@@ -110,7 +110,7 @@ export default (tokenName) => {
 
         () => {
 
-          this.swap.room.once('swap is declining', ({ isStoppedSwap }) => {
+          this.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
             if (isStoppedSwap === true) {
               console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
               return
