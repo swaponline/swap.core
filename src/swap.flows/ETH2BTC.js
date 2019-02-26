@@ -409,7 +409,6 @@ class ETH2BTC extends Flow {
     const { sellAmount } = this.swap
 
     if (this.state.isStoppedSwap) {
-      console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
       return
     }
 

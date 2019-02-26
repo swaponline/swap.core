@@ -481,6 +481,10 @@ export default (tokenName) => {
     async syncBalance() {
       const {sellAmount} = this.swap
 
+      if (this.state.isStoppedSwap) {
+        return
+      }
+
       this.setState({
         isBalanceFetching: true,
       })

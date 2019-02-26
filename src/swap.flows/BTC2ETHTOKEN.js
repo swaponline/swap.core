@@ -177,6 +177,10 @@ export default (tokenName) => {
               const { scriptAddress } = this.btcSwap.createScript(scriptValues)
               const unspents = await this.btcSwap.fetchUnspents(scriptAddress)
 
+              if (this.state.isStoppedSwap) {
+                return
+              }
+
               if (unspents.length === 0) {
                 return false
               }
@@ -494,11 +498,6 @@ export default (tokenName) => {
     async syncBalance() {
       const { sellAmount } = this.swap
 
-      if (this.state.isStoppedSwap) {
-        console.error(`The Swap ${this.swap.id} was stopped by one of the participants`)
-        return
-      }
-
       this.setState({
         isBalanceFetching: true,
       })
@@ -546,9 +545,9 @@ export default (tokenName) => {
     }
 
     stopSwapProcess() {
-      this.setState(() => ({
+      this.setState({
         isStoppedSwap: true,
-      }))
+      })
     }
 
     async tryWithdraw(_secret) {
