@@ -110,7 +110,7 @@ export default (tokenName) => {
 
         () => {
 
-          this.swap.room.once('swap is decline', ({ isStoppedSwap }) => {
+          this.swap.room.once('swap is declining', ({ isStoppedSwap }) => {
             if (isStoppedSwap === true) {
               console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
               return
@@ -557,7 +557,7 @@ export default (tokenName) => {
       this.setState({
         isStoppedSwap: true,
       })
-      this.sendMessageAbtClose(true)
+      this.sendMessageAboutClose(true)
     }
 
     async tryWithdraw(_secret) {

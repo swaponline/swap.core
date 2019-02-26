@@ -100,7 +100,7 @@ class ETH2BTC extends Flow {
 
       () => {
 
-        flow.swap.room.once('swap is decline', ({ isStoppedSwap }) => {
+        flow.swap.room.once('swap is declining', ({ isStoppedSwap }) => {
           if (isStoppedSwap === true) {
             console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
             return
@@ -484,7 +484,7 @@ class ETH2BTC extends Flow {
     this.setState({
       isStoppedSwap: true,
     })
-    this.sendMessageAbtClose(isStoppedSwapValue)
+    this.sendMessageAboutClose(isStoppedSwapValue)
   }
 
   async tryWithdraw(_secret) {

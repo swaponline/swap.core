@@ -184,9 +184,9 @@ class Flow {
     })
   }
 
-  sendMessageAbtClose(isStoppedSwapValue) {
+  sendMessageAboutClose(isStoppedSwapValue) {
     this.swap.room.sendMessage({
-      event: 'swap is decline',
+      event: 'swap is declining',
       data: {
         isStoppedSwap: isStoppedSwapValue,
       },

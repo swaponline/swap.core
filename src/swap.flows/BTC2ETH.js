@@ -229,7 +229,7 @@ class BTC2ETH extends Flow {
           })
         })
 
-        flow.swap.room.once('swap is decline', ({ isStoppedSwap }) => {
+        flow.swap.room.once('swap is declining', ({ isStoppedSwap }) => {
           if (isStoppedSwap === true) {
             console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
             return
@@ -464,7 +464,7 @@ class BTC2ETH extends Flow {
     this.setState({
       isStoppedSwap: true,
     })
-    this.sendMessageAbtClose(true)
+    this.sendMessageAboutClose(true)
   }
 
   getRefundTxHex = () => {
