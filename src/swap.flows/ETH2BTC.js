@@ -77,6 +77,11 @@ class ETH2BTC extends Flow {
 
     super._persistSteps()
     this._persistState()
+    flow.swap.room.once('request withdraw', () => {
+      flow.setState({
+        withdrawRequestIncoming: true,
+      })
+    })
   }
 
   _persistState() {
@@ -343,6 +348,39 @@ class ETH2BTC extends Flow {
 
       }
     ]
+  }
+
+  acceptWithdrawRequest() {
+    const flow = this
+
+    if (this.state.withdrawRequestAccepted) return
+    this.setState({
+      withdrawRequestAccepted: true,
+    })
+
+    this.swap.room.once('do withdraw', async ({secret}) => {
+      try {
+        const data = {
+          participantAddress: flow.swap.participant.eth.address,
+          secret,
+        }
+
+        await flow.ethSwap.withdrawNoMoney(data, (hash) => {
+          flow.swap.room.sendMessage({
+            event: 'withdraw ready',
+            data: {
+              ethSwapWithdrawTransactionHash: hash,
+            }
+          })
+        })
+      } catch (err) {
+        debug('swap.core:flow')(err.message)
+      }
+    })
+
+    this.swap.room.sendMessage({
+      event: 'accept withdraw request'
+    })
   }
 
   _checkSwapAlreadyExists() {
