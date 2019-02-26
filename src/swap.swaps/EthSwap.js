@@ -95,8 +95,7 @@ class EthSwap extends SwapInterface {
 
     debug('swap.core:swaps')('create after', this.gasPrice)
 
-    const base = BigNumber(10).pow(18)
-    const newAmount = new BigNumber(amount.toString()).times(base).integerValue().toNumber()
+    const newAmount = this.app.env.web3.utils.toWei(amount.toString())
 
     return new Promise(async (resolve, reject) => {
       const hash = `0x${secretHash.replace(/^0x/, '')}`
@@ -145,8 +144,7 @@ class EthSwap extends SwapInterface {
 
     await this.updateGas()
 
-    const base = BigNumber(10).pow(18)
-    const newAmount = new BigNumber(amount.toString()).times(base).integerValue().toNumber()
+    const newAmount = this.app.env.web3.utils.toWei(amount.toString())
 
     return new Promise(async (resolve, reject) => {
       const hash = `0x${secretHash.replace(/^0x/, '')}`
@@ -209,23 +207,26 @@ class EthSwap extends SwapInterface {
    * @param {string} data.participantAddress
    * @returns {Promise}
    */
-  checkSwapExists(data) {
+  swaps(data) {
     const { ownerAddress, participantAddress } = data
 
-    return new Promise(async (resolve, reject) => {
-      let swap
+    return this.contract.methods.swaps(ownerAddress, participantAddress).call()
+  }
 
-      try {
-        swap = await this.contract.methods.swaps(ownerAddress, participantAddress).call()
-      }
-      catch (err) {
-        reject(err)
-        return
-      }
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.ownerAddress
+   * @param {string} data.participantAddress
+   * @returns {Promise}
+   */
+  checkSwapExists(data) {
+    return new Promise(async (resolve) => {
+      const swap = await this.swaps(data)
 
       debug('swap.core:swaps')('swapExists', swap)
 
-      const balance = swap ? parseInt(swap.balance) : 0
+      const balance = swap && swap.balance ? parseInt(swap.balance) : 0
       resolve(balance > 0)
     })
   }
@@ -348,7 +349,7 @@ class EthSwap extends SwapInterface {
    */
   async calcWithdrawNoMoneyGas(data) {
     return this.calcWithdrawOtherGas({
-      ownerAddress: this.app.services.auth.eth.address,
+      ownerAddress: this.app.services.auth.accounts.eth.address,
       participantAddress: data.participantAddress,
       secret: data.secret,
     })
@@ -364,7 +365,7 @@ class EthSwap extends SwapInterface {
    */
   async withdrawNoMoney(data, handleTransactionHash) {
     return this.withdrawOther({
-      ownerAddress: this.app.services.auth.eth.address,
+      ownerAddress: this.app.services.auth.accounts.eth.address,
       participantAddress: data.participantAddress,
       secret: data.secret,
     }, handleTransactionHash)

@@ -32,6 +32,7 @@ const checkIncomeOrderFormat = (order) => {
     isProcessing: '?Boolean',
     isRequested: '?Boolean',
     isPartial: '?Boolean',
+    isHidden: '?Boolean',
     destination: util.typeforce.t.maybe({
       ownerAddress: '?String',
       participantAddress: '?String',
@@ -80,6 +81,8 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
     this.app.services.room.on('new orders', this._handleNewOrders)
     this.app.services.room.on('new order', this._handleNewOrder)
     this.app.services.room.on('remove order', this._handleRemoveOrder)
+    this.app.services.room.on('hide orders', this._handleHideOrders)
+    this.app.services.room.on('show orders', this._handleShowOrders)
 
     this.getUniqueId = (() => {
       let id = Date.now()
@@ -89,6 +92,22 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
 
   _handleReady = () => {
     this._persistMyOrders()
+  }
+
+  _handleHideOrders = ({ fromPeer }) => {
+    this.items.forEach((order) => {
+      if (order && order.owner && order.owner.peer === fromPeer) {
+        order.isHidden = true
+      }
+    })
+  }
+
+  _handleShowOrders = ({ fromPeer }) => {
+    this.items.forEach((order) => {
+      if (order && order.owner && order.owner.peer === fromPeer) {
+        order.isHidden = false
+      }
+    })
   }
 
   _handleUserOnline = (peer) => {
@@ -108,6 +127,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
         'isRequested',
         'isProcessing',
         'isPartial',
+        'isHidden',
         'destination',
       ))
 
@@ -183,12 +203,17 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
   _create(data) {
     const { id, buyAmount, sellAmount, buyCurrency, sellCurrency, ...rest } = data
 
+    const buy = buyCurrency.toUpperCase()
+    const sell = sellCurrency.toUpperCase()
+    const roundedBuyAmount = BigNumber(buyAmount).dp(constants.COINS_PRECISION[buy])
+    const roundedSellAmount = BigNumber(sellAmount).dp(constants.COINS_PRECISION[sell])
+
     const order = new Order(this.app, this, {
-      id: id || this.getUniqueId(),
-      buyAmount: new BigNumber(String(buyAmount)),
-      sellAmount: new BigNumber(String(sellAmount)),
-      buyCurrency: buyCurrency.toUpperCase(),
-      sellCurrency: sellCurrency.toUpperCase(),
+      id:           id || this.getUniqueId(),
+      buyAmount:    roundedBuyAmount,
+      sellAmount:   roundedSellAmount,
+      buyCurrency:  buy,
+      sellCurrency: sell,
       ...rest,
     })
 
@@ -259,6 +284,7 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
       'isRequested',
       'isProcessing',
       'isPartial',
+      'isHidden',
       'destination',
     ))
 
@@ -303,12 +329,44 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
           'isRequested',
           'isProcessing',
           'isPartial',
+          'isHidden',
           'destination',
         ),
       },
     })
 
     return order
+  }
+
+  hideMyOrders() {
+    this.items.forEach((order) => {
+      if (order && order.owner && order.owner.peer === this.app.services.room.peer) {
+        order.isHidden = true
+      }
+    })
+    this._saveMyOrders()
+    this.app.services.room.sendMessageRoom({
+      event: 'hide orders',
+      data: {},
+    })
+  }
+
+  showMyOrders() {
+    this.items.forEach((order) => {
+      if (order && order.owner && order.owner.peer === this.app.services.room.peer) {
+        order.isHidden = false
+      }
+    })
+    this._saveMyOrders()
+    this.app.services.room.sendMessageRoom({
+      event: 'show orders',
+      data: {},
+    })
+  }
+
+  hasHiddenOrders() {
+    let myHiddenOrders = this.items.filter(({ isHidden, owner: { peer } }) => (peer === this.app.services.room.peer && isHidden))
+    return myHiddenOrders.length ? true : false
   }
 
   /**

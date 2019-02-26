@@ -89,7 +89,9 @@ class EthTokenSwap extends SwapInterface {
    */
   async approve(data, handleTransactionHash) {
     const { amount } = data
-    const newAmount = new BigNumber(String(amount)).times(new BigNumber(10).pow(this.decimals)).decimalPlaces(this.decimals).toNumber()
+
+    const exp = BigNumber(10).pow(this.decimals)
+    const newAmount = BigNumber(amount).times(exp).toString()
 
     await this.updateGas()
 
@@ -168,7 +170,9 @@ class EthTokenSwap extends SwapInterface {
    */
   async createSwap(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount, calcFee } = data
-    const newAmount = new BigNumber(String(amount)).times(new BigNumber(10).pow(this.decimals)).decimalPlaces(this.decimals).toNumber()
+
+    const exp = BigNumber(10).pow(this.decimals)
+    const newAmount = BigNumber(amount).times(exp).toString()
 
     await this.updateGas()
 
@@ -222,7 +226,9 @@ class EthTokenSwap extends SwapInterface {
    */
   async createSwapTarget(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount , targetWallet, calcFee } = data
-    const newAmount = new BigNumber(String(amount)).times(new BigNumber(10).pow(this.decimals)).decimalPlaces(this.decimals).toNumber()
+
+    const exp = BigNumber(10).pow(this.decimals)
+    const newAmount = BigNumber(amount).times(exp).toString()
 
     await this.updateGas()
 
@@ -273,27 +279,26 @@ class EthTokenSwap extends SwapInterface {
    * @param {string} data.participantAddress
    * @returns {Promise}
    */
-  checkSwapExists(data) {
+  swaps(data) {
     const { ownerAddress, participantAddress } = data
 
-    return new Promise(async (resolve, reject) => {
-      let swap
+    return this.contract.methods.swaps(ownerAddress, participantAddress).call()
+  }
 
-      debug('swap.core:swaps')(`swaps[${ownerAddress}, ${participantAddress}]`)
-
-      try {
-        swap = await this.contract.methods.swaps(ownerAddress, participantAddress).call()
-      }
-      catch (err) {
-        reject(err)
-        return
-      }
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.ownerAddress
+   * @param {string} data.participantAddress
+   * @returns {Promise}
+   */
+  checkSwapExists(data) {
+    return new Promise(async (resolve) => {
+      const swap = await this.swaps(data)
 
       debug('swap.core:swaps')('swapExists', swap)
 
       const balance = swap && swap.balance ? parseInt(swap.balance) : 0
-      debug('swap.core:swaps')(`resolve(${balance})`)
-
       resolve(balance > 0)
     })
   }
@@ -433,7 +438,7 @@ class EthTokenSwap extends SwapInterface {
    */
   async calcWithdrawNoMoneyGas(data) {
     return this.calcWithdrawOtherGas({
-      ownerAddress: this.app.services.auth.eth.address,
+      ownerAddress: this.app.services.auth.accounts.eth.address,
       participantAddress: data.participantAddress,
       secret: data.secret,
     })
@@ -449,7 +454,7 @@ class EthTokenSwap extends SwapInterface {
    */
   async withdrawNoMoney(data, handleTransactionHash) {
     return this.withdrawOther({
-      ownerAddress: this.app.services.auth.eth.address,
+      ownerAddress: this.app.services.auth.accounts.eth.address,
       participantAddress: data.participantAddress,
       secret: data.secret,
     }, handleTransactionHash)
