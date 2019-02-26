@@ -419,17 +419,10 @@ class ETH2BTC extends Flow {
   async syncBalance() {
     const { sellAmount } = this.swap
 
-    const isStoppedSwapValue = this.state.isStoppedSwap
-
     if (this.state.isStoppedSwap) {
-      this.swap.room.sendMessage({
-        event: 'swap is decline',
-        data: {
-          isStoppedSwap: isStoppedSwapValue,
-        },
-      })
-      console.warn(`The Swap ${this.swap.id} was closed by you`)
-      return
+      const isStoppedSwapValue = this.state.isStoppedSwap
+
+      this.sendMessageAbtClose(isStoppedSwapValue)
     }
 
     this.setState({

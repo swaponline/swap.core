@@ -178,17 +178,10 @@ class BTC2ETH extends Flow {
 
           const checkBTCScriptBalance = async () => {
 
-            const isStoppedSwapValue = this.state.isStoppedSwap
-
             if (this.state.isStoppedSwap) {
-              flow.swap.room.sendMessage({
-                event: 'swap is decline',
-                data: {
-                  isStoppedSwap: isStoppedSwapValue,
-                },
-              })
-              console.warn(`The Swap ${this.swap.id} was closed by you`)
-              return
+              const isStoppedSwapValue = this.state.isStoppedSwap
+
+              this.sendMessageAbtClose(isStoppedSwapValue)
             }
 
             const { scriptAddress } = this.btcSwap.createScript(scriptValues)

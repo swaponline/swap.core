@@ -492,15 +492,11 @@ export default (tokenName) => {
     async syncBalance() {
       const {sellAmount} = this.swap
 
-      const isStoppedSwapValue = this.state.isStoppedSwap
+      if (this.state.isStoppedSwap) {
+        const isStoppedSwapValue = this.state.isStoppedSwap
 
-      this.swap.room.once('swap is decline', ({ isStoppedSwap }) => {
-        console.log('isStoppedSwap', isStoppedSwap)
-        if (isStoppedSwap === true) {
-          console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
-          return
-        }
-      })
+        this.sendMessageAbtClose(isStoppedSwapValue)
+      }
 
       this.setState({
         isBalanceFetching: true,

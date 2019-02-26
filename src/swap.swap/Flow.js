@@ -179,12 +179,21 @@ class Flow {
   }
 
   swapDecline() {
-    console.log('sent')
     this.swap.room.sendMessage({
       event: 'stop swap'
     })
   }
 
+  sendMessageAbtClose(isStoppedSwapValue) {
+    this.swap.room.sendMessage({
+      event: 'swap is decline',
+      data: {
+        isStoppedSwap: isStoppedSwapValue,
+      },
+    })
+    console.warn(`The Swap ${this.swap.id} was closed by you`)
+    return
+  }
 }
 
 

@@ -186,17 +186,10 @@ export default (tokenName) => {
               const { scriptAddress } = this.btcSwap.createScript(scriptValues)
               const unspents = await this.btcSwap.fetchUnspents(scriptAddress)
 
-              const isStoppedSwapValue = this.state.isStoppedSwap
-
               if (this.state.isStoppedSwap) {
-                flow.swap.room.sendMessage({
-                  event: 'swap is decline',
-                  data: {
-                    isStoppedSwap: isStoppedSwapValue,
-                  },
-                })
-                console.warn(`The Swap ${this.swap.id} was closed by you`)
-                return
+                const isStoppedSwapValue = this.state.isStoppedSwap
+
+                this.sendMessageAbtClose(isStoppedSwapValue)
               }
 
               if (unspents.length === 0) {
