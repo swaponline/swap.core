@@ -109,6 +109,17 @@ export default (tokenName) => {
         // 2. Wait participant create, fund BTC Script
 
         () => {
+
+          this.swap.room.once('swap is decline', ({ isStoppedSwap }) => {
+            this.setState({
+              isStoppedSwap,
+            })
+            if (isStoppedSwap === true) {
+              console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
+              return
+            }
+          })
+
           flow.swap.room.once('create btc script', ({scriptValues, btcScriptCreatingTransactionHash}) => {
             flow.finishStep({
               secretHash: scriptValues.secretHash,
@@ -481,9 +492,15 @@ export default (tokenName) => {
     async syncBalance() {
       const {sellAmount} = this.swap
 
-      if (this.state.isStoppedSwap) {
-        return
-      }
+      const isStoppedSwapValue = this.state.isStoppedSwap
+
+      this.swap.room.once('swap is decline', ({ isStoppedSwap }) => {
+        console.log('isStoppedSwap', isStoppedSwap)
+        if (isStoppedSwap === true) {
+          console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
+          return
+        }
+      })
 
       this.setState({
         isBalanceFetching: true,

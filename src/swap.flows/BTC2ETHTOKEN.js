@@ -120,6 +120,15 @@ export default (tokenName) => {
         // 2. Create secret, secret hash and BTC script
 
         () => {
+          this.swap.room.once('swap is decline', ({ isStoppedSwap }) => {
+            this.setState({
+              isStoppedSwap,
+            })
+            if (isStoppedSwap === true) {
+              console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
+              return
+            }
+          })
           // this.submitSecret()
         },
 
@@ -177,7 +186,16 @@ export default (tokenName) => {
               const { scriptAddress } = this.btcSwap.createScript(scriptValues)
               const unspents = await this.btcSwap.fetchUnspents(scriptAddress)
 
+              const isStoppedSwapValue = this.state.isStoppedSwap
+
               if (this.state.isStoppedSwap) {
+                flow.swap.room.sendMessage({
+                  event: 'swap is decline',
+                  data: {
+                    isStoppedSwap: isStoppedSwapValue,
+                  },
+                })
+                console.warn(`The Swap ${this.swap.id} was closed by you`)
                 return
               }
 
@@ -210,7 +228,6 @@ export default (tokenName) => {
               isBtcScriptFunded: true,
             }, { step: 'lock-btc' })
           }
-
         },
 
         // 5. Wait participant creates ETH Contract

@@ -178,7 +178,16 @@ class BTC2ETH extends Flow {
 
           const checkBTCScriptBalance = async () => {
 
+            const isStoppedSwapValue = this.state.isStoppedSwap
+
             if (this.state.isStoppedSwap) {
+              flow.swap.room.sendMessage({
+                event: 'swap is decline',
+                data: {
+                  isStoppedSwap: isStoppedSwapValue,
+                },
+              })
+              console.warn(`The Swap ${this.swap.id} was closed by you`)
               return
             }
 
@@ -227,6 +236,16 @@ class BTC2ETH extends Flow {
           flow.setState({
             ethSwapCreationTransactionHash,
           })
+        })
+
+        flow.swap.room.once('swap is decline', ({ isStoppedSwap }) => {
+          this.setState({
+            isStoppedSwap,
+          })
+          if (isStoppedSwap === true) {
+            console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
+            return
+          }
         })
 
         const checkEthBalance = () => {
