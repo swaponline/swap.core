@@ -120,12 +120,6 @@ export default (tokenName) => {
         // 2. Create secret, secret hash and BTC script
 
         () => {
-          this.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
-            if (isStoppedSwap === true) {
-              console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
-              return
-            }
-          })
           // this.submitSecret()
         },
 
@@ -439,7 +433,16 @@ export default (tokenName) => {
             resolve( balance );
           }
           else {
-            setTimeout( checkEthBalance, 20 * 1000 );
+            setTimeout(() => {
+              this.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
+                this.setState({
+                  isStoppedSwap
+                })
+                console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
+              })
+              checkEthBalance()
+            },
+              5 * 1000 );
           }
         }
 
@@ -554,6 +557,7 @@ export default (tokenName) => {
         isStoppedSwap: true,
       })
       this.sendMessageAboutClose(true)
+      console.warn(`The Swap ${this.swap.id} was closed by you`)
     }
 
     async tryWithdraw(_secret) {

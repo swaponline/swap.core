@@ -229,13 +229,6 @@ class BTC2ETH extends Flow {
           })
         })
 
-        flow.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
-          if (isStoppedSwap === true) {
-            console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
-            return
-          }
-        })
-
         const checkEthBalance = () => {
           timer = setTimeout(async () => {
             const balance = await flow.ethSwap.getBalance({
@@ -250,9 +243,15 @@ class BTC2ETH extends Flow {
               }
             }
             else {
+              flow.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
+                this.setState({
+                  isStoppedSwap
+                })
+                console.warn(`The Swap ${this.swap.id} was stopped by the other swap participant`)
+              })
               checkEthBalance()
             }
-          }, 20 * 1000)
+          }, 5 * 1000)
         }
 
         checkEthBalance()
@@ -465,6 +464,7 @@ class BTC2ETH extends Flow {
       isStoppedSwap: true,
     })
     this.sendMessageAboutClose(true)
+    console.warn(`The Swap ${this.swap.id} was closed by you`)
   }
 
   getRefundTxHex = () => {

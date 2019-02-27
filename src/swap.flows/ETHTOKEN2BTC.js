@@ -109,13 +109,15 @@ export default (tokenName) => {
         // 2. Wait participant create, fund BTC Script
 
         () => {
-
-          this.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
-            if (isStoppedSwap === true) {
+          setInterval(() => {
+            flow.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
+              this.setState({
+                isStoppedSwap
+              })
               console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
-              return
-            }
-          })
+            })
+          }, 5000)
+
 
           flow.swap.room.once('create btc script', ({scriptValues, btcScriptCreatingTransactionHash}) => {
             flow.finishStep({
@@ -558,6 +560,7 @@ export default (tokenName) => {
         isStoppedSwap: true,
       })
       this.sendMessageAboutClose(true)
+      console.warn(`The Swap ${this.swap.id} was closed by you`)
     }
 
     async tryWithdraw(_secret) {

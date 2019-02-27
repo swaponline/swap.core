@@ -100,12 +100,14 @@ class ETH2BTC extends Flow {
 
       () => {
 
-        flow.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
-          if (isStoppedSwap === true) {
+        setInterval(() => {
+          flow.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
+            this.setState({
+              isStoppedSwap
+            })
             console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
-            return
-          }
-        })
+          })
+        }, 5000)
 
         flow.swap.room.once('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
           flow.finishStep({
@@ -484,7 +486,8 @@ class ETH2BTC extends Flow {
     this.setState({
       isStoppedSwap: true,
     })
-    this.sendMessageAboutClose(isStoppedSwapValue)
+    this.sendMessageAboutClose(true)
+    console.warn(`The Swap ${this.swap.id} was closed by you`)
   }
 
   async tryWithdraw(_secret) {
