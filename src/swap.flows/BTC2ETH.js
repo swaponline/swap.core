@@ -77,7 +77,6 @@ class BTC2ETH extends Flow {
       isFinished: false,
       isSwapExist: false,
     }
-
     super._persistSteps()
     this._persistState()
   }
@@ -242,14 +241,11 @@ class BTC2ETH extends Flow {
                 }, { step: 'wait-lock-eth' })
               }
             }
-            else {
-              flow.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
-                this.setState({
-                  isStoppedSwap
-                })
-                console.warn(`The Swap ${this.swap.id} was stopped by the other swap participant`)
-              })
+            else if (!this.state.isStoppedSwap) {
+              this.swap.room.once('swap was canceled', () => {this.stopSwapProcessParticipant()} )
               checkEthBalance()
+            } else {
+              clearInterval(timer)
             }
           }, 5 * 1000)
         }
@@ -459,11 +455,18 @@ class BTC2ETH extends Flow {
     }, { step: 'sync-balance' })
   }
 
+  stopSwapProcessParticipant() {
+    this.setState({
+      isStoppedSwap: true,
+    })
+    console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
+  }
+
   stopSwapProcess() {
     this.setState({
       isStoppedSwap: true,
     })
-    this.sendMessageAboutClose(true)
+    this.sendMessageAboutClose()
     console.warn(`The Swap ${this.swap.id} was closed by you`)
   }
 

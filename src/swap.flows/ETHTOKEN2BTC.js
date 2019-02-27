@@ -110,12 +110,7 @@ export default (tokenName) => {
 
         () => {
           setInterval(() => {
-            flow.swap.room.once('swap was canceled', ({ isStoppedSwap }) => {
-              this.setState({
-                isStoppedSwap
-              })
-              console.warn(`The Swap ${this.swap.id} was stopped by one of the participants`)
-            })
+            this.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() )
           }, 5000)
 
 
@@ -555,12 +550,18 @@ export default (tokenName) => {
         })
     }
 
+    stopSwapProcessParticipant() {
+      this.setState({
+        isStoppedSwap: true,
+      })
+      console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
+    }
+
     stopSwapProcess() {
       this.setState({
         isStoppedSwap: true,
       })
-      this.sendMessageAboutClose(true)
-      console.warn(`The Swap ${this.swap.id} was closed by you`)
+      this.sendMessageAboutClose()
     }
 
     async tryWithdraw(_secret) {
