@@ -102,8 +102,8 @@ class ETH2BTC extends Flow {
         let timer
 
         timer = setInterval(() => {
-          if (!this.state.isStoppedSwap) {
-            this.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() )
+          if (!this.state.isStoppedSwap && this.state.step === 2) {
+            flow.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() )
           } else {
             clearInterval(timer)
           }
