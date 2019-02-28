@@ -111,8 +111,6 @@ export default (tokenName) => {
         () => {
           let timer
 
-          let timer
-
           timer = setInterval(() => {
             if (!this.state.isStoppedSwap && this.state.step === 2) {
               flow.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() )
