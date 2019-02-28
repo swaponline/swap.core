@@ -63,16 +63,20 @@ class BtcSwap extends SwapInterface {
    * @param {boolean} options.inSatoshis
    * @param {Number} options.size
    * @param {String} options.speed
-   * @returns {BigNumber|Number}
+   * @returns {BigNumber}
    * @public
    */
   async getTxFee({ inSatoshis, size = 550, speed = 'fast' } = {}) {
     try {
       const estimatedRate = await this.estimateFeeRate({ speed })
-      const estimatedFee = Math.max(DUST, Math.ceil(estimatedRate * size / 1024))
+      const estimatedFee = BigNumber.maximum(DUST, BigNumber(estimatedRate)
+        .multipliedBy(size)
+        .div(1024)
+        .dp(0, BigNumber.ROUND_UP)
+      )
 
-      if (Number.isInteger(Number(estimatedFee))) {
-        this.feeValue = Number(estimatedFee)
+      if (estimatedFee.isGreaterThan(0)) {
+        this.feeValue = estimatedFee
       } else {
         throw new Error(`Not an Integer: ${estimatedFee}`)
       }
@@ -82,7 +86,7 @@ class BtcSwap extends SwapInterface {
 
     return inSatoshis
       ? this.feeValue
-      : BigNumber(this.feeValue).div(1e8)
+      : this.feeValue.div(1e8)
   }
 
   /**
@@ -280,7 +284,7 @@ class BtcSwap extends SwapInterface {
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue
 
-        if (totalUnspent < feeValue + fundValue) {
+        if (BigNumber(totalUnspent).isLessThan(BigNumber(feeValue.plus(fundValue)))) {
           throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue} + ${fundValue}`)
         }
 
@@ -358,7 +362,7 @@ class BtcSwap extends SwapInterface {
     const feeValue      = this.feeValue // TODO how to get this value
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
 
-    if (totalUnspent < feeValue) {
+    if (BigNumber(totalUnspent).isLessThan(feeValue)) {
       throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue}`)
     }
 
