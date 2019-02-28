@@ -69,7 +69,7 @@ test('btcSwap can estimate tx fee', async () => {
   const expected = 546
 
   expect(result > 0).toBeTruthy()
-  expect(result).toBeGreaterThanOrEqual(expected)
+  expect(result.toNumber()).toBeGreaterThanOrEqual(expected)
 })
 
 test('btcSwap can estimate confidence factor', async () => {
