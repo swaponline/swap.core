@@ -17,6 +17,7 @@ const WEB3_PROVIDERS = {
 }
 
 const ETHERCHAIN_API = `https://www.etherchain.org/api/gasPriceOracle`
+const ETHGASSTATION_API = `https://ethgasstation.info/json/ethgasAPI.json`
 const BigNumber = require('bignumber.js')
 const TEN = new BigNumber(10)
 
@@ -82,13 +83,20 @@ class Ethereum {
   async estimateGasPrice(options) {
     try {
       return await this.estimateGasPriceEtherChain(options)
-    } catch (err) {
-      console.error(`EstimateFeeError: EtherChain ${err.message}, falling back to Web3 estimation...`)
-      return await this.estimateGasPriceWeb3(options)
+    } catch (etherChainError) {
+      console.error(`EstimateFeeError: EtherChain ${etherChainError.message}, falling back to EthGasStation estimation...`)
     }
+
+    try {
+      return await this.estimateGasPriceEthGasStation(options)
+    } catch(ethGasStationError) {
+      console.error(`EstimateFeeError: EthGasStation ${ethGasStationError.message}, falling back to Web3 estimation...`)
+    }
+
+    return await this.estimateGasPriceWeb3(options)
   }
 
-  async estimateGasPriceWeb3({ speed = 'normal' } = {}) {
+  async estimateGasPriceWeb3({ speed = 'fast' } = {}) {
     const _multiplier = (() => {
       switch (speed) {
         case 'fast':    return 2
@@ -108,10 +116,10 @@ class Ethereum {
       })
     )
 
-    return BigNumber(gasPrice).times(_multiplier).toNumber()
+    return BigNumber(gasPrice).multipliedBy(_multiplier)
   }
 
-  estimateGasPriceEtherChain({ speed = 'normal' } = {}) {
+  estimateGasPriceEtherChain({ speed = 'fast' } = {}) {
     const _speed = (() => {
       switch (speed) {
         case 'fast':    return 'fast'
@@ -124,7 +132,24 @@ class Ethereum {
     return request
       .get(`${ETHERCHAIN_API}`)
       .then(json => JSON.parse(json))
-      .then(fees => Number(fees[_speed]))
+      .then(fees => BigNumber(fees[_speed]).multipliedBy(1e9))
+      .catch(error => filterError(error))
+  }
+
+  estimateGasPriceEthGasStation({ speed = 'fast' }) {
+    const _speed = (() => {
+      switch (speed) {
+        case 'fast':    return 'fast'
+        case 'normal':  return 'average'
+        case 'slow':    return 'safeLow'
+        default:      return 'average'
+      }
+    })()
+
+    return request
+      .get(`${ETHGASSTATION_API}`)
+      .then(json => JSON.parse(json))
+      .then(fees => BigNumber(fees[_speed]).dividedBy(10).multipliedBy(1e9))
       .catch(error => filterError(error))
   }
 }
