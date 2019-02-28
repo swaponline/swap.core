@@ -70,7 +70,7 @@ class BTC2ETH extends Flow {
 
       refundTransactionHash: null,
       isRefunded: false,
-
+      withdrawFee: null,
       refundTxHex: null,
       isFinished: false,
       isSwapExist: false,
@@ -259,11 +259,11 @@ class BTC2ETH extends Flow {
 
       async () => {
         const { buyAmount, participant } = flow.swap
-        const { secretHash } = flow.state
+        const { secretHash, secret } = flow.state
 
         const data = {
           ownerAddress:   participant.eth.address,
-          secret:         flow.state.secret,
+          secret,
         }
 
         const balanceCheckError = await flow.ethSwap.checkBalance({
@@ -323,6 +323,19 @@ class BTC2ETH extends Flow {
         const tryWithdraw = async () => {
           if (!flow.state.isEthWithdrawn) {
             try {
+              const { withdrawFee } = flow.state
+
+              if (!withdrawFee) {
+                const withdrawNeededGas = await flow.ethSwap.calcWithdrawGas({
+                  ownerAddress: data.ownerAddress,
+                  secret,
+                })
+                flow.setState({
+                  withdrawFee: withdrawNeededGas,
+                })
+                debug('swap.core:flow')('withdraw gas fee', withdrawNeededGas)
+              }
+
               await flow.ethSwap.withdraw(data, (hash) => {
                 flow.setState({
                   ethSwapWithdrawTransactionHash: hash,
