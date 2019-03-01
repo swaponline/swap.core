@@ -410,7 +410,17 @@ class BTC2ETH extends Flow {
     ]
   }
 
+  /**
+   * TODO - backport version compatibility
+   *  mapped to sendWithdrawRequestToAnotherParticipant
+   *  remove at next iteration after client software update
+   *  Used in swap.react
+   */
   sendWithdrawRequest() {
+    return this.sendWithdrawRequestToAnotherParticipant()
+  }
+
+  sendWithdrawRequestToAnotherParticipant() {
     const flow = this
 
     if (!this.state.requireWithdrawFee) return
