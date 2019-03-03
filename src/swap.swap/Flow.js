@@ -184,6 +184,11 @@ class Flow {
     })
     console.warn(`The Swap ${this.swap.id} was closed by you`)
   }
+
+  stopSwapProcessParticipant() {
+    console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
+    return true
+  }
 }
 
 

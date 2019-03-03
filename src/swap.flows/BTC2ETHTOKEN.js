@@ -435,10 +435,8 @@ export default (tokenName) => {
           }
           else {
             checkEthBalance()
-            await util.helpers.repeatAsyncUntilResult(() => {
-              if (!this.state.isStoppedSwap) {
-                this.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() )
-              }},
+            await util.helpers.repeatAsyncUntilResult(() =>
+              this.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() ),
             )
           }
         }
@@ -547,13 +545,6 @@ export default (tokenName) => {
             isSwapExist: false,
           })
         })
-    }
-
-    stopSwapProcessParticipant() {
-      this.setState({
-        isStoppedSwap: true,
-      })
-      console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
     }
 
     stopSwapProcess() {
