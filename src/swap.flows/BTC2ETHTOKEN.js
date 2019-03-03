@@ -159,7 +159,7 @@ export default (tokenName) => {
               }
             })
           }
-            // Balance on system wallet enough
+          // Balance on system wallet enough
           if (flow.state.isBalanceEnough) {
             await flow.btcSwap.fundScript({
               scriptValues: flow.state.btcScriptValues,
@@ -434,15 +434,12 @@ export default (tokenName) => {
             resolve( balance );
           }
           else {
-            timer = setTimeout(() => {
-              if(!this.state.isStoppedSwap) {
+            checkEthBalance()
+            await util.helpers.repeatAsyncUntilResult(() =>
+              if (!this.state.isStoppedSwap) {
                 this.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() )
-                checkEthBalance()
-              } else {
-                clearInterval(timer)
-              }
-            },
-              5 * 1000 );
+              },
+            )
           }
         }
 
