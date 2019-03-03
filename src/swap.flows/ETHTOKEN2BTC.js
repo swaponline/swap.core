@@ -108,7 +108,7 @@ export default (tokenName) => {
 
         // 2. Wait participant create, fund BTC Script
 
-        () => {
+         async () => {
 
           await util.helpers.repeatAsyncUntilResult(() =>
             if (!this.state.isStoppedSwap && this.state.step === 2) {
