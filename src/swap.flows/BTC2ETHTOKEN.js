@@ -435,10 +435,10 @@ export default (tokenName) => {
           }
           else {
             checkEthBalance()
-            await util.helpers.repeatAsyncUntilResult(() =>
+            await util.helpers.repeatAsyncUntilResult(() => {
               if (!this.state.isStoppedSwap) {
                 this.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() )
-              },
+              }},
             )
           }
         }

@@ -110,10 +110,10 @@ export default (tokenName) => {
 
          async () => {
 
-          await util.helpers.repeatAsyncUntilResult(() =>
+          await util.helpers.repeatAsyncUntilResult(() => {
             if (!this.state.isStoppedSwap && this.state.step === 2) {
               flow.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() )
-            }
+            }},
           )
 
           flow.swap.room.once('create btc script', ({scriptValues, btcScriptCreatingTransactionHash}) => {

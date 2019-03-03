@@ -99,10 +99,10 @@ class ETH2BTC extends Flow {
       // 2. Wait participant create, fund BTC Script
 
       async () => {
-        await util.helpers.repeatAsyncUntilResult(() =>
+        await util.helpers.repeatAsyncUntilResult(() => {
           if (!this.state.isStoppedSwap && this.state.step === 2) {
             flow.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() )
-          },
+          }},
         )
 
         flow.swap.room.once('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
