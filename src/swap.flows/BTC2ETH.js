@@ -222,8 +222,8 @@ class BTC2ETH extends Flow {
         const { participant } = flow.swap
         let timer
 
-         util.helpers.repeatAsyncUntilResult(() =>
-          this.swap.room.once('swap was canceled', () => {this.stopSwapProcessParticipant() }),
+        util.helpers.repeatAsyncUntilResult(() =>
+          flow.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() ),
         )
 
         flow.swap.room.once('create eth contract', ({ ethSwapCreationTransactionHash }) => {

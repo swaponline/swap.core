@@ -14,6 +14,7 @@ class Flow {
 
     this.state = {
       step: 0,
+      stopSending: false,
       isWaitingForOwner: false,
     }
 
@@ -186,8 +187,15 @@ class Flow {
   }
 
   stopSwapProcessParticipant() {
-    console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
-    return true
+    if (!this.state.stopSending) {
+      console.log(this.state.stopSending)
+
+      console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
+      this.setState(() => ({
+        stopSending: true,
+      }))
+      return true
+    }
   }
 }
 

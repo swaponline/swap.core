@@ -436,7 +436,7 @@ export default (tokenName) => {
           else {
             checkEthBalance()
             await util.helpers.repeatAsyncUntilResult(() =>
-              this.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() ),
+              flow.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() ),
             )
           }
         }
