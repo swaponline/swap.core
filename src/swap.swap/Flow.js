@@ -14,7 +14,6 @@ class Flow {
 
     this.state = {
       step: 0,
-      stopSending: false,
       isWaitingForOwner: false,
     }
 
@@ -181,19 +180,13 @@ class Flow {
 
   sendMessageAboutClose() {
     this.swap.room.sendMessage({
-      event: 'swap was canceled',
+      event: 'swap was canceled',// сее сообщение нужно для получение инфорамации о заверщении свапа в реакте
+    })
+
+    this.swap.room.sendMessage({
+      event: 'swap was canceled for core',// сее сообщение нужно для изменения стейта и получения информации о заверщении свапа в коре
     })
     console.warn(`The Swap ${this.swap.id} was closed by you`)
-  }
-
-  stopSwapProcessParticipant() {
-    if (!this.state.stopSending) {
-      console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
-      this.setState(() => ({
-        stopSending: true,
-      }))
-      return true
-    }
   }
 }
 

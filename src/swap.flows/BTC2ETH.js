@@ -77,6 +77,14 @@ class BTC2ETH extends Flow {
       isFinished: false,
       isSwapExist: false,
     }
+
+    this.swap.room.once('swap was canceled for core', () => {
+      console.error('Swap was stopped')
+      this.setState({
+        isStoppedSwap: true,
+      })
+    })
+
     super._persistSteps()
     this._persistState()
   }
@@ -177,10 +185,6 @@ class BTC2ETH extends Flow {
 
           const checkBTCScriptBalance = async () => {
 
-            if (this.state.isStoppedSwap) {
-              return
-            }
-
             const { scriptAddress } = this.btcSwap.createScript(scriptValues)
             const unspents = await this.btcSwap.fetchUnspents(scriptAddress)
 
@@ -206,13 +210,19 @@ class BTC2ETH extends Flow {
             }
           }
 
-          await util.helpers.repeatAsyncUntilResult(() =>
-            checkBTCScriptBalance(),
-          )
+          await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
+            if (!this.state.isStoppedSwap) {
+              checkBTCScriptBalance()
+            } else {
+              stopRepeat()
+            }
+          })
 
-          flow.finishStep({
-            isBtcScriptFunded: true,
-          }, { step: 'lock-btc' })
+          if (!this.state.isStoppedSwap) {
+            flow.finishStep({
+              isBtcScriptFunded: true,
+            }, { step: 'lock-btc' })
+          }
         }
       },
 
@@ -221,10 +231,6 @@ class BTC2ETH extends Flow {
       () => {
         const { participant } = flow.swap
         let timer
-
-        util.helpers.repeatAsyncUntilResult(() =>
-          flow.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() ),
-        )
 
         flow.swap.room.once('create eth contract', ({ ethSwapCreationTransactionHash }) => {
           flow.setState({
@@ -246,7 +252,7 @@ class BTC2ETH extends Flow {
               }
             }
             else {
-              clearInterval(timer)
+              checkEthBalance()
             }
           }, 5 * 1000)
         }
@@ -456,11 +462,18 @@ class BTC2ETH extends Flow {
     }, { step: 'sync-balance' })
   }
 
-  stopSwapProcess() {
+  stopSwapProcess() { // вызывается из реакте
     this.setState({
       isStoppedSwap: true,
     })
     this.sendMessageAboutClose()
+  }
+
+  stopSwapProcessParticipant() {
+    this.setState({
+      isStoppedSwap: true,
+    })
+    console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
   }
 
   getRefundTxHex = () => {

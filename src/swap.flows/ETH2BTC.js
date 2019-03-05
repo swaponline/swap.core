@@ -77,6 +77,13 @@ class ETH2BTC extends Flow {
       isSwapExist: false,
     }
 
+    this.swap.room.once('swap was canceled for core', () => {
+      console.error('Swap was stopped')
+      this.setState({
+        isStoppedSwap: true,
+      })
+    })
+
     super._persistSteps()
     this._persistState()
   }
@@ -99,10 +106,6 @@ class ETH2BTC extends Flow {
       // 2. Wait participant create, fund BTC Script
 
       () => {
-        util.helpers.repeatAsyncUntilResult(() =>
-          flow.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() ),
-        )
-
         flow.swap.room.once('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
           flow.finishStep({
             secretHash: scriptValues.secretHash,
@@ -410,33 +413,38 @@ class ETH2BTC extends Flow {
   }
 
   async syncBalance() {
-    const { sellAmount } = this.swap
+    const checkBalance = async () => {
+      const { sellAmount } = this.swap
 
-    if (this.state.isStoppedSwap) {
-      return
-    }
-
-    this.setState({
-      isBalanceFetching: true,
-    })
-
-    const balance = await this.ethSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
-    const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
-
-    if (isEnoughMoney) {
-      this.finishStep({
-        balance,
-        isBalanceFetching: false,
-        isBalanceEnough: true,
-      }, { step: 'sync-balance' })
-    }
-    else {
       this.setState({
-        balance,
-        isBalanceFetching: false,
-        isBalanceEnough: false,
+        isBalanceFetching: true,
       })
+
+      const balance = await this.ethSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
+      const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
+
+      if (isEnoughMoney) {
+        this.finishStep({
+          balance,
+          isBalanceFetching: false,
+          isBalanceEnough: true,
+        }, { step: 'sync-balance' })
+      }
+      else {
+        this.setState({
+          balance,
+          isBalanceFetching: false,
+          isBalanceEnough: false,
+        })
+      }
     }
+    await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
+      if (!this.state.isStoppedSwap) {
+        checkBalance()
+      } else {
+        stopRepeat()
+      }
+    })
   }
 
   async tryRefund() {
@@ -481,6 +489,13 @@ class ETH2BTC extends Flow {
       isStoppedSwap: true,
     })
     this.sendMessageAboutClose()
+  }
+
+  stopSwapProcessParticipant() {
+    this.setState({
+      isStoppedSwap: true,
+    })
+    console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
   }
 
   async tryWithdraw(_secret) {

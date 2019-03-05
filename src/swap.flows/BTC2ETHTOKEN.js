@@ -76,6 +76,13 @@ export default (tokenName) => {
         isSwapExist: false,
       }
 
+      this.swap.room.once('swap was canceled for core', () => {
+        console.error('Swap was stoped')
+        this.setState({
+          isStoppedSwap: true,
+        })
+      })
+
       super._persistSteps()
       this._persistState()
     }
@@ -177,10 +184,6 @@ export default (tokenName) => {
               const { scriptAddress } = this.btcSwap.createScript(scriptValues)
               const unspents = await this.btcSwap.fetchUnspents(scriptAddress)
 
-              if (this.state.isStoppedSwap) {
-                return
-              }
-
               if (unspents.length === 0) {
                 return false
               }
@@ -203,12 +206,19 @@ export default (tokenName) => {
               }
             }
 
-            await util.helpers.repeatAsyncUntilResult(() =>
-              checkBTCScriptBalance(),
-            )
-            flow.finishStep({
-              isBtcScriptFunded: true,
-            }, { step: 'lock-btc' })
+            await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
+              if (!this.state.isStoppedSwap) {
+                checkBTCScriptBalance()
+              } else {
+                stopRepeat()
+              }
+            })
+
+            if (!this.state.isStoppedSwap) {
+              flow.finishStep({
+                isBtcScriptFunded: true,
+              }, { step: 'lock-btc' })
+            }
           }
         },
 
@@ -423,7 +433,6 @@ export default (tokenName) => {
     async waitEthBalance() {
       const flow = this;
       const participant = this.swap.participant;
-      let timer
 
       return new Promise((resolve, reject) => {
         const checkEthBalance =  async () => {
@@ -432,12 +441,8 @@ export default (tokenName) => {
           })
           if (balance > 0) {
             resolve( balance );
-          }
-          else {
-            checkEthBalance()
-            await util.helpers.repeatAsyncUntilResult(() =>
-              flow.swap.room.once('swap was canceled', () => this.stopSwapProcessParticipant() ),
-            )
+          } else {
+            setTimeout( checkEthBalance, 20 * 1000 );
           }
         }
 
@@ -547,11 +552,18 @@ export default (tokenName) => {
         })
     }
 
-    stopSwapProcess() {
+    stopSwapProcess() { // call from react
       this.setState({
         isStoppedSwap: true,
       })
       this.sendMessageAboutClose()
+    }
+
+    stopSwapProcessParticipant() {
+      this.setState({
+        isStoppedSwap: true,
+      })
+      console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
     }
 
     async tryWithdraw(_secret) {
