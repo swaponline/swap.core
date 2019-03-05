@@ -77,6 +77,8 @@ class ETH2BTC extends Flow {
 
     super._persistSteps()
     this._persistState()
+
+    const flow = this
     flow.swap.room.once('request withdraw', () => {
       flow.setState({
         withdrawRequestIncoming: true,
