@@ -366,6 +366,7 @@ class BTC2ETH extends Flow {
                   flow.swap.room.once('withdraw ready', ({ethSwapWithdrawTransactionHash}) => {
                     flow.setState({
                       ethSwapWithdrawTransactionHash,
+                      canCreateEthTransaction: true,
                     })
                     onWithdrawReady()
                   })

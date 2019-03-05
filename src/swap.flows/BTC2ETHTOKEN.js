@@ -354,6 +354,7 @@ export default (tokenName) => {
                   flow.swap.room.once('withdraw ready', ({ethSwapWithdrawTransactionHash}) => {
                     flow.setState({
                       ethSwapWithdrawTransactionHash,
+                      canCreateEthTransaction: true,
                     })
                     onWithdrawReady()
                   })
