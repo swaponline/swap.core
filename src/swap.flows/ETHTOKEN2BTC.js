@@ -47,6 +47,8 @@ export default (tokenName) => {
       this.state = {
         step: 0,
 
+        isStoppedSwap: false,
+
         signTransactionHash: null,
         isSignFetching: false,
         isMeSigned: false,
@@ -78,6 +80,13 @@ export default (tokenName) => {
         isSwapExist: false,
       }
 
+      this.swap.room.once('swap was canceled for core', () => {
+        console.error('Swap was stoped')
+        this.setState({
+          isStoppedSwap: true,
+        })
+      })
+
       super._persistSteps()
       this._persistState()
 
@@ -107,6 +116,7 @@ export default (tokenName) => {
         // 2. Wait participant create, fund BTC Script
 
         () => {
+
           flow.swap.room.once('create btc script', ({scriptValues, btcScriptCreatingTransactionHash}) => {
             flow.finishStep({
               secretHash: scriptValues.secretHash,
@@ -477,29 +487,38 @@ export default (tokenName) => {
     }
 
     async syncBalance() {
-      const {sellAmount} = this.swap
+      const checkBalance = async () => {
+        const { sellAmount } = this.swap
 
-      this.setState({
-        isBalanceFetching: true,
-      })
-
-      const balance = await this.ethTokenSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
-      const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
-
-      if (isEnoughMoney) {
-        this.finishStep({
-          balance,
-          isBalanceFetching: false,
-          isBalanceEnough: true,
-        }, {step: 'sync-balance'})
-      }
-      else {
         this.setState({
-          balance,
-          isBalanceFetching: false,
-          isBalanceEnough: false,
+          isBalanceFetching: true,
         })
+
+        const balance = await this.ethTokenSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
+        const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
+
+        if (isEnoughMoney) {
+          this.finishStep({
+            balance,
+            isBalanceFetching: false,
+            isBalanceEnough: true,
+          }, { step: 'sync-balance' })
+        }
+        else {
+          this.setState({
+            balance,
+            isBalanceFetching: false,
+            isBalanceEnough: false,
+          })
+        }
       }
+      await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
+        if (!this.state.isStoppedSwap) {
+          checkBalance()
+        } else {
+          stopRepeat()
+        }
+      })
     }
 
     async tryRefund() {
@@ -537,6 +556,13 @@ export default (tokenName) => {
             isSwapExist: false,
           })
         })
+    }
+
+    stopSwapProcess() { // call from react
+      this.setState({
+        isStoppedSwap: true,
+      })
+      this.sendMessageAboutClose()
     }
 
     async tryWithdraw(_secret) {

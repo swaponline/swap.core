@@ -45,6 +45,8 @@ class ETH2BTC extends Flow {
     this.state = {
       step: 0,
 
+      isStoppedSwap: false,
+
       signTransactionHash: null,
       isSignFetching: false,
       isMeSigned: false,
@@ -75,6 +77,13 @@ class ETH2BTC extends Flow {
       isSwapExist: false,
     }
 
+    this.swap.room.once('swap was canceled for core', () => {
+      console.error('Swap was stopped')
+      this.setState({
+        isStoppedSwap: true,
+      })
+    })
+
     super._persistSteps()
     this._persistState()
   }
@@ -104,7 +113,6 @@ class ETH2BTC extends Flow {
             btcScriptCreatingTransactionHash,
           }, { step: 'wait-lock-btc', silentError: true })
         })
-
         flow.swap.room.sendMessage({
           event: 'request btc script',
         })
@@ -156,7 +164,6 @@ class ETH2BTC extends Flow {
           amount: sellAmount,
           targetWallet: flow.swap.destinationSellAddress
         }
-
         const tryCreateSwap = async () => {
           if (!flow.state.isEthContractFunded) {
             try {
@@ -191,10 +198,8 @@ class ETH2BTC extends Flow {
               return null
             }
           }
-
           return true
         }
-
         const isEthContractFunded = await util.helpers.repeatAsyncUntilResult(() =>
           tryCreateSwap(),
         )
@@ -297,6 +302,7 @@ class ETH2BTC extends Flow {
           }, { step: 'wait-withdraw-eth' })
         }
       },
+
 
       // 7. Withdraw
 
@@ -407,29 +413,38 @@ class ETH2BTC extends Flow {
   }
 
   async syncBalance() {
-    const { sellAmount } = this.swap
+    const checkBalance = async () => {
+      const { sellAmount } = this.swap
 
-    this.setState({
-      isBalanceFetching: true,
-    })
-
-    const balance = await this.ethSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
-    const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
-
-    if (isEnoughMoney) {
-      this.finishStep({
-        balance,
-        isBalanceFetching: false,
-        isBalanceEnough: true,
-      }, { step: 'sync-balance' })
-    }
-    else {
       this.setState({
-        balance,
-        isBalanceFetching: false,
-        isBalanceEnough: false,
+        isBalanceFetching: true,
       })
+
+      const balance = await this.ethSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
+      const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
+
+      if (isEnoughMoney) {
+        this.finishStep({
+          balance,
+          isBalanceFetching: false,
+          isBalanceEnough: true,
+        }, { step: 'sync-balance' })
+      }
+      else {
+        this.setState({
+          balance,
+          isBalanceFetching: false,
+          isBalanceEnough: false,
+        })
+      }
     }
+    await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
+      if (!this.state.isStoppedSwap) {
+        checkBalance()
+      } else {
+        stopRepeat()
+      }
+    })
   }
 
   async tryRefund() {
@@ -467,6 +482,13 @@ class ETH2BTC extends Flow {
           isSwapExist: false,
         })
       })
+  }
+
+  stopSwapProcess() { // вызывается в реакте
+    this.setState({
+      isStoppedSwap: true,
+    })
+    this.sendMessageAboutClose()
   }
 
   async tryWithdraw(_secret) {

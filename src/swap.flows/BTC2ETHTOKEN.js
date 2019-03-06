@@ -47,6 +47,8 @@ export default (tokenName) => {
       this.state = {
         step: 0,
 
+        isStoppedSwap: false,
+        isEnoughMoney: false,
         signTransactionHash: null,
         isSignFetching: false,
         isParticipantSigned: false,
@@ -74,6 +76,13 @@ export default (tokenName) => {
         isFinished: false,
         isSwapExist: false,
       }
+
+      this.swap.room.once('swap was canceled for core', () => {
+        console.error('Swap was stoped')
+        this.setState({
+          isStoppedSwap: true,
+        })
+      })
 
       super._persistSteps()
       this._persistState()
@@ -158,15 +167,13 @@ export default (tokenName) => {
               }
             })
           }
-
           // Balance on system wallet enough
           if (flow.state.isBalanceEnough) {
             await flow.btcSwap.fundScript({
               scriptValues: flow.state.btcScriptValues,
               amount: sellAmount,
             }, (hash) => {
-              onTransactionHash(hash)
-
+            onTransactionHash(hash)
               flow.finishStep({
                 isBtcScriptFunded: true,
               }, { step: 'lock-btc' })
@@ -193,20 +200,24 @@ export default (tokenName) => {
 
               const isEnoughMoney = BigNumber(balance).isGreaterThanOrEqualTo(sellAmount.times(1e8))
 
-              if (isEnoughMoney) {
-                return true
-              } else {
-                return false
-              }
+              this.setState({
+                isEnoughMoney
+              })
             }
 
-            await util.helpers.repeatAsyncUntilResult(() =>
-              checkBTCScriptBalance(),
-            )
+            await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
+              if (!this.state.isStoppedSwap) {
+                checkBTCScriptBalance()
+              } else if (this.state.isEnoughMoney || this.state.isStoppedSwap) {
+                stopRepeat()
+              }
+            })
 
-            flow.finishStep({
-              isBtcScriptFunded: true,
-            }, { step: 'lock-btc' })
+            if (!this.state.isStoppedSwap) {
+              flow.finishStep({
+                isBtcScriptFunded: true,
+              }, { step: 'lock-btc' })
+            }
           }
         },
 
@@ -236,7 +247,6 @@ export default (tokenName) => {
             if (!flow.state.isEthContractFunded) {
               clearTimeout(timer)
               timer = null
-
               flow.finishStep({
                 isEthContractFunded: true,
               }, { step: 'wait-lock-eth' })
@@ -433,8 +443,7 @@ export default (tokenName) => {
           })
           if (balance > 0) {
             resolve( balance );
-          }
-          else {
+          } else {
             setTimeout( checkEthBalance, 20 * 1000 );
           }
         }
@@ -543,6 +552,13 @@ export default (tokenName) => {
             isSwapExist: false,
           })
         })
+    }
+
+    stopSwapProcess() { // call from react
+      this.setState({
+        isStoppedSwap: true,
+      })
+      this.sendMessageAboutClose()
     }
 
     async tryWithdraw(_secret) {
