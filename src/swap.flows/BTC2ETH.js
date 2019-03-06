@@ -320,7 +320,7 @@ class BTC2ETH extends Flow {
             isEthWithdrawn,
           }, 'withdraw-eth')
         }
-        const tryWithdraw = async () => {
+        const tryWithdraw = async (stopRepeater) => {
           if (!flow.state.isEthWithdrawn) {
             try {
               const { withdrawFee } = flow.state
@@ -356,20 +356,30 @@ class BTC2ETH extends Flow {
               } else if ( /out of gas/.test(err.message) ) {
                 console.error(`tx failed (wrong secret?): ${err.message}`)
               } else if ( /insufficient funds for gas/.test(err.message) ) {
-                  console.error(`insufficient fund for gas: ${err.message}`)
-                  debug('swap.core:flow')('insufficient fund for gas... wait fund or request other side to withdraw')
+                console.error(`insufficient fund for gas: ${err.message}`)
 
-                  flow.setState({
-                    requireWithdrawFee: true,
-                  })
+                debug('swap.core:flow')('insufficient fund for gas... wait fund or request other side to withdraw')
 
+                const { requireWithdrawFee } = this.state
+
+                if (!requireWithdrawFee) {
                   flow.swap.room.once('withdraw ready', ({ethSwapWithdrawTransactionHash}) => {
                     flow.setState({
                       ethSwapWithdrawTransactionHash,
-                      canCreateEthTransaction: true,
                     })
+
                     onWithdrawReady()
                   })
+
+                  flow.setState({
+                    requireWithdrawFee: true,
+                    canCreateEthTransaction: true,
+                  })
+                  
+                  stopRepeater()
+                  return false
+                }
+
               } else {
                 console.error(err)
               }
@@ -385,8 +395,8 @@ class BTC2ETH extends Flow {
           return true
         }
 
-        const isEthWithdrawn = await util.helpers.repeatAsyncUntilResult(() =>
-          tryWithdraw(),
+        const isEthWithdrawn = await util.helpers.repeatAsyncUntilResult((stopRepeater) =>
+          tryWithdraw(stopRepeater),
         )
 
         if (isEthWithdrawn) {
