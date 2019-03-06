@@ -494,7 +494,7 @@ export default (tokenName) => {
           isBalanceFetching: true,
         })
 
-        const balance = await this.ethSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
+        const balance = await this.ethTokenSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
         const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
         if (isEnoughMoney) {
@@ -563,6 +563,13 @@ export default (tokenName) => {
         isStoppedSwap: true,
       })
       this.sendMessageAboutClose()
+    }
+
+    stopSwapProcessParticipant() {
+      this.setState({
+        isStoppedSwap: true,
+      })
+      console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
     }
 
     async tryWithdraw(_secret) {

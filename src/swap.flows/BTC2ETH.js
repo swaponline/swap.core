@@ -47,6 +47,7 @@ class BTC2ETH extends Flow {
       step: 0,
 
       isStoppedSwap: false,
+      isEnoughMoney: false,
 
       signTransactionHash: null,
       isSignFetching: false,
@@ -203,17 +204,15 @@ class BTC2ETH extends Flow {
 
             const isEnoughMoney = BigNumber(balance).isGreaterThanOrEqualTo(sellAmount.times(1e8))
 
-            if (isEnoughMoney) {
-              return true
-            } else {
-              return false
-            }
+            this.setState({
+              isEnoughMoney,
+            })
           }
 
           await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
             if (!this.state.isStoppedSwap) {
               checkBTCScriptBalance()
-            } else {
+            } else if (this.state.isEnoughMoney || this.state.isStoppedSwap) {
               stopRepeat()
             }
           })

@@ -48,7 +48,7 @@ export default (tokenName) => {
         step: 0,
 
         isStoppedSwap: false,
-
+        isEnoughMoney: false,
         signTransactionHash: null,
         isSignFetching: false,
         isParticipantSigned: false,
@@ -199,17 +199,15 @@ export default (tokenName) => {
 
               const isEnoughMoney = BigNumber(balance).isGreaterThanOrEqualTo(sellAmount.times(1e8))
 
-              if (isEnoughMoney) {
-                return true
-              } else {
-                return false
-              }
+              this.setState({
+                isEnoughMoney
+              })
             }
 
             await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
               if (!this.state.isStoppedSwap) {
                 checkBTCScriptBalance()
-              } else {
+              } else if (this.state.isEnoughMoney || this.state.isStoppedSwap) {
                 stopRepeat()
               }
             })
@@ -557,6 +555,13 @@ export default (tokenName) => {
         isStoppedSwap: true,
       })
       this.sendMessageAboutClose()
+    }
+
+    stopSwapProcessParticipant() {
+      this.setState({
+        isStoppedSwap: true,
+      })
+      console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
     }
 
     async tryWithdraw(_secret) {
