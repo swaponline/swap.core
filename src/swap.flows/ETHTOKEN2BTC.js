@@ -565,13 +565,6 @@ export default (tokenName) => {
       this.sendMessageAboutClose()
     }
 
-    stopSwapProcessParticipant() {
-      this.setState({
-        isStoppedSwap: true,
-      })
-      console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
-    }
-
     async tryWithdraw(_secret) {
       const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, btcScriptValues } = this.state
 
