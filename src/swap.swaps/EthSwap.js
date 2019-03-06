@@ -249,6 +249,120 @@ class EthSwap extends SwapInterface {
 
   /**
    *
+   * @returns {Promise}
+   */
+  async fetchSwapEvents() {
+    if (this._allSwapEvents) return this._allSwapEvents
+
+    const allSwapEvents = await this.contract.getPastEvents('allEvents', {
+      fromBlock: 0,
+      toBlock: 'latest',
+    })
+
+    this.contract.events.allEvents({ fromBlock: 0, toBlock: 'latest' })
+      .on('data', event => {
+        this._allSwapEvents.push(event)
+      })
+      .on('changed', (event) => {
+        console.error(`EthSwap: fetchEvents: needs rescan`)
+        this._allSwapEvents = null
+      })
+      .on('error', err => {
+        console.error(err)
+        this._allSwapEvents = null
+      })
+
+    this._allSwapEvents = allSwapEvents
+
+    return allSwapEvents
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secretHash
+   * @returns {Promise}
+   */
+  async findSwap(data) {
+    const { secretHash } = data
+
+    const allSwapEvents = await this.fetchSwapEvents()
+
+    const swapEvents = allSwapEvents
+      .filter(({ returnValues }) => returnValues._secretHash === `0x${secretHash.replace('0x','')}`)
+
+    const [ create, close, ...rest ] = swapEvents
+
+    if (rest && rest.length) {
+      console.error(`More than two swaps with same hash`, rest)
+      // throw new Error(`More than two swaps with same hash`)
+    }
+
+    return [ create, close ]
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secretHash
+   * @returns {Promise(boolean)}
+   */
+  async wasRefunded(data) {
+    const [ create, close ] = await this.findSwap(data)
+
+    if (!create) {
+      console.log(`No swap ${secretHash}`)
+      return false
+    } else if (create && !close) {
+      console.log(`Open yet!`)
+      return false
+    } else {
+      if (close.event == 'Withdraw') {
+        console.log(`Withdrawn`)
+        return false
+      } else if (close.event == 'Refund') {
+        console.log(`Refund`)
+        return true
+      } else {
+        console.log(`Unknown event, error`)
+        return false
+      }
+    }
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secretHash
+   * @returns {Promise(boolean)}
+   */
+  async wasWithdrawn(data) {
+    const [ create, close ] = await this.findSwap(data)
+
+    if (!create) {
+      console.log(`No swap ${secretHash}`)
+      return false
+    } else if (create && !close) {
+      console.log(`Open yet!`)
+      return false
+    } else {
+      if (close.event == 'Withdraw') {
+        console.log(`Withdrawn`)
+        return true
+      } else if (close.event == 'Refund') {
+        console.log(`Refund`)
+        return false
+      } else {
+        console.log(`Unknown event, error`)
+        return false
+      }
+    }
+
+  }
+
+
+  /**
+   *
    * @returns {boolean}
    */
   hasTargetWallet() {
