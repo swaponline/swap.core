@@ -469,13 +469,6 @@ class BTC2ETH extends Flow {
     this.sendMessageAboutClose()
   }
 
-  stopSwapProcessParticipant() {
-    this.setState({
-      isStoppedSwap: true,
-    })
-    console.warn(`The Swap ${this.swap.id} was stopped by the participants`)
-  }
-
   getRefundTxHex = () => {
     this.btcSwap.getRefundHexTransaction({
       scriptValues: this.state.btcScriptValues,
