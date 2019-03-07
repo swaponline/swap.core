@@ -48,6 +48,7 @@ export default (tokenName) => {
         step: 0,
 
         isStoppedSwap: false,
+        isEnoughMoney: false,
 
         signTransactionHash: null,
         isSignFetching: false,
@@ -497,6 +498,10 @@ export default (tokenName) => {
         const balance = await this.ethTokenSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
         const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
+        this.setState({
+          isEnoughMoney,
+        })
+
         if (isEnoughMoney) {
           this.finishStep({
             balance,
@@ -513,7 +518,7 @@ export default (tokenName) => {
         }
       }
       await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
-        if (!this.state.isStoppedSwap) {
+        if (!this.state.isStoppedSwap && !this.state.isEnoughMoney) {
           checkBalance()
         } else {
           stopRepeat()
