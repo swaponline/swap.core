@@ -46,6 +46,7 @@ class ETH2BTC extends Flow {
       step: 0,
 
       isStoppedSwap: false,
+      isEnoughMoney: false,
 
       signTransactionHash: null,
       isSignFetching: false,
@@ -423,6 +424,10 @@ class ETH2BTC extends Flow {
       const balance = await this.ethSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
       const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
+      this.setState({
+        isEnoughMoney,
+      })
+
       if (isEnoughMoney) {
         this.finishStep({
           balance,
@@ -439,7 +444,7 @@ class ETH2BTC extends Flow {
       }
     }
     await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
-      if (!this.state.isStoppedSwap) {
+      if (!this.state.isStoppedSwap && !this.state.isEnoughMoney) {
         checkBalance()
       } else {
         stopRepeat()
