@@ -302,30 +302,31 @@ class EthSwap extends SwapInterface {
   }
 
   /**
-   *
-   * @param {object} data
-   * @param {string} data.secretHash
-   * @returns {Promise(boolean)}
-   */
-  async wasRefunded(data) {
+    *
+    * @param {object} data
+    * @param {string} data.secretHash
+    * @returns {Promise(status)}
+    */
+
+  async wasClosed(data) {
     const [ create, close ] = await this.findSwap(data)
 
     if (!create) {
-      console.log(`No swap ${secretHash}`)
-      return false
+      debug(`No swap ${secretHash}`)
+      return 'no swap'
     } else if (create && !close) {
-      console.log(`Open yet!`)
-      return false
+      debug(`Open yet!`)
+      return 'open'
     } else {
       if (close.event == 'Withdraw') {
-        console.log(`Withdrawn`)
-        return false
+        debug(`Withdrawn`)
+        return 'withdrawn'
       } else if (close.event == 'Refund') {
-        console.log(`Refund`)
-        return true
+        debug(`Refund`)
+        return 'refunded'
       } else {
-        console.log(`Unknown event, error`)
-        return false
+        debug(`Unknown event, error`)
+        return 'error'
       }
     }
   }
@@ -336,28 +337,20 @@ class EthSwap extends SwapInterface {
    * @param {string} data.secretHash
    * @returns {Promise(boolean)}
    */
+  async wasRefunded(data) {
+    const status = await this.wasClosed(data)
+    return stats === 'refunded'
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secretHash
+   * @returns {Promise(boolean)}
+   */
   async wasWithdrawn(data) {
-    const [ create, close ] = await this.findSwap(data)
-
-    if (!create) {
-      console.log(`No swap ${secretHash}`)
-      return false
-    } else if (create && !close) {
-      console.log(`Open yet!`)
-      return false
-    } else {
-      if (close.event == 'Withdraw') {
-        console.log(`Withdrawn`)
-        return true
-      } else if (close.event == 'Refund') {
-        console.log(`Refund`)
-        return false
-      } else {
-        console.log(`Unknown event, error`)
-        return false
-      }
-    }
-
+    const status = await this.wasClosed(data)
+    return stats === 'withdrawn'
   }
 
 
