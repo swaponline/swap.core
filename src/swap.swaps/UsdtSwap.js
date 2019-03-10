@@ -254,6 +254,10 @@ class UsdtSwap extends SwapInterface {
   redeemScript(data, handleTransactionHash, isRefund) {
     const { amount, scriptValues, secret } = data
 
+    if (!amount) {
+      throw new Error(`USDT Redeem Error: amount not given: ${amount}`)
+    }
+
     return new Promise(async (resolve, reject) => {
       try {
         const { secretHash, lockTime } = scriptValues
