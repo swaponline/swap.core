@@ -318,7 +318,7 @@ export default (tokenName) => {
             })
           }
 
-          const tryWithdraw = async () => {
+          const tryWithdraw = async (stopRepeater) => {
             if (!flow.state.isEthWithdrawn) {
               try {
                 const { withdrawFee } = flow.state
@@ -355,18 +355,29 @@ export default (tokenName) => {
                   console.error(`tx failed (wrong secret?): ${err.message}`)
                 } else if ( /insufficient funds for gas/.test(err.message) ) {
                   console.error(`insufficient fund for gas: ${err.message}`)
+
                   debug('swap.core:flow')('insufficient fund for gas... wait fund or request other side to withdraw')
 
-                  flow.setState({
-                    requireWithdrawFee: true,
-                  })
+                  const { requireWithdrawFee } = this.state
+                  
+                  if (!requireWithdrawFee) {
+                    flow.swap.room.once('withdraw ready', ({ethSwapWithdrawTransactionHash}) => {
+                      flow.setState({
+                        ethSwapWithdrawTransactionHash,
+                      })
 
-                  flow.swap.room.once('withdraw ready', ({ethSwapWithdrawTransactionHash}) => {
-                    flow.setState({
-                      ethSwapWithdrawTransactionHash,
+                      onWithdrawReady()
                     })
-                    onWithdrawReady()
-                  })
+
+                    flow.setState({
+                      requireWithdrawFee: true,
+                      canCreateEthTransaction: true,
+                    })
+                  
+                    stopRepeater()
+                    return false
+                  }
+
                 } else {
                   console.error(err)
                 }
@@ -382,8 +393,8 @@ export default (tokenName) => {
             return true
           }
 
-          const isEthWithdrawn = await util.helpers.repeatAsyncUntilResult(() =>
-            tryWithdraw(),
+          const isEthWithdrawn = await util.helpers.repeatAsyncUntilResult((stopRepeater) =>
+            tryWithdraw(stopRepeater),
           )
 
           if (isEthWithdrawn) {
@@ -408,7 +419,17 @@ export default (tokenName) => {
       ]
     }
 
+    /**
+     * TODO - backport version compatibility
+     *  mapped to sendWithdrawRequestToAnotherParticipant
+     *  remove at next iteration after client software update
+     *  Used in swap.react
+     */
     sendWithdrawRequest() {
+      return this.sendWithdrawRequestToAnotherParticipant()
+    }
+
+    sendWithdrawRequestToAnotherParticipant() {
       const flow = this
 
       if (!this.state.requireWithdrawFee) return
