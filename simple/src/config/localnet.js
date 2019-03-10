@@ -25,6 +25,7 @@ module.exports = {
     fetchBalance: (address) => bitcoin.fetchBtcBalance(address),
     fetchUnspents: (scriptAddress) => bitcoin.fetchBtcUnspents(scriptAddress),
     broadcastTx: (txRaw) => bitcoin.broadcastBtcTx(txRaw),
+    estimateFeeValue: ({ inSatoshis, speed, address } = {}) => bitcoin.estimateFeeValue({ inSatoshis, speed, address }),
     estimateFeeRate: ({ speed } = {}) => bitcoin.estimateFeeRate({ speed }),
   }),
   noxonTokenSwap: tokenSwap({

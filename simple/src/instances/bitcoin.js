@@ -42,28 +42,32 @@ class Bitcoin {
       .catch(err => console.error(`NOXONFUND error: ${err.message}`))
   }
 
-  login(_privateKey) {
-    let privateKey = _privateKey
-
-    if (!privateKey) {
-      const keyPair = this.core.ECPair.makeRandom({ network: this.net })
-      privateKey    = keyPair.toWIF()
+  async estimateFeeValue({ inSatoshis = false, speed, address } = {}) {
+    if (!address) {
+      throw new Error('Bitcoin address not exist' )
     }
 
-    const account     = new this.core.ECPair.fromWIF(privateKey, this.net)
-    const address     = account.getAddress()
-    const publicKey   = account.getPublicKeyBuffer().toString('hex')
+    const feeRate = await this.estimateFeeRate({ speed })
+    const unspents = await this.fetchUnspents(address)
+    const txIn = unspents.length
+    const txOut = 2
 
-    account.__proto__.getPrivateKey = () => privateKey
+    let txSize = 226 // default tx size for 1 txIn and 2 txOut
 
-    console.info('Logged in with Bitcoin', {
-      account,
-      address,
-      privateKey,
-      publicKey,
-    })
+    if (txIn !== 0) {
+      txSize = txIn * 146 + txOut * 33 + (15 + txIn - txOut)
+    }
 
-    return account
+    const feeValue = BigNumber(feeRate)
+      .multipliedBy(txSize)
+      .div(1024)
+      .dp(0, BigNumber.ROUND_HALF_EVEN)
+
+    if (inSatoshis) {
+      return feeValue.toString()
+    }
+
+    return feeValue.multipliedBy(1e-8).toString()
   }
 
   async estimateFeeRate(options) {
@@ -79,7 +83,7 @@ class Bitcoin {
     }
   }
 
-  estimateFeeRateEARNCOM({ speed = 'normal' } = {}) {
+  estimateFeeRateEARNCOM({ speed = 'fast' } = {}) {
     const _speed = (() => {
       switch (speed) {
         case 'fast':    return 'fastestFee'
@@ -96,7 +100,7 @@ class Bitcoin {
       .catch(error => filterError(error))
   }
 
-  estimateFeeRateBLOCKCYPHER({ speed = 'normal' } = {}) {
+  estimateFeeRateBLOCKCYPHER({ speed = 'fast' } = {}) {
     const _speed = (() => {
       switch (speed) {
         case 'fast':    return 'high_fee_per_kb'
@@ -149,43 +153,53 @@ class Bitcoin {
     return request
       .get(`${this.root}/tx/${hash}`)
       .then(json => JSON.parse(json))
-      .catch(error => filterError(error))
+      .then(({ fees, ...rest }) => ({
+        fees: BigNumber(fees).multipliedBy(1e8),
+        ...rest,
+      }))
+      .catch(error => {
+        debug('swap.core:bitcoin')('BitPay:', error)
+        return {}
+      })
   }
 
-  fetchTxInfo(hash) {
+  fetchTxConfidence(hash) {
     const API_ROOT = this.network === 'testnet'
       ? BLOCKCYPHER_API_TESTNET
       : BLOCKCYPHER_API
 
-    return Promise.all([
-      request
-        .get(`${API_ROOT}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`)
-        .then(json => JSON.parse(json))
-        .catch(err => err),
-      request
-        .get(`${API_ROOT}/txs/${hash}`)
-        .then(json => JSON.parse(json))
-        .catch(err => err),
-    ]).then(([ tx_info_confidence, tx_info_other ]) => {
-        return {
-          ...tx_info_other,
-          ...tx_info_confidence,
-        }
-      })
-      .then(info => {
-        if (info.error) {
-          debug('swap.core:bitcoin')(`BlockCypherError: ${info.error}`)
-        }
-        
-        if (info.confidence || info.fees) {
-          return info
-        } else if (info.error) {
-          throw new Error(`BlockCypherError: ${info.error}`)
+    return request
+      .get(`${API_ROOT}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`)
+      .then(json => JSON.parse(json))
+      .catch(error => {
+        error = error.message
+
+        if (/not found/.test(error)) {
+          return {
+            confidence: 0.1,
+          }
+        } else if (/already been confirmed/.test(error)) {
+          return {
+            confidence: 1,
+          }
         } else {
-          throw new Error(`BlockCypherError: No response`)
+          debug('swap.core:bitcoin')('BlockCypher:', error)
+          return {
+            confidence: 0,
+          }
         }
       })
-      .catch(error => filterError(error))
+  }
+
+  fetchTxInfo(hash) {
+    return Promise.all([
+      this.fetchTx(hash),
+      this.fetchTxConfidence(hash),
+    ]).then(([{ vin, ...rest }, confidence ]) => ({
+      senderAddress: vin ? vin[0].addr : null,
+      ...rest,
+      ...confidence,
+    }))
   }
 
   fetchOmniBalance(address, assetId = 31) {

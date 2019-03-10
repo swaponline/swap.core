@@ -40,9 +40,10 @@ class BtcSwap extends SwapInterface {
     this.fetchBalance   = options.fetchBalance
     this.fetchUnspents  = options.fetchUnspents
     this.broadcastTx    = options.broadcastTx
-    this.feeValue       = options.feeValue || 5000
-    this.fetchTxInfo    = options.fetchTxInfo || (() => ({}))
-    this.estimateFeeRate = options.estimateFeeRate || (() => {})
+    this.feeValue       = options.feeValue || DUST
+    this.fetchTxInfo    = options.fetchTxInfo || (() => {})
+    this.estimateFeeValue = options.estimateFeeValue || (() => 0)
+    this.estimateFeeRate = options.estimateFeeRate || (() => 0)
   }
 
   _initSwap(app) {
@@ -66,19 +67,30 @@ class BtcSwap extends SwapInterface {
    * @returns {BigNumber}
    * @public
    */
-  async getTxFee({ inSatoshis, size = 550, speed = 'fast' } = {}) {
+  async getTxFee({ inSatoshis, size, speed = 'fast', address } = {}) {
     try {
-      const estimatedRate = await this.estimateFeeRate({ speed })
-      const estimatedFee = BigNumber.maximum(DUST, BigNumber(estimatedRate)
-        .multipliedBy(size)
-        .div(1024)
-        .dp(0, BigNumber.ROUND_UP)
-      )
+      const defaultFee = BigNumber(DUST)
+      let estimatedFee = defaultFee
+
+      if (address && !size) {
+        estimatedFee = BigNumber(await this.estimateFeeValue({ inSatoshis, address }))
+      }
+
+      if (estimatedFee.isLessThanOrEqualTo(defaultFee) && size) {
+        const estimatedRate = await this.estimateFeeRate({ speed })
+
+        estimatedFee = BigNumber.maximum(defaultFee, BigNumber(estimatedRate)
+          .multipliedBy(size)
+          .div(1024)
+          .dp(0, BigNumber.ROUND_UP)
+        )
+      }
 
       if (estimatedFee.isGreaterThan(0)) {
         this.feeValue = estimatedFee
       } else {
-        throw new Error(`Not an Integer: ${estimatedFee}`)
+        this.feeValue = defaultFee
+        debug('swap.core:swaps')(`BtcSwap: Not an Integer: ${estimatedFee}`)
       }
     } catch (err) {
       debug('swap.core:swaps')(`BtcSwap: Error with fee update: ${err.message}, using old value feeValue=${this.feeValue}`)
@@ -86,7 +98,7 @@ class BtcSwap extends SwapInterface {
 
     return inSatoshis
       ? this.feeValue
-      : this.feeValue.div(1e8)
+      : this.feeValue.div(1e8).dp(0, BigNumber.ROUND_UP)
   }
 
   /**
@@ -97,12 +109,14 @@ class BtcSwap extends SwapInterface {
    * @private
    */
   async filterConfidentUnspents(unspents, expectedConfidenceLevel = 0.95) {
-    const feesToConfidence = async (fees, size) => {
-      const currentFastestFee = await this.getTxFee({ inSatoshis: true, size, speed: 'fast' })
+    const feesToConfidence = async (fees, size, address) => {
+      const currentFastestFee = await this.getTxFee({ inSatoshis: true, size, speed: 'fast', address })
 
       debug('swap.core:swaps')(`currentFastestFee: ${currentFastestFee}`)
 
-      return fees < currentFastestFee ? (fees / currentFastestFee) : 1
+      return BigNumber(fees).isLessThan(currentFastestFee)
+        ? BigNumber(fees).dividedBy(currentFastestFee).toNumber()
+        : 1
     }
 
     const confirmationsToConfidence = confs => confs > 0 ? 1 : 0
@@ -110,26 +124,26 @@ class BtcSwap extends SwapInterface {
     const fetchConfidence = async ({ txid, confirmations }) => {
       const confidenceFromConfirmations = confirmationsToConfidence(confirmations)
 
-      if (confidenceFromConfirmations > expectedConfidenceLevel) {
+      if (BigNumber(confidenceFromConfirmations).isGreaterThanOrEqualTo(expectedConfidenceLevel)) {
         return confidenceFromConfirmations
       }
 
       try {
         const info = await this.fetchTxInfo(txid)
 
-        const { confidence, fees, size } = info
+        const { confidence, fees, size, senderAddress } = info
 
-        debug('swap.core:swaps')(`tx ${txid}:`, { confidence, confirmations, fees, size })
+        debug('swap.core:swaps')(`tx ${txid}:`, { confidence, confirmations, fees, size, senderAddress })
 
-        if (confidence && !Number.isNaN(Number(confidence))) {
+        if (BigNumber(confidence).isGreaterThan(0)) {
           return confidence
         }
 
         if (fees) {
-          return await feesToConfidence(fees, size)
+          return await feesToConfidence(fees, size, senderAddress)
         }
 
-        throw new Error(`txinfo=${{ confidence, confirmations, fees, size }}`)
+        throw new Error(`txinfo=${{ confidence, confirmations, fees, size, senderAddress }}`)
 
       } catch (err) {
         console.error(`BtcSwap: Error fetching confidence: using confirmations > 0:`, err.message)
@@ -141,9 +155,10 @@ class BtcSwap extends SwapInterface {
 
     return unspents.filter((utxo, index) => {
       debug('swap.core:swaps')(`confidence[${index}]:`, confidences[index])
-      return BigNumber(confidences[index]).isGreaterThan(expectedConfidenceLevel)
+      return BigNumber(confidences[index]).isGreaterThanOrEqualTo(expectedConfidenceLevel)
     })
   }
+
   /**
    *
    * @param {object} data
@@ -275,12 +290,13 @@ class BtcSwap extends SwapInterface {
     return new Promise(async (resolve, reject) => {
       try {
         const { scriptAddress } = this.createScript(scriptValues, hashName)
+        const ownerAddress = this.app.services.auth.accounts.btc.getAddress()
 
         const tx            = new this.app.env.bitcoin.TransactionBuilder(this.network)
-        const unspents      = await this.fetchUnspents(this.app.services.auth.accounts.btc.getAddress())
+        const unspents      = await this.fetchUnspents(ownerAddress)
 
         const fundValue     = amount.multipliedBy(1e8).integerValue().toNumber()
-        const feeValue      = await this.getTxFee({ inSatoshis: true })
+        const feeValue      = await this.getTxFee({ inSatoshis: true, address: ownerAddress })
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue
 

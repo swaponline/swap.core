@@ -30,6 +30,7 @@ module.exports = {
     fetchUnspents: (scriptAddress) => bitcoin.fetchUnspents(scriptAddress),
     broadcastTx: (txRaw) => bitcoin.broadcastTx(txRaw),
     fetchTxInfo: txid => bitcoin.fetchTxInfo(txid),
+    estimateFeeValue: ({ inSatoshis, speed, address } = {}) => bitcoin.estimateFeeValue({ inSatoshis, speed, address }),
     estimateFeeRate: ({ speed } = {}) => bitcoin.estimateFeeRate({ speed }),
   }),
   usdtSwap: () => ({
