@@ -21,6 +21,7 @@ const txInfo = {
   },
   'd98b57b3266c19dec66ded0a5d661b93584466e7c84db3d50ed5505f6eb60667': {
     fees: 50000,
+    size: 223,
   },
 }
 
@@ -53,7 +54,7 @@ const btcSwap = new BtcSwap({
   fetchBalance: (address) => 10,
   fetchUnspents: (address) => [],
   broadcastTx: (rawTx) => {},
-  estimateFeeRate: ({ speed } = {}) => testnet().estimateFeeRate({ speed }),
+  estimateFeeValue: ({ inSatoshis, speed, address, txSize } = {}) => testnet().estimateFeeValue({ inSatoshis, speed, address, txSize }),
   fetchTxInfo: async txid => txInfo[txid],
 })
 
