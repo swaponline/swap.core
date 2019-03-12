@@ -206,9 +206,9 @@ export default (tokenName) => {
             }
 
             await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
-              if (!this.state.isStoppedSwap) {
+              if (!this.state.isEnoughMoney && !this.state.isStoppedSwap) {
                 checkBTCScriptBalance()
-              } else if (this.state.isEnoughMoney || this.state.isStoppedSwap) {
+              } else {
                 stopRepeat()
               }
             })
