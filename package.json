@@ -11,7 +11,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "test": "jest tests/*.test.js",
+    "test": "DEBUG=swap.core* jest tests/*.test.js",
     "dev": "babel -w ./src --out-dir ./lib",
     "clean": "rimraf ./lib",
     "build": "npm run clean && babel ./src --out-dir ./lib",
