@@ -72,6 +72,7 @@ export default (tokenName) => {
         isEthWithdrawn: false,
 
         refundTxHex: null,
+        withdrawFee: null,
         isFinished: false,
         isSwapExist: false,
       }
@@ -205,9 +206,9 @@ export default (tokenName) => {
             }
 
             await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
-              if (!this.state.isStoppedSwap) {
+              if (!this.state.isEnoughMoney && !this.state.isStoppedSwap) {
                 checkBTCScriptBalance()
-              } else if (this.state.isEnoughMoney || this.state.isStoppedSwap) {
+              } else {
                 stopRepeat()
               }
             })
@@ -257,11 +258,11 @@ export default (tokenName) => {
 
         async () => {
           const { buyAmount, participant } = flow.swap
-          const { secretHash } = flow.state
+          const { secretHash, secret } = flow.state
 
           const data = {
-            ownerAddress:   participant.eth.address,
-            secret:         flow.state.secret,
+            ownerAddress: participant.eth.address,
+            secret,
           }
 
           const balanceCheckError = await flow.ethTokenSwap.checkBalance({
@@ -320,15 +321,18 @@ export default (tokenName) => {
           const tryWithdraw = async () => {
             if (!flow.state.isEthWithdrawn) {
               try {
-                const withdrawNeededGas = await flow.ethTokenSwap.calcWithdrawGas({
-                  ownerAddress: data.ownerAddress,
-                  secret: data.secret,
-                })
-                flow.setState({
-                  withdrawFee: withdrawNeededGas
-                })
+                const { withdrawFee } = flow.state
 
-                debug('swap.core:flow')('withdraw gas fee', withdrawNeededGas)
+                if (!withdrawFee) {
+                  const withdrawNeededGas = await flow.ethTokenSwap.calcWithdrawGas({
+                    ownerAddress: data.ownerAddress,
+                    secret,
+                  })
+                  flow.setState({
+                    withdrawFee: withdrawNeededGas,
+                  })
+                  debug('swap.core:flow')('withdraw gas fee', withdrawNeededGas)
+                }
 
                 await flow.ethTokenSwap.withdraw(data, (hash) => {
                   flow.setState({
