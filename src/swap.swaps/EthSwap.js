@@ -54,6 +54,7 @@ class EthSwap extends SwapInterface {
    * @deprecated
    */
   updateGas() {
+    console.warn(`EthSwap.updateGas() is deprecated and will be removed. Use .updateGasPrice()`)
     return updateGasPrice()
   }
 
