@@ -73,7 +73,7 @@ class BTC2ETH extends Flow {
 
       refundTransactionHash: null,
       isRefunded: false,
-
+      withdrawFee: null,
       refundTxHex: null,
       isFinished: false,
       isSwapExist: false,
@@ -274,11 +274,11 @@ class BTC2ETH extends Flow {
 
       async () => {
         const { buyAmount, participant } = flow.swap
-        const { secretHash } = flow.state
+        const { secretHash, secret } = flow.state
 
         const data = {
           ownerAddress:   participant.eth.address,
-          secret:         flow.state.secret,
+          secret,
         }
 
         const balanceCheckError = await flow.ethSwap.checkBalance({
@@ -316,9 +316,41 @@ class BTC2ETH extends Flow {
           }
         }
 
-        const tryWithdraw = async () => {
+        const onWithdrawReady = () => {
+          flow.swap.room.on('request ethWithdrawTxHash', () => {
+            // Spot where there was an a vulnerability
+            flow.swap.room.sendMessage({
+              event: 'ethWithdrawTxHash',
+              data: {
+                ethSwapWithdrawTransactionHash: flow.state.ethSwapWithdrawTransactionHash,
+              },
+            })
+          })
+
+          flow.swap.room.sendMessage({
+            event: 'finish eth withdraw',
+          })
+
+          flow.finishStep({
+            isEthWithdrawn,
+          }, 'withdraw-eth')
+        }
+        const tryWithdraw = async (stopRepeater) => {
           if (!flow.state.isEthWithdrawn) {
             try {
+              const { withdrawFee } = flow.state
+
+              if (!withdrawFee) {
+                const withdrawNeededGas = await flow.ethSwap.calcWithdrawGas({
+                  ownerAddress: data.ownerAddress,
+                  secret,
+                })
+                flow.setState({
+                  withdrawFee: withdrawNeededGas,
+                })
+                debug('swap.core:flow')('withdraw gas fee', withdrawNeededGas)
+              }
+
               await flow.ethSwap.withdraw(data, (hash) => {
                 flow.setState({
                   ethSwapWithdrawTransactionHash: hash,
@@ -338,6 +370,31 @@ class BTC2ETH extends Flow {
                 console.error(`known tx: ${err.message}`)
               } else if ( /out of gas/.test(err.message) ) {
                 console.error(`tx failed (wrong secret?): ${err.message}`)
+              } else if ( /insufficient funds for gas/.test(err.message) ) {
+                console.error(`insufficient fund for gas: ${err.message}`)
+
+                debug('swap.core:flow')('insufficient fund for gas... wait fund or request other side to withdraw')
+
+                const { requireWithdrawFee } = this.state
+
+                if (!requireWithdrawFee) {
+                  flow.swap.room.once('withdraw ready', ({ethSwapWithdrawTransactionHash}) => {
+                    flow.setState({
+                      ethSwapWithdrawTransactionHash,
+                    })
+
+                    onWithdrawReady()
+                  })
+
+                  flow.setState({
+                    requireWithdrawFee: true,
+                    canCreateEthTransaction: true,
+                  })
+                  
+                  stopRepeater()
+                  return false
+                }
+
               } else {
                 console.error(err)
               }
@@ -353,28 +410,12 @@ class BTC2ETH extends Flow {
           return true
         }
 
-        const isEthWithdrawn = await util.helpers.repeatAsyncUntilResult(() =>
-          tryWithdraw(),
+        const isEthWithdrawn = await util.helpers.repeatAsyncUntilResult((stopRepeater) =>
+          tryWithdraw(stopRepeater),
         )
 
         if (isEthWithdrawn) {
-          flow.swap.room.on('request ethWithdrawTxHash', () => {
-            // Spot where there was an a vulnerability
-            flow.swap.room.sendMessage({
-              event: 'ethWithdrawTxHash',
-              data: {
-                ethSwapWithdrawTransactionHash: flow.state.ethSwapWithdrawTransactionHash,
-              },
-            })
-          })
-
-          flow.swap.room.sendMessage({
-            event: 'finish eth withdraw',
-          })
-
-          flow.finishStep({
-            isEthWithdrawn,
-          }, 'withdraw-eth')
+          onWithdrawReady()
         }
       },
 
@@ -393,6 +434,40 @@ class BTC2ETH extends Flow {
 
       }
     ]
+  }
+
+  /**
+   * TODO - backport version compatibility
+   *  mapped to sendWithdrawRequestToAnotherParticipant
+   *  remove at next iteration after client software update
+   *  Used in swap.react
+   */
+  sendWithdrawRequest() {
+    return this.sendWithdrawRequestToAnotherParticipant()
+  }
+
+  sendWithdrawRequestToAnotherParticipant() {
+    const flow = this
+
+    if (!this.state.requireWithdrawFee) return
+    if (this.state.requireWithdrawFeeSended) return
+
+    this.setState({
+      requireWithdrawFeeSended: true,
+    })
+
+    this.swap.room.on('accept withdraw request', () => {
+      flow.swap.room.sendMessage({
+        event: 'do withdraw',
+        data: {
+          secret: flow.state.secret,
+        }
+      })
+    })
+
+    this.swap.room.sendMessage({
+      event: 'request withdraw',
+    })
   }
 
   submitSecret(secret) {

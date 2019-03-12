@@ -74,7 +74,7 @@ class EthTokenSwap extends SwapInterface {
 
   async updateGas() {
     try {
-      this.gasPrice = await this.estimateGasPrice()
+      this.gasPrice = await this.estimateGasPrice({ speed: 'fast' })
     } catch(err) {
       debug('swap.core:swaps')(`EthTokenSwap: Error with gas update: ${err.message}, using old value gasPrice=${this.gasPrice}`)
     }
