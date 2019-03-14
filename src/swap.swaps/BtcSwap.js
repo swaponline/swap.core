@@ -275,7 +275,7 @@ class BtcSwap extends SwapInterface {
         const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue
 
-        if (BigNumber(totalUnspent).isLessThan(BigNumber(feeValue.plus(fundValue)))) {
+        if (totalUnspent < feeValue + fundValue) {
           throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue} + ${fundValue}`)
         }
 
