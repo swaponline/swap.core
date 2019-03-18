@@ -48,11 +48,16 @@ class Ethereum {
   fetchBalance(address) {
     return this.core.eth.getBalance(address)
       .then((wei) => {
-        let balance = Number(this.core.utils.fromWei(wei))
+        let balance = this.core.utils.fromWei(wei)
 
         debug('swap.core:ethereum')('ETH Balance:', balance)
 
         return balance
+      })
+      .catch((error) => {
+        debug('swap.core:ethereum')('ETH error:', error)
+
+        return '0'
       })
   }
 
@@ -61,13 +66,13 @@ class Ethereum {
     const url = `${this.etherscan}/api?module=account&action=tokenbalance&contractaddress=${tokenAddress}&address=${address}`
 
     return request.get(url)
-      .then( json => JSON.parse(json))
+      .then(json => JSON.parse(json))
       .then(({ result }) => result)
-      .then( raw => BigNumber(raw).dividedBy( base ) )
-      .then( num => num.toNumber())
+      .then(raw => BigNumber(raw).dividedBy(base).toString())
       .catch(error => {
         debug('swap.core:ethereum')(`TokenBalanceError: ${error.statusCode} ${url} - Failed to fetch token balance (${tokenAddress}). Probably too frequent request!`)
-        return '-'
+
+        return '0'
       })
   }
 
