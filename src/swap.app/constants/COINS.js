@@ -54,7 +54,7 @@ export const ETH_TOKENS = {
   abyss: 'ABYSS',
   msk: 'MSK',
   xsat: 'XSAT',
-  hedpay: 'HEDPAY',
+  hdp: 'HDP',
 }
 
 export default {
