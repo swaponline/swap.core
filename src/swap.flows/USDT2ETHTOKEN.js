@@ -252,6 +252,16 @@ export default (tokenName) => {
             flow.finishStep()
           }
 
+          const tokenAddressIsValid = await flow.ethTokenSwap.checkTokenIsValid({
+            ownerAddress: flow.swap.participant.eth.address,
+            participantAddress: this.app.services.auth.accounts.eth.address,
+          })
+
+          if (!tokenAddressIsValid) {
+            console.error("Tokens, blocked at contract dismatch with needed. Stop swap now!")
+            return
+          }
+
           const data = {
             ownerAddress:   flow.swap.participant.eth.address,
             secret:         flow.state.secret,
