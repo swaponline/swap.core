@@ -364,6 +364,24 @@ class EthTokenSwap extends SwapInterface {
   }
 
   /**
+   * @param {object} data
+   * @param {string} data.ownerAddress
+   * @param {string} tokenAddress
+   */
+  async checkTokenIsValid(data) {
+    const { ownerAddress, participantAddress } = data
+
+    debug('swap.core:swaps')(`Check token is valid. Needed token address: ${this.tokenAddress.toUpperCase()}`);
+    const swap = await util.helpers.repeatAsyncUntilResult(() =>
+      this.contract.methods.swaps(ownerAddress, participantAddress).call()
+    )
+
+    const { token } = swap
+    debug('swap.core:swaps')(`Token address at swap contract: ${token.toUpperCase()}`);
+
+    return (this.tokenAddress.toUpperCase() == token.toUpperCase())
+  }
+  /**
    *
    * @param {string} ownerAddress
    * @returns {Promise.<string>}

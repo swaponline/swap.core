@@ -299,6 +299,16 @@ export default (tokenName) => {
             return
           }
 
+          const tokenAddressIsValid = await flow.ethTokenSwap.checkTokenIsValid({
+            ownerAddress: participant.eth.address,
+            participantAddress: this.app.services.auth.accounts.eth.address,
+          })
+
+          if (!tokenAddressIsValid) {
+            console.error("Tokens, blocked at contract dismatch with needed. Stop swap now!")
+            return
+          }
+
           const onWithdrawReady = () => {
             flow.swap.room.on('request ethWithdrawTxHash', () => {
               flow.swap.room.sendMessage({
