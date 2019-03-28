@@ -55,6 +55,7 @@ export const ETH_TOKENS = {
   msk: 'MSK',
   xsat: 'XSAT',
   hdp: 'HDP',
+  satx: 'SATX',
 }
 
 export default {
