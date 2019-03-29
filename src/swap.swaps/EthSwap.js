@@ -88,7 +88,7 @@ class EthSwap extends SwapInterface {
     }
   }
 
-  async send(methodName, args, params = {}, handleTransactionHash) {
+  async send(methodName, args, _params = {}, handleTransactionHash) {
     if (typeof this.contract.methods[methodName] !== 'function') {
       throw new Error(`EthSwap.send: No method ${methodName} in contract`)
     }
@@ -100,7 +100,7 @@ class EthSwap extends SwapInterface {
         from: this.app.services.auth.accounts.eth.address,
         gas: this.gasLimit,
         gasPrice: this.gasPrice,
-        ...params,
+        ..._params,
       }
 
       debug(`EthSwap -> ${methodName} -> params`, params)
