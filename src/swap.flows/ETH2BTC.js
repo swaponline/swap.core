@@ -493,21 +493,27 @@ class ETH2BTC extends Flow {
   }
 
   async tryRefund() {
-    const { owner, participant } = this.swap
     const { secretHash } = this.state
 
-    const currentSwap = await this.ethSwap.swaps({
-      ownerAddress: owner.eth.address,
-      participantAddress: participant.eth.address,
-    })
+    const refundHandler = () => {
+      this.swap.room.sendMessage({
+        event: 'refund completed',
+      })
 
-    const thisSecretHash = `0x${secretHash.replace(/^0x/, '')}`
-    const currentSecretHash = currentSwap.secretHash
+      this.setState({
+        isSwapExist: false,
+        isRefunded: true,
+      })
 
-    const isCurrentSwap = thisSecretHash === currentSecretHash
+      return true
+    }
 
-    if (!isCurrentSwap) {
-      throw new Error('This refund is not for current swap')
+    const wasRefunded = this.ethSwap.wasRefunded({ secretHash })
+
+    if (wasRefunded) {
+      debug('swap.core:flow')('This swap was refunded')
+
+      return refundHandler()
     }
 
     return this.ethSwap.refund({
@@ -515,18 +521,9 @@ class ETH2BTC extends Flow {
     }, (hash) => {
       this.setState({
         refundTransactionHash: hash,
-        isRefunded: true,
       })
     })
-      .then(() => {
-        this.swap.room.sendMessage({
-          event: 'refund completed',
-        })
-
-        this.setState({
-          isSwapExist: false,
-        })
-      })
+    .then(() => refundHandler())
   }
 
   stopSwapProcess() { // вызывается в реакте
