@@ -12,7 +12,7 @@ const isAsk = (type) => (type === PAIR_TYPES.ASK)
 const isBid = (type) => (type === PAIR_TYPES.BID)
 
 const filteredDecimals = ({ amount, currency }) =>
-  BigNumber(amount).decimalPlaces(COINS_PRECISION[currency] || 18).toString()
+  BigNumber(amount).decimalPlaces((COINS_PRECISION[currency] !== undefined) ? COINS_PRECISION[currency] : 18).toString()
 
 export const parseTicker = (order) => {
   const { buyCurrency: buy, sellCurrency: sell } = order
