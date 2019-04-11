@@ -60,6 +60,7 @@ class EthTokenSwap extends SwapInterface {
     this.gasPrice       = options.gasPrice || 2e9
     this.fetchBalance   = options.fetchBalance
     this.estimateGasPrice = options.estimateGasPrice || (() => {})
+
   }
 
   _initSwap(app) {
@@ -356,7 +357,7 @@ class EthTokenSwap extends SwapInterface {
       return `Expected hash: ${expectedHash}, got: ${_secretHash}`
     }
 
-    const expectedValueWei = BigNumber(expectedValue).multipliedBy(1e18)
+    const expectedValueWei = BigNumber(expectedValue).multipliedBy(this.decimals)
 
     if (expectedValueWei.isGreaterThan(balance)) {
       return `Expected value: ${expectedValueWei.toString()}, got: ${balance}`
