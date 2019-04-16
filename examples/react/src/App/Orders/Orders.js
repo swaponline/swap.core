@@ -145,11 +145,11 @@ export default class Orders extends Component {
                                       Boolean(requests && requests.length) ? (
                                         <Fragment>
                                           {
-                                            requests.map(({ peer, reputation }) => (
-                                              <div key={peer}>
-                                                User {peer} with <b>{reputation}</b> reputation wants to swap.
-                                                <button onClick={() => this.acceptRequest(id, peer)}>ACCEPT</button>
-                                                <button onClick={() => this.declineRequest(id, peer)}>DECLINE</button>
+                                            requests.map(({ participant, reputation }) => (
+                                              <div key={participant.peer}>
+                                                User {participant.peer} with <b>{reputation}</b> reputation wants to swap.
+                                                <button onClick={() => this.acceptRequest(id, participant.peer)}>ACCEPT</button>
+                                                <button onClick={() => this.declineRequest(id, participant.peer)}>DECLINE</button>
                                               </div>
                                             ))
                                           }
