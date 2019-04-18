@@ -58,7 +58,7 @@ export const ETH_TOKENS = {
   satx: 'SATX',
   bnb: 'BNB',
   scro: 'SCRO',
-  xeur: 'xEuro'
+  xeur: 'XEUR',
 }
 
 export default {
