@@ -73,12 +73,61 @@ class EthTokenSwap extends SwapInterface {
     this.ERC20          = new this.app.env.web3.eth.Contract(this.tokenAbi, this.tokenAddress)
   }
 
-  async updateGas() {
+   /**
+   * @deprecated
+   */
+  updateGas() {
+    console.warn(`EthTokenSwap.updateGas() is deprecated and will be removed. Use .updateGasPrice()`)
+    return updateGasPrice()
+  }
+
+  async updateGasPrice() {
+    debug('gas price before update', this.gasPrice)
+
     try {
       this.gasPrice = await this.estimateGasPrice({ speed: 'fast' })
     } catch(err) {
-      debug('swap.core:swaps')(`EthTokenSwap: Error with gas update: ${err.message}, using old value gasPrice=${this.gasPrice}`)
+      debug(`EthTokenSwap: Error with gas update: ${err.message}, using old value gasPrice=${this.gasPrice}`)
     }
+
+    debug('gas price after update', this.gasPrice)
+  }
+
+  async send(methodName, args, _params = {}, handleTransactionHash) {
+    if (typeof this.contract.methods[methodName] !== 'function') {
+      throw new Error(`EthTokenSwap.send: No method ${methodName} in contract`)
+    }
+
+    await this.updateGasPrice()
+
+    return new Promise(async (resolve, reject) => {
+      const params = {
+        from: this.app.services.auth.accounts.eth.address,
+        gas: this.gasLimit,
+        gasPrice: this.gasPrice,
+        ..._params,
+      }
+
+      debug(`EthSwap -> ${methodName} -> params`, params)
+
+      const gasAmount = await this.contract.methods[methodName](...args).estimateGas(params)
+
+      params.gas = gasAmount
+
+      debug(`EthSwap -> ${methodName} -> gas`, gasAmount)
+
+      const receipt = await this.contract.methods[methodName](...args).send(params)
+        .on('transactionHash', (hash) => {
+          if (typeof handleTransactionHash === 'function') {
+            handleTransactionHash(hash)
+          }
+        })
+        .on('error', (err) => {
+          reject(err)
+        })
+
+      resolve(receipt)
+    })
   }
 
   /**
@@ -93,6 +142,9 @@ class EthTokenSwap extends SwapInterface {
 
     const exp = BigNumber(10).pow(this.decimals)
     const newAmount = BigNumber(amount).times(exp).toString()
+
+    const args = [ this.address, newAmount ]
+    return this.send('approve', [...args], {}, handleTransactionHash)
 
     await this.updateGas()
 
@@ -175,6 +227,11 @@ class EthTokenSwap extends SwapInterface {
     const exp = BigNumber(10).pow(this.decimals)
     const newAmount = BigNumber(amount).times(exp).toString()
 
+    const hash    = `0x${secretHash.replace(/^0x/, '')}`
+    const args  = [ hash, participantAddress, newAmount, this.tokenAddress ]
+
+    return this.send('creatSwap', [...args], {}, handleTransactionHash)
+
     await this.updateGas()
 
     return new Promise(async (resolve, reject) => {
@@ -230,6 +287,11 @@ class EthTokenSwap extends SwapInterface {
 
     const exp = BigNumber(10).pow(this.decimals)
     const newAmount = BigNumber(amount).times(exp).toString()
+    const hash    = `0x${secretHash.replace(/^0x/, '')}`
+
+    const args  = [ hash , participantAddress, targetWallet , newAmount, this.tokenAddress ]
+
+    return this.send('creatSwapTarget', [...args], {}, handleTransactionHash)
 
     await this.updateGas()
 
@@ -514,7 +576,10 @@ class EthTokenSwap extends SwapInterface {
   async withdrawOther(data, handleTransactionHash) {
     const { ownerAddress, participantAddress, secret } = data
 
-    await this.updateGas()
+    const _secret = `0x${secret.replace(/^0x/, '')}`
+    const args = [ _secret, ownerAddress, participantAddress ]
+
+    return this.send('withdrawOther', [...args], {}, handleTransactionHash)
 
     return new Promise(async (resolve, reject) => {
       const _secret = `0x${secret.replace(/^0x/, '')}`
@@ -558,7 +623,8 @@ class EthTokenSwap extends SwapInterface {
   async refund(data, handleTransactionHash) {
     const { participantAddress } = data
 
-    await this.updateGas()
+    const args = [ participantAddress ]
+    return this.send('refund', [...args], {}, handleTransactionHash)
 
     return new Promise(async (resolve, reject) => {
       const params = {
@@ -606,6 +672,111 @@ class EthTokenSwap extends SwapInterface {
     })
   }
 
+  /**
+   *
+   * @returns {Promise}
+   */
+  async fetchSwapEvents() {
+    if (this._allSwapEvents) return this._allSwapEvents
+
+    const allSwapEvents = await this.contract.getPastEvents('allEvents', {
+      fromBlock: 0,
+      toBlock: 'latest',
+    })
+
+    this.contract.events.allEvents({ fromBlock: 0, toBlock: 'latest' })
+      .on('data', event => {
+        this._allSwapEvents.push(event)
+      })
+      .on('changed', (event) => {
+        console.error(`EthSwap: fetchEvents: needs rescan`)
+        this._allSwapEvents = null
+      })
+      .on('error', err => {
+        console.error(err)
+        this._allSwapEvents = null
+      })
+
+    this._allSwapEvents = allSwapEvents
+
+    return allSwapEvents
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secretHash
+   * @returns {Promise}
+   */
+  async findSwap(data) {
+    const { secretHash } = data
+
+    const allSwapEvents = await this.fetchSwapEvents()
+
+    const swapEvents = allSwapEvents
+      .filter(({ returnValues }) => returnValues._secretHash === `0x${secretHash.replace('0x','')}`)
+
+    const [ create, close, ...rest ] = swapEvents
+
+    if (rest && rest.length) {
+      console.error(`More than two swaps with same hash`, rest)
+      // throw new Error(`More than two swaps with same hash`)
+    }
+
+    return [ create, close ]
+  }
+
+  /**
+    *
+    * @param {object} data
+    * @param {string} data.secretHash
+    * @returns {Promise(status)}
+    */
+
+  async wasClosed(data) {
+    const [ create, close ] = await this.findSwap(data)
+
+    if (!create) {
+      debug(`No swap ${secretHash}`)
+      return 'no swap'
+    } else if (create && !close) {
+      debug(`Open yet!`)
+      return 'open'
+    } else {
+      if (close.event == 'Withdraw') {
+        debug(`Withdrawn`)
+        return 'withdrawn'
+      } else if (close.event == 'Refund') {
+        debug(`Refund`)
+        return 'refunded'
+      } else {
+        debug(`Unknown event, error`)
+        return 'error'
+      }
+    }
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secretHash
+   * @returns {Promise(boolean)}
+   */
+  async wasRefunded(data) {
+    const status = await this.wasClosed(data)
+    return stats === 'refunded'
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secretHash
+   * @returns {Promise(boolean)}
+   */
+  async wasWithdrawn(data) {
+    const status = await this.wasClosed(data)
+    return stats === 'withdrawn'
+  }
 
   /**
    *
