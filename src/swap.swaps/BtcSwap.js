@@ -351,7 +351,8 @@ class BtcSwap extends SwapInterface {
 
     const tx            = new this.app.env.bitcoin.TransactionBuilder(this.network)
     const unspents      = await this.fetchUnspents(scriptAddress)
-    const feeValue      = this.feeValue // TODO how to get this value
+    const feeValueBN    = await this.getTxFee({ inSatoshis: true, address: ownerAddress })
+    const feeValue      = feeValueBN.integerValue().toNumber()
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
 
     if (BigNumber(totalUnspent).isLessThan(feeValue)) {
