@@ -313,7 +313,7 @@ class EthSwap extends SwapInterface {
     const [ create, close ] = await this.findSwap(data)
 
     if (!create) {
-      debug(`No swap ${secretHash}`)
+      debug(`No swap with hash ${data.secretHash}`)
       return 'no swap'
     } else if (create && !close) {
       debug(`Open yet!`)
