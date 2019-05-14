@@ -293,6 +293,8 @@ class BtcSwap extends SwapInterface {
           handleTransactionHash(txRaw.getId())
         }
 
+        debug('swap.core:swaps')(`tx raw hex:\n${txRaw.toHex()}`)
+
         try {
           const result = await this.broadcastTx(txRaw.toHex())
 
