@@ -176,11 +176,11 @@ class BTC2ETH extends Flow {
             amount: sellAmount,
           }, (hash) => {
             onTransactionHash(hash)
-
-            flow.finishStep({
-              isBtcScriptFunded: true,
-            }, { step: 'lock-btc' })
           })
+
+          flow.finishStep({
+            isBtcScriptFunded: true,
+          }, { step: 'lock-btc' })
         } else {
           const { btcScriptValues: scriptValues } = flow.state
 
@@ -390,7 +390,7 @@ class BTC2ETH extends Flow {
                     requireWithdrawFee: true,
                     canCreateEthTransaction: true,
                   })
-                  
+
                   stopRepeater()
                   return false
                 }
