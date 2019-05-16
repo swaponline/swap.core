@@ -49,7 +49,7 @@ class Bitcoin {
 
     const txSize = txIn > 0
       ? txIn * 146 + txOut * 33 + (15 + txIn - txOut)
-      : 226 // default tx size for 1 txIn and 2 txOut
+      : 320 // default tx size for 1 txIn and 2 txOut = 226, our default = 320
 
     return txSize
   }
@@ -99,7 +99,7 @@ class Bitcoin {
         case 'fast':    return 'fastestFee'
         case 'normal':  return 'halfHourFee'
         case 'slow':    return 'hourFee'
-        default:      return 'halfHourFee'
+        default:      return 'fastestFee'
       }
     })()
 
@@ -116,7 +116,7 @@ class Bitcoin {
         case 'fast':    return 'high_fee_per_kb'
         case 'normal':  return 'medium_fee_per_kb'
         case 'slow':    return 'low_fee_per_kb'
-        default:      return 'medium_fee_per_kb'
+        default:      return 'high_fee_per_kb'
       }
     })()
 
