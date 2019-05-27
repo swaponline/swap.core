@@ -4,6 +4,7 @@ export default [
   'ETH-BTC',
   'EOS-BTC',
   'LTC-BTC',
+  'ETH-BCH',
   'ETH-LTC',
 
   ...Object.values(ETH_TOKENS).map(token => `${token}-BTC`),
