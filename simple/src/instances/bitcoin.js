@@ -105,9 +105,13 @@ class Bitcoin {
       }
     })()
 
-    // 1 hour cache
+    // 10 minuts cache
+    // query request
     return request
-      .get(`${EARN_COM}`, { cacheResponse: 60*60*1000 } )
+      .get(`${EARN_COM}`, {
+        cacheResponse: 10*60*1000,
+        queryResponse: true,
+      } )
       .then(json => JSON.parse(json))
       .then(fees => Number(fees[_speed]) * 1024)
       .catch(error => filterError(error))
@@ -127,20 +131,24 @@ class Bitcoin {
       ? BLOCKCYPHER_API_TESTNET
       : BLOCKCYPHER_API
 
-    // 1 hour cache
+    // 10 minuts cache
+    // query request
     return request
-      .get(`${API_ROOT}`, { cacheResponse: 60*60*1000 } )
+      .get(`${API_ROOT}`, {
+        cacheResponse: 10*60*1000,
+        queryResponse: true,
+      } )
       .then(json => JSON.parse(json))
       .then(info => Number(info[_speed]))
       .catch(error => filterError(error))
   }
 
   fetchBalance(address) {
-    // 1 minute cache
+    // 10 seconds cache
     // query requests
     return request.get(`${this.root}/addr/${address}`,
       {
-        cacheResponse: 1*60*1000,
+        cacheResponse: 10*1000,
         queryResponse: true,
       }
     ).then(( json ) => {
@@ -153,10 +161,11 @@ class Bitcoin {
   }
 
   fetchUnspents(address) {
-    // 1 minute cache
+    // 10 seconds cache
+    // query requests
     return request.get(`${this.root}/addr/${address}/utxo`,
       { 
-        cacheResponse: 1*60*1000,
+        cacheResponse: 10*1000,
         queryResponse: true,
       }
     ).then(json => JSON.parse(json))
@@ -174,9 +183,13 @@ class Bitcoin {
   }
 
   fetchTx(hash) {
-    // 1 minute cache
+    // 5 seconds cache
+    // query request
     return request
-      .get(`${this.root}/tx/${hash}`, { cacheResponse: 1*60*1000 } )
+      .get(`${this.root}/tx/${hash}`, {
+        cacheResponse: 5*1000,
+        queryResponse: true,
+      } )
       .then(json => JSON.parse(json))
       .then(({ fees, ...rest }) => ({
         fees: BigNumber(fees).multipliedBy(1e8),
@@ -193,9 +206,13 @@ class Bitcoin {
       ? BLOCKCYPHER_API_TESTNET
       : BLOCKCYPHER_API
 
-    // 1 minute cache
+    // 5 seconds cache
+    // query request
     return request
-      .get(`${API_ROOT}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`, { cacheResponse: 1*60*1000 } )
+      .get(`${API_ROOT}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`, {
+        cacheResponse: 5*1000,
+        queryResponse: true,
+      } )
       .then(json => JSON.parse(json))
       .catch(error => {
         error = error.message
