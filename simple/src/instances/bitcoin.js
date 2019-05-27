@@ -137,22 +137,30 @@ class Bitcoin {
 
   fetchBalance(address) {
     // 1 minute cache
-    return request.get(`${this.root}/addr/${address}`, { cacheResponse: 1*60*1000 } )
-      .then(( json ) => {
-        const balance = JSON.parse(json).balance
-        debug('swap.core:bitcoin')('BTC Balance:', balance)
+    // query requests
+    return request.get(`${this.root}/addr/${address}`,
+      {
+        cacheResponse: 1*60*1000,
+        queryResponse: true,
+      }
+    ).then(( json ) => {
+      const balance = JSON.parse(json).balance
+      debug('swap.core:bitcoin')('BTC Balance:', balance)
 
-        return balance
-      })
-      .catch(error => filterError(error))
+      return balance
+    })
+    .catch(error => filterError(error))
   }
 
   fetchUnspents(address) {
     // 1 minute cache
-    return request
-      .get(`${this.root}/addr/${address}/utxo`, { cacheResponse: 1*60*1000 } )
-      .then(json => JSON.parse(json))
-      .catch(error => filterError(error))
+    return request.get(`${this.root}/addr/${address}/utxo`,
+      { 
+        cacheResponse: 1*60*1000,
+        queryResponse: true,
+      }
+    ).then(json => JSON.parse(json))
+    .catch(error => filterError(error))
   }
 
   broadcastTx(txRaw) {
