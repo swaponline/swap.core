@@ -1,10 +1,11 @@
 const bitcoin = require('bitcoinjs-lib')
-const request = require('request-promise-native')
+//const request = require('request-promise-native')
+const request = require('../helpers/request')
 const BigNumber = require('bignumber.js')
 const debug = require('debug')
 
-// const BITPAY = isMain ? `https://insight.bitpay.com/api` : `https://test-insight.bitpay.com/api`
-const BITPAY = false ? `https://insight.bitpay.com/api` : `https://test-insight.swap.online/insight-api`
+//const BITPAY = isMain ? `https://insight.bitpay.com/api` : `https://test-insight.bitpay.com/api`
+const BITPAY = false ? `https://insight.bitpay.com/api` : `https://test-insight.bitpay.com/api`
 const BITPAY_MAIN = `https://insight.bitpay.com/api`
 
 const BLOCKCYPHER_API = `https://api.blockcypher.com/v1/btc/main/`
@@ -35,7 +36,8 @@ class Bitcoin {
   }
 
   getRate() {
-    request.get('https://noxonfund.com/curs.php')
+    // 10 min cache
+    request.get('https://noxonfund.com/curs.php', { cacheResponse: 10*60*1000 } )
       .then(({ price_btc }) => {
         return price_btc
       })
@@ -103,8 +105,9 @@ class Bitcoin {
       }
     })()
 
+    // 1 hour cache
     return request
-      .get(`${EARN_COM}`)
+      .get(`${EARN_COM}`, { cacheResponse: 60*60*1000 } )
       .then(json => JSON.parse(json))
       .then(fees => Number(fees[_speed]) * 1024)
       .catch(error => filterError(error))
@@ -124,15 +127,17 @@ class Bitcoin {
       ? BLOCKCYPHER_API_TESTNET
       : BLOCKCYPHER_API
 
+    // 1 hour cache
     return request
-      .get(`${API_ROOT}`)
+      .get(`${API_ROOT}`, { cacheResponse: 60*60*1000 } )
       .then(json => JSON.parse(json))
       .then(info => Number(info[_speed]))
       .catch(error => filterError(error))
   }
 
   fetchBalance(address) {
-    return request.get(`${this.root}/addr/${address}`)
+    // 1 minute cache
+    return request.get(`${this.root}/addr/${address}`, { cacheResponse: 1*60*1000 } )
       .then(( json ) => {
         const balance = JSON.parse(json).balance
         debug('swap.core:bitcoin')('BTC Balance:', balance)
@@ -143,8 +148,9 @@ class Bitcoin {
   }
 
   fetchUnspents(address) {
+    // 1 minute cache
     return request
-      .get(`${this.root}/addr/${address}/utxo`)
+      .get(`${this.root}/addr/${address}/utxo`, { cacheResponse: 1*60*1000 } )
       .then(json => JSON.parse(json))
       .catch(error => filterError(error))
   }
@@ -160,8 +166,9 @@ class Bitcoin {
   }
 
   fetchTx(hash) {
+    // 1 minute cache
     return request
-      .get(`${this.root}/tx/${hash}`)
+      .get(`${this.root}/tx/${hash}`, { cacheResponse: 1*60*1000 } )
       .then(json => JSON.parse(json))
       .then(({ fees, ...rest }) => ({
         fees: BigNumber(fees).multipliedBy(1e8),
@@ -178,8 +185,9 @@ class Bitcoin {
       ? BLOCKCYPHER_API_TESTNET
       : BLOCKCYPHER_API
 
+    // 1 minute cache
     return request
-      .get(`${API_ROOT}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`)
+      .get(`${API_ROOT}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`, { cacheResponse: 1*60*1000 } )
       .then(json => JSON.parse(json))
       .catch(error => {
         error = error.message
