@@ -60,6 +60,7 @@ export const ETH_TOKENS = {
   bnb: 'BNB',
   scro: 'SCRO',
   xeur: 'XEUR',
+  eurs: 'EURS',
 }
 
 export default {
