@@ -1,4 +1,5 @@
-const request = require('request-promise-native')
+//const request = require('request-promise-native')
+const request = require('../helpers/request')
 const debug = require('debug')
 
 const Web3 = require('web3')
@@ -65,7 +66,8 @@ class Ethereum {
     const base = TEN.pow(decimals) // 1e18 usually
     const url = `${this.etherscan}/api?module=account&action=tokenbalance&contractaddress=${tokenAddress}&address=${address}`
 
-    return request.get(url)
+    // cache 1 minute
+    return request.get(url, { cacheResponse: 1*60*1000 })
       .then(json => JSON.parse(json))
       .then(({ result }) => result)
       .then(raw => BigNumber(raw).dividedBy(base).toString())
@@ -134,8 +136,9 @@ class Ethereum {
       }
     })()
 
+    // cache 1 hour
     return request
-      .get(`${ETHERCHAIN_API}`)
+      .get(`${ETHERCHAIN_API}`, { cacheResponse: 60*60*1000 })
       .then(json => JSON.parse(json))
       .then(fees => BigNumber(fees[_speed]).multipliedBy(1e9))
       .catch(error => filterError(error))
@@ -151,8 +154,9 @@ class Ethereum {
       }
     })()
 
+    // cache 1 hour
     return request
-      .get(`${ETHGASSTATION_API}`)
+      .get(`${ETHGASSTATION_API}`, { cacheResponse: 10*60*1000 })
       .then(json => JSON.parse(json))
       .then(fees => BigNumber(fees[_speed]).dividedBy(10).multipliedBy(1e9))
       .catch(error => filterError(error))
