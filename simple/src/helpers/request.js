@@ -18,7 +18,7 @@ const responseCacheGet = (req, opts) => {
 
 const responseCacheAdd = (req, opts, resData) => {
   const cacheKey = responseCacheGetKey(req, opts)
-  const cacheResponse = { opts }
+  const cacheResponse = opts.cacheResponse
   const cacheResponseCreateTime = new Date().getTime()
 
   responseCacheStorage[cacheKey] = {
@@ -28,33 +28,50 @@ const responseCacheAdd = (req, opts, resData) => {
   }
 }
 
+const responseQueryArray = new Array()
+const responseQueryWorker = () => {
+  if (responseQueryArray.length) {
+    const currentQuery = responseQueryArray.shift()
+    currentQuery( responseQueryWorker )
+  } else {
+    setTimeout( responseQueryWorker, 10 )
+  }
+}
+responseQueryWorker()
+
+
 const createResponseHandler = (req, opts) => {
   const debug = `${opts.method.toUpperCase()} ${opts.endpoint}`
 
-  // cached answer
-  const cachedAnswer = responseCacheGet(req, opts)
-
-  if (cachedAnswer) {
-    console.log('request from cache')
-    return new Promise((fulfill, reject) => {
-      fulfill(cachedAnswer.resData)
-      opts.onComplete()
-    })
-  }
-  console.log('new request')
 
   // no cache - do request
   return new Promise((fulfill, reject) => {
-    req.then( answer => {
-      console.log('answer recived', opts.endpoint)
-      if (opts.cacheResponse) {
-        responseCacheAdd(req, opts, answer)
+    const doRequest = ( nextTick ) => {
+      // cached answer
+      const cachedAnswer = responseCacheGet(req, opts)
+
+      if (cachedAnswer) {
+        setTimeout( nextTick, 500 )
+        fulfill(cachedAnswer.resData)
+        return
       }
-      fulfill(answer)
-    })
-    .catch( error => {
-      reject(error)
-    })
+      req.then( answer => {
+        if (opts.cacheResponse) {
+          responseCacheAdd(req, opts, answer)
+        }
+        setTimeout( nextTick, 500 )
+        fulfill(answer)
+      })
+      .catch( error => {
+        setTimeout( nextTick, 500 )
+        reject(error)
+      })
+    }
+    if (opts.queryResponse) {
+      responseQueryArray.push( doRequest )
+    } else {
+      doRequest( () => {} )
+    }
   })
 }
 
@@ -77,7 +94,7 @@ const defaultOptions = {
  */
 const sendRequest = (options) => {
   const opts = { ...defaultOptions, ...options }
-  console.log('sendRequest ', opts.method, opts.endpoint)
+
   const req = request[opts.method](opts.endpoint)
 
   // req.set({
