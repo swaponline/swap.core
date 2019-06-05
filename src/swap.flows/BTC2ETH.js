@@ -519,18 +519,24 @@ class BTC2ETH extends Flow {
 
   async syncBalance() {
     const { sellAmount } = this.swap
+
     this.setState({
       isBalanceFetching: true,
     })
 
     const balance = await this.btcSwap.fetchBalance(this.app.services.auth.accounts.btc.getAddress())
-    const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
+    const txFee = await this.btcSwap.estimateFeeValue({ method: 'swap', fixed: true })
+
+    const needAmount = sellAmount.plus(txFee)
+    const isEnoughMoney = needAmount.isLessThanOrEqualTo(balance)
 
     if (!isEnoughMoney) {
-      console.error(`Not enough money: ${balance} < ${sellAmount}`)
+      console.error(`Not enough money: ${balance} < ${needAmount} (${sellAmount} + txFee ${txFee})`)
     }
     this.finishStep({
       balance,
+      createScriptFee: txFee,
+      createScriptNeedAmount: needAmount,
       isBalanceFetching: false,
       isBalanceEnough: isEnoughMoney,
     }, { step: 'sync-balance' })

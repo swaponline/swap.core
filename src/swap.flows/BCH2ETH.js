@@ -524,13 +524,18 @@ class BCH2ETH extends Flow {
     })
 
     const balance = await this.bchSwap.fetchBalance(this.app.services.auth.accounts.bch.getAddress())
-    const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
+    const txFee = await this.bchSwap.estimateFeeValue({ method: 'swap', fixed: true })
+
+    const needAmount = sellAmount.plus(txFee)
+    const isEnoughMoney = needAmount.isLessThanOrEqualTo(balance)
 
     if (!isEnoughMoney) {
-      console.error(`Not enough money: ${balance} < ${sellAmount}`)
+      console.error(`Not enough money: ${balance} < ${needAmount} (${sellAmount} + txFee ${txFee})`)
     }
     this.finishStep({
       balance,
+      createScriptFee: txFee,
+      createScriptNeedAmount: needAmount,
       isBalanceFetching: false,
       isBalanceEnough: isEnoughMoney,
     }, { step: 'sync-balance' })
