@@ -95,12 +95,13 @@ const defaultOptions = {
 const sendRequest = (options) => {
   const opts = { ...defaultOptions, ...options }
 
-  const req = request[opts.method](opts.endpoint)
+  let req
 
-  // req.set({
-  //   'Content-Type': opts.formData ? 'application/x-www-form-urlencoded; charset=UTF-8' : 'application/json',
-  //   ...(opts.headers || {}),
-  // })
+  if (opts.body) {
+    req = request[opts.method](opts.endpoint, { json: !!opts.json, body: opts.body })
+  } else {
+    req = request[opts.method](opts.endpoint)
+  }
 
   if (opts.timeout) {
     req.timeout({
@@ -112,10 +113,6 @@ const sendRequest = (options) => {
 
   if (opts.query) {
     req.query(opts.query)
-  }
-
-  if (opts.body) {
-    req.send(opts.body)
   }
 
   if (opts.sameOrigin) {
