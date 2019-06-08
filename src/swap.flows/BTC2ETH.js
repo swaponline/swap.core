@@ -67,7 +67,9 @@ class BTC2ETH extends Flow {
 
       isEthContractFunded: false,
 
+      btcSwapWithdrawTransactionHash: null,
       ethSwapWithdrawTransactionHash: null,
+
       canCreateEthTransaction: true,
       isEthWithdrawn: false,
 
@@ -422,7 +424,10 @@ class BTC2ETH extends Flow {
       // 7. Finish
 
       () => {
-        flow.swap.room.once('swap finished', () => {
+        flow.swap.room.once('swap finished', ({btcSwapWithdrawTransactionHash}) => {
+          flow.setState({
+            btcSwapWithdrawTransactionHash,
+          })
           flow.finishStep({
             isFinished: true,
           })
