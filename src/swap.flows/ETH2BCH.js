@@ -71,6 +71,9 @@ class ETH2BCH extends Flow {
       isEthWithdrawn: false,
       isBchWithdrawn: false,
 
+      ethSwapWithdrawTransactionHash: null,
+      bchSwapWithdrawTransactionHash: null,
+
       refundTransactionHash: null,
       isRefunded: false,
 
@@ -343,8 +346,13 @@ class ETH2BCH extends Flow {
       // 8. Finish
 
       () => {
+        const { bchSwapWithdrawTransactionHash } = flow.state
+
         flow.swap.room.sendMessage({
           event: 'swap finished',
+          data: {
+            bchSwapWithdrawTransactionHash,
+          },
         })
 
         flow.finishStep({
