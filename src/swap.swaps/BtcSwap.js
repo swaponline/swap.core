@@ -178,8 +178,6 @@ class BtcSwap extends SwapInterface {
 
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
 
-    debug('swap.core:swaps')('DATA', data)
-
     const script = this.app.env.bitcoin.script.compile([
 
       hashOpcode,
@@ -237,16 +235,16 @@ class BtcSwap extends SwapInterface {
     const totalConfidentUnspent = confidentUnspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
 
     if (expectedValue.isGreaterThan(totalUnspent)) {
-      return `Expected script value: ${expectedValue.toNumber()}, got: ${totalUnspent}`
+      return `Expected script value: ${expectedValue.toNumber()}, got: ${totalUnspent}, address: ${scriptAddress}`
     }
     if (expected.lockTime > lockTime) {
-      return `Expected script lockTime: ${expected.lockTime}, got: ${lockTime}`
+      return `Expected script lockTime: ${expected.lockTime}, got: ${lockTime}, address: ${scriptAddress}`
     }
     if (expected.recipientPublicKey !== recipientPublicKey) {
       return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
     }
     if (expectedValue.isGreaterThan(totalConfidentUnspent)) {
-      return `Expected script value: ${expectedValue.toString()} with confidence above ${expectedConfidence}, got: ${totalConfidentUnspent}`
+      return `Expected script value: ${expectedValue.toString()} with confidence above ${expectedConfidence}, got: ${totalConfidentUnspent}, address: ${scriptAddress}`
     }
   }
 
