@@ -4,8 +4,7 @@ const request = require('../helpers/request')
 const BigNumber = require('bignumber.js')
 const debug = require('debug')
 
-//const BITPAY = isMain ? `https://insight.bitpay.com/api` : `https://test-insight.bitpay.com/api`
-const BITPAY = false ? `https://insight.bitpay.com/api` : `https://test-insight.bitpay.com/api`
+const BITPAY = `https://test-insight.bitpay.com/api`
 const BITPAY_MAIN = `https://insight.bitpay.com/api`
 
 const BLOCKCYPHER_API = `https://api.blockcypher.com/v1/btc/main/`
@@ -58,22 +57,23 @@ class Bitcoin {
 
   async estimateFeeValue({ feeRate, inSatoshis, speed, address, txSize } = {}) {
     const DUST = 546
+    let calculatedFeeValue
 
     if (!txSize && !address) {
       debug('swap.core:bitcoin')('estimateFeeValue: need address or txSize')
-      return DUST
+      calculatedFeeValue = BigNumber(DUST).multipliedBy(1e-8)
+    } else {
+      txSize = txSize || await this.calculateTxSize({ address, speed })
+      feeRate = feeRate || await this.estimateFeeRate({ speed })
+
+      calculatedFeeValue = BigNumber.maximum(
+        DUST,
+        BigNumber(feeRate)
+          .multipliedBy(txSize)
+          .div(1024)
+          .dp(0, BigNumber.ROUND_HALF_EVEN),
+      )
     }
-
-    txSize = txSize || await this.calculateTxSize({ address, speed })
-    feeRate = feeRate || await this.estimateFeeRate({ speed })
-
-    const calculatedFeeValue = BigNumber.maximum(
-      DUST,
-      BigNumber(feeRate)
-        .multipliedBy(txSize)
-        .div(1024)
-        .dp(0, BigNumber.ROUND_HALF_EVEN),
-    )
 
     const finalFeeValue = inSatoshis
       ? calculatedFeeValue.toString()
@@ -164,7 +164,7 @@ class Bitcoin {
     // 10 seconds cache
     // query requests
     return request.get(`${this.root}/addr/${address}/utxo`,
-      { 
+      {
         cacheResponse: 10*1000,
         queryResponse: true,
       }
