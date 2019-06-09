@@ -61,6 +61,8 @@ class BTC2ETH extends Flow {
 
       btcScriptVerified: false,
 
+      createScriptFee: null,
+      createScriptNeedAmount: null,
       isBalanceFetching: false,
       isBalanceEnough: false,
       balance: null,
@@ -529,22 +531,24 @@ class BTC2ETH extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.btcSwap.fetchBalance(this.app.services.auth.accounts.btc.getAddress())
-    const txFee = await this.btcSwap.estimateFeeValue({ method: 'swap', fixed: true })
+    const btcAddress = this.app.services.auth.accounts.btc.getAddress()
+    const balance = await this.btcSwap.fetchBalance(btcAddress)
+    const txFee = await this.btcSwap.estimateFeeValue({ method: 'swap', fixed: true, address: btcAddress })
 
     const needAmount = sellAmount.plus(txFee)
     const isEnoughMoney = needAmount.isLessThanOrEqualTo(balance)
 
-    if (!isEnoughMoney) {
+    if (isEnoughMoney) {
+      this.finishStep({
+        balance,
+        createScriptFee: txFee,
+        createScriptNeedAmount: needAmount,
+        isBalanceFetching: false,
+        isBalanceEnough: isEnoughMoney,
+      }, { step: 'sync-balance' })
+    } else {
       console.error(`Not enough money: ${balance} < ${needAmount} (${sellAmount} + txFee ${txFee})`)
     }
-    this.finishStep({
-      balance,
-      createScriptFee: txFee,
-      createScriptNeedAmount: needAmount,
-      isBalanceFetching: false,
-      isBalanceEnough: isEnoughMoney,
-    }, { step: 'sync-balance' })
   }
 
   stopSwapProcess() { // вызывается из реакте
