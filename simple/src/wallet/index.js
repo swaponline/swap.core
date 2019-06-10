@@ -39,8 +39,8 @@ class Wallet {
     return this.balances[symbol]
   }
 
-  async getData() {
-    const currencies = Object.values(this.constants.COINS)
+  async getData({ coins } = {}) {
+    const currencies = coins || Object.values(this.constants.COINS)
     const data = this.auth.getPublicData()
 
     const addresses = currencies.reduce((obj, symbol) => {
