@@ -375,13 +375,18 @@ export default (tokenName) => {
         // 8. Finish
 
         () => {
+          const { btcSwapWithdrawTransactionHash } = flow.state
+
           flow.swap.room.sendMessage({
             event: 'swap finished',
+            data: {
+              btcSwapWithdrawTransactionHash,
+            },
           })
 
           flow.finishStep({
-            isFinished: true
-          })
+            isFinished: true,
+          }, { step: 'finish' })
         },
 
         // 9. Finished!
