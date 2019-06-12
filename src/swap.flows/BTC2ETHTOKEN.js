@@ -415,7 +415,10 @@ export default (tokenName) => {
         // 7. Finish
 
         () => {
-          flow.swap.room.once('swap finished', () => {
+          flow.swap.room.once('swap finished', ({btcSwapWithdrawTransactionHash}) => {
+            flow.setState({
+              btcSwapWithdrawTransactionHash,
+            })
             flow.finishStep({
               isFinished: true,
             })
