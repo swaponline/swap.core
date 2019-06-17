@@ -67,6 +67,7 @@ export default (tokenName) => {
         btcScriptCreatingTransactionHash: null,
         ethSwapCreationTransactionHash: null,
         canCreateEthTransaction: true,
+        isFailedTransaction: false,
         isEthContractFunded: false,
 
         secret: null,
@@ -219,21 +220,32 @@ export default (tokenName) => {
                   flow.setState({
                     ethSwapCreationTransactionHash: hash,
                     canCreateEthTransaction: true,
+                    isFailedTransaction: false,
                   })
 
                   debug('swap.core:flow')('created swap!', hash)
                 })
-              } catch (err) {
-                if ( /known transaction/.test(err.message) ) {
-                  console.error(`known tx: ${err.message}`)
-                } else if ( /out of gas/.test(err.message) ) {
-                  console.error(`tx failed (wrong secret?): ${err.message}`)
+              } catch (error) {
+                if ( /insufficient funds/.test(error.message) ) {
+                  console.error(`Insufficient ETH for gas: ${error.message}`)
+
+                  flow.setState({
+                    canCreateEthTransaction: false,
+                  })
+
+                  return null
+                } else if ( /known transaction/.test(error.message) ) {
+                  console.error(`known tx: ${error.message}`)
+                } else if ( /out of gas/.test(error.message) ) {
+                  console.error(`tx failed (wrong secret?): ${error.message}`)
+                } else if ( /always failing transaction/.test(error.message) ) {
+                  console.error(`Insufficient Token for transaction: ${error.message}`)
                 } else {
-                  console.error(err)
+                  console.error(error)
                 }
 
                 flow.setState({
-                  canCreateEthTransaction: false,
+                  isFailedTransaction: true,
                 })
 
                 return null
@@ -312,8 +324,8 @@ export default (tokenName) => {
                 return null
               }
             }
-            catch (err) {
-              console.error(err)
+            catch (error) {
+              console.error(error)
 
               return null
             }
@@ -420,8 +432,8 @@ export default (tokenName) => {
               }
             })
           })
-        } catch (err) {
-          debug('swap.core:flow')(err.message)
+        } catch (error) {
+          debug('swap.core:flow')(error.message)
         }
       })
 
