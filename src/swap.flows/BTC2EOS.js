@@ -50,17 +50,17 @@ const transactionHandlers = (flow) => ({
     const { secret, scriptValues } = flow.state
 
     return new Promise(async (resolve, reject) => {
-      try {
-        await flow.btcSwap.refund({
+      await flow.btcSwap.refund({
           scriptValues,
           secret,
-        }, (btcRefundTx) => {
-          resolve(btcRefundTx)
         }, 'sha256')
-      } catch (err) {
-        console.error(`refund failed: ${err.message}`)
-      }
-    })
+          .then((btcRefundTx) => {
+            resolve(btcRefundTx)
+          })
+          .catch((error) => {
+            console.error(`refund failed: ${error.message}`)
+          })
+        })
   },
 })
 
