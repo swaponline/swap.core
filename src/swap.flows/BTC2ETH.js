@@ -151,7 +151,7 @@ class BTC2ETH extends Flow {
             btcScriptCreatingTransactionHash: txID,
           })
 
-          flow.swap.room.on('request btc script', () => {
+          flow.swap.room.once('request btc script', () => {
             flow.swap.room.sendMessage({
               event:  'create btc script',
               data: {
@@ -516,7 +516,7 @@ class BTC2ETH extends Flow {
     const { participant } = this.swap
 
     const utcNow = () => Math.floor(Date.now() / 1000)
-    const getLockTime = () => utcNow() + 60 * 1 * 20 // 3 hours from now
+    const getLockTime = () => utcNow() + 60 * 60 * 3 // 3 hours from now
 
     const scriptValues = {
       secretHash:         secretHash,
@@ -534,10 +534,6 @@ class BTC2ETH extends Flow {
     })
   }
 
-  async skipSyncBalance() {
-    this.finishStep({}, { step: 'sync-balance' })
-  }
-
   async syncBalance() {
     const { sellAmount } = this.swap
 
@@ -546,8 +542,11 @@ class BTC2ETH extends Flow {
     })
 
     const btcAddress = this.app.services.auth.accounts.btc.getAddress()
-    const balance = await this.btcSwap.fetchBalance(btcAddress)
+
     const txFee = await this.btcSwap.estimateFeeValue({ method: 'swap', fixed: true, address: btcAddress })
+    const unspents = await this.btcSwap.fetchUnspents(btcAddress)
+    const totalUnspent = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+    const balance = BigNumber(totalUnspent).dividedBy(1e8)
 
     const needAmount = sellAmount.plus(txFee)
     const isEnoughMoney = needAmount.isLessThanOrEqualTo(balance)

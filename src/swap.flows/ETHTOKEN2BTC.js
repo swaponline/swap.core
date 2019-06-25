@@ -120,7 +120,7 @@ export default (tokenName) => {
         // 2. Wait participant create, fund BTC Script
 
         () => {
-          flow.swap.room.once('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
+          flow.swap.room.on('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
             const { step } = flow.state
 
             if (step === 3) {
