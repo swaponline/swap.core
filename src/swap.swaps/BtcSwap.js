@@ -425,22 +425,28 @@ class BtcSwap extends SwapInterface {
    * @param {string} hashName
    * @returns {Promise}
    */
-  withdraw(data, handleTransactionHash, isRefund, hashName) {
+  withdraw(data, isRefund, hashName) {
     return new Promise(async (resolve, reject) => {
       try {
         const txRaw = await this.getWithdrawRawTransaction(data, isRefund, hashName)
         debug('swap.core:swaps')('raw tx withdraw', txRaw.toHex())
 
-        if (typeof handleTransactionHash === 'function') {
-          handleTransactionHash(txRaw.getId())
-        }
-
         const result = await this.broadcastTx(txRaw.toHex())
 
-        resolve(result)
+        resolve(txRaw.getId())
       }
-      catch (err) {
-        reject(err)
+      catch (error) {
+        const { text } = error.res
+
+        let errorMessage
+
+        if (/non-final/.test(text)) {
+          errorMessage = 'Try it later'
+        } else {
+          errorMessage = error
+        }
+
+        reject(errorMessage)
       }
     })
   }
@@ -454,8 +460,8 @@ class BtcSwap extends SwapInterface {
    * @param {string} hashName
    * @returns {Promise}
    */
-  refund(data, handleTransactionHash, hashName) {
-    return this.withdraw(data, handleTransactionHash, true, hashName)
+  refund(data, hashName) {
+    return this.withdraw(data, true, hashName)
   }
 }
 

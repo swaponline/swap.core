@@ -31,7 +31,7 @@ class Room {
 
       return online
     } catch (err) {
-      console.error(err)
+      console.warn(err)
       return false
     }
   }
