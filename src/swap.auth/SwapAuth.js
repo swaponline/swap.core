@@ -39,7 +39,7 @@ class SwapAuth extends ServiceInterface {
         const account = instance.login(_privateKeys[name], app)
 
         this.accounts[name] = account
-        getPublicDataMethods[name] = () => instance.getPublicData(account)
+        getPublicDataMethods[name] = () => instance.getPublicData(account, app)
       }
       catch (err) {
         throw new Error(`SwapAuth._initService(): ${err}`)

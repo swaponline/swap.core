@@ -60,6 +60,7 @@ class EthTokenSwap extends SwapInterface {
     this.gasPrice       = options.gasPrice || 2e9
     this.fetchBalance   = options.fetchBalance
     this.estimateGasPrice = options.estimateGasPrice || (() => {})
+
   }
 
   _initSwap(app) {
@@ -356,12 +357,122 @@ class EthTokenSwap extends SwapInterface {
       return `Expected hash: ${expectedHash}, got: ${_secretHash}`
     }
 
-    const expectedValueWei = BigNumber(expectedValue).multipliedBy(1e18)
+    const expectedValueWei = BigNumber(expectedValue).multipliedBy(this.decimals)
 
     if (expectedValueWei.isGreaterThan(balance)) {
       return `Expected value: ${expectedValueWei.toString()}, got: ${balance}`
     }
   }
+
+
+  /**
+   *
+   * @returns {Promise}
+   */
+  async fetchSwapEvents() {
+    if (this._allSwapEvents) return this._allSwapEvents
+
+    const allSwapEvents = await this.contract.getPastEvents('allEvents', {
+      fromBlock: 0,
+      toBlock: 'latest',
+    })
+
+    this.contract.events.allEvents({ fromBlock: 0, toBlock: 'latest' })
+      .on('data', event => {
+        this._allSwapEvents.push(event)
+      })
+      .on('changed', (event) => {
+        console.error(`EthSwap: fetchEvents: needs rescan`)
+        this._allSwapEvents = null
+      })
+      .on('error', err => {
+        console.error(err)
+        this._allSwapEvents = null
+      })
+
+    this._allSwapEvents = allSwapEvents
+
+    return allSwapEvents
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secretHash
+   * @returns {Promise}
+   */
+  async findSwap(data) {
+    const { secretHash } = data
+
+    const allSwapEvents = await this.fetchSwapEvents()
+
+    const swapEvents = allSwapEvents
+      .filter(({ returnValues }) => returnValues._secretHash === `0x${secretHash.replace('0x','')}`)
+
+    const [ create, close, ...rest ] = swapEvents
+
+    if (rest && rest.length) {
+      console.error(`More than two swaps with same hash`, rest)
+      // throw new Error(`More than two swaps with same hash`)
+    }
+
+    return [ create, close ]
+  }
+
+  /**
+    *
+    * @param {object} data
+    * @param {string} data.secretHash
+    * @returns {Promise(status)}
+    */
+
+  async wasClosed(data) {
+    const [ create, close ] = await this.findSwap(data)
+
+    if (!create) {
+      debug(`No swap with hash ${data.secretHash}`)
+      return 'no swap'
+    } else if (create && !close) {
+      debug(`Open yet!`)
+      return 'open'
+    } else {
+      if (close.event == 'Withdraw') {
+        debug(`Withdrawn`)
+        return 'withdrawn'
+      } else if (close.event == 'Refund') {
+        debug(`Refund`)
+        return 'refunded'
+      } else {
+        debug(`Unknown event, error`)
+        return 'error'
+      }
+    }
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secretHash
+   * @returns {Promise(boolean)}
+   */
+  wasRefunded(data) {
+    return this.wasClosed(data)
+      .then((result) =>
+        stats === 'refunded'
+      )
+  }
+
+  /**
+   *
+   * @param {object} data
+   * @param {string} data.secretHash
+   * @returns {Promise(boolean)}
+   */
+  async wasWithdrawn(data) {
+    const status = await this.wasClosed(data)
+    return stats === 'withdrawn'
+  }
+
 
   /**
    * @param {object} data
@@ -381,6 +492,16 @@ class EthTokenSwap extends SwapInterface {
 
     return (this.tokenAddress.toUpperCase() == token.toUpperCase())
   }
+
+  /**
+   *
+   * @returns {boolean}
+   */
+  hasTargetWallet() {
+    return !!this.contract.methods.getTargetWallet
+  }
+
+
   /**
    *
    * @param {string} ownerAddress

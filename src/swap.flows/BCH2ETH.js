@@ -5,13 +5,13 @@ import { Flow } from 'swap.swap'
 import { BigNumber } from 'bignumber.js'
 
 
-class BTC2ETH extends Flow {
+class BCH2ETH extends Flow {
 
   static getName() {
     return `${this.getFromName()}2${this.getToName()}`
   }
   static getFromName() {
-    return constants.COINS.btc
+    return constants.COINS.bch
   }
   static getToName() {
     return constants.COINS.eth
@@ -20,13 +20,13 @@ class BTC2ETH extends Flow {
   constructor(swap) {
     super(swap)
 
-    this._flowName = BTC2ETH.getName()
+    this._flowName = BCH2ETH.getName()
 
     this.stepNumbers = {
       'sign': 1,
       'submit-secret': 2,
       'sync-balance': 3,
-      'lock-btc': 4,
+      'lock-bch': 4,
       'wait-lock-eth': 5,
       'withdraw-eth': 6,
       'finish': 7,
@@ -34,13 +34,13 @@ class BTC2ETH extends Flow {
     }
 
     this.ethSwap = swap.ownerSwap
-    this.btcSwap = swap.participantSwap
+    this.bchSwap = swap.participantSwap
 
     if (!this.ethSwap) {
-      throw new Error('BTC2ETH: "ethSwap" of type object required')
+      throw new Error('BCH2ETH: "ethSwap" of type object required')
     }
-    if (!this.btcSwap) {
-      throw new Error('BTC2ETH: "btcSwap" of type object required')
+    if (!this.bchSwap) {
+      throw new Error('BCH2ETH: "bchSwap" of type object required')
     }
 
     this.state = {
@@ -53,13 +53,13 @@ class BTC2ETH extends Flow {
       isSignFetching: false,
       isParticipantSigned: false,
 
-      btcScriptCreatingTransactionHash: null,
+      bchScriptCreatingTransactionHash: null,
       ethSwapCreationTransactionHash: null,
 
       secretHash: null,
-      btcScriptValues: null,
+      bchScriptValues: null,
 
-      btcScriptVerified: false,
+      bchScriptVerified: false,
 
       createScriptFee: null,
       createScriptNeedAmount: null,
@@ -69,7 +69,7 @@ class BTC2ETH extends Flow {
 
       isEthContractFunded: false,
 
-      btcSwapWithdrawTransactionHash: null,
+      bchSwapWithdrawTransactionHash: null,
       ethSwapWithdrawTransactionHash: null,
 
       canCreateEthTransaction: true,
@@ -77,14 +77,18 @@ class BTC2ETH extends Flow {
 
       refundTransactionHash: null,
       isRefunded: false,
-
       withdrawFee: null,
       refundTxHex: null,
       isFinished: false,
       isSwapExist: false,
-
-      requireWithdrawFee: false,
     }
+
+    this.swap.room.once('swap was canceled for core', () => {
+      console.error('Swap was stopped')
+      this.setState({
+        isStoppedSwap: true,
+      })
+    })
 
     super._persistSteps()
     this._persistState()
@@ -101,7 +105,7 @@ class BTC2ETH extends Flow {
 
       // 1. Signs
 
-      async () => {
+      () => {
         flow.swap.room.once('swap sign', () => {
           flow.finishStep({
             isParticipantSigned: true,
@@ -114,18 +118,19 @@ class BTC2ETH extends Flow {
           })
         })
 
-        const { isSwapExist } = flow.state
-
-        if (isSwapExist) {
-          flow.stopSwapProcess()
+        if (flow.state.isSwapExist) {
+          flow.swap.room.once('refund completed', () => {
+            flow.swap.room.sendMessage({
+              event: 'request sign',
+            })
+          })
         } else {
           flow.swap.room.sendMessage({
             event: 'request sign',
           })
         }
       },
-
-      // 2. Create secret, secret hash and BTC script
+      // 2. Create secret, secret hash
 
       () => {
         // this.submitSecret()
@@ -137,142 +142,136 @@ class BTC2ETH extends Flow {
         this.syncBalance()
       },
 
-      // 4. Create BTC Script, fund, notify participant
+      // 4. Create BCH Script, fund, notify participant
 
       async () => {
-        const onTransactionHash = (txID) => {
-          const { btcScriptCreatingTransactionHash, btcScriptValues } = flow.state
+        const { sellAmount } = flow.swap
 
-          if (btcScriptCreatingTransactionHash) {
-            return
-          }
+        const onTransactionHash = (txID) => {
+          if (flow.state.bchScriptCreatingTransactionHash) return
 
           flow.setState({
-            btcScriptCreatingTransactionHash: txID,
+            bchScriptCreatingTransactionHash: txID,
           })
 
-          flow.swap.room.once('request btc script', () => {
+          flow.swap.room.on('request bch script', () => {
             flow.swap.room.sendMessage({
-              event:  'create btc script',
+              event:  'create bch script',
               data: {
-                scriptValues: btcScriptValues,
-                btcScriptCreatingTransactionHash: txID,
+                scriptValues: flow.state.bchScriptValues,
+                bchScriptCreatingTransactionHash: txID,
               }
             })
           })
 
           flow.swap.room.sendMessage({
-            event: 'create btc script',
+            event: 'create bch script',
             data: {
-              scriptValues : btcScriptValues,
-              btcScriptCreatingTransactionHash : txID,
+              scriptValues : flow.state.bchScriptValues,
+              bchScriptCreatingTransactionHash : txID,
             }
           })
         }
 
-        const { sellAmount } = flow.swap
-        const { isBalanceEnough, btcScriptValues } = flow.state
-
-        if (isBalanceEnough) {
-          await flow.btcSwap.fundScript({
-            scriptValues: btcScriptValues,
+        // Balance on system wallet enough
+        if (flow.state.isBalanceEnough) {
+          await flow.bchSwap.fundScript({
+            scriptValues: flow.state.bchScriptValues,
             amount: sellAmount,
+          }, (hash) => {
+            onTransactionHash(hash)
+
+            flow.finishStep({
+              isBchScriptFunded: true,
+            }, { step: 'lock-bch' })
           })
-        }
+        } else {
+          const { bchScriptValues: scriptValues } = flow.state
 
-        const checkBTCScriptBalance = async () => {
-          const { scriptAddress } = this.btcSwap.createScript(btcScriptValues)
-          const unspents = await this.btcSwap.fetchUnspents(scriptAddress)
+          const checkBCHScriptBalance = async () => {
 
-          if (unspents.length === 0) {
-            return false
-          }
+            const { scriptAddress } = this.bchSwap.createScript(scriptValues)
+            const unspents = await this.bchSwap.fetchUnspents(scriptAddress)
 
-          const txID = unspents[0].txid
+            if (unspents.length === 0) {
+              return false
+            }
 
-          const balance = await this.btcSwap.getBalance(btcScriptValues)
+            const txID = unspents[0].txid
+            onTransactionHash(txID)
 
-          const isEnoughMoney = BigNumber(balance).isGreaterThanOrEqualTo(sellAmount.times(1e8))
+            const balance = await this.bchSwap.getBalance(scriptValues)
 
-          if (isEnoughMoney) {
             flow.setState({
-              isEnoughMoney,
               scriptBalance: BigNumber(balance).div(1e8).dp(8),
             })
 
-            onTransactionHash(txID)
+            const isEnoughMoney = BigNumber(balance).isGreaterThanOrEqualTo(sellAmount.times(1e8))
+
+            this.setState({
+              isEnoughMoney,
+            })
           }
 
-          return isEnoughMoney
-        }
 
-        await util.helpers.repeatAsyncUntilResult(async (stopRepeat) => {
-          const { isStoppedSwap } = flow.state
-
-          if (!isStoppedSwap) {
-            return await checkBTCScriptBalance()
-          } else {
-            stopRepeat()
+          await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
+            if (!this.state.isEnoughMoney && !this.state.isStoppedSwap) {
+              checkBCHScriptBalance()
+            } else {
+              stopRepeat()
+            }
+          })
+          if (!this.state.isStoppedSwap) {
+            flow.finishStep({
+              isBchScriptFunded: true,
+            }, { step: 'lock-bch' })
           }
-        })
-
-        const { isStoppedSwap } = flow.state
-
-        if (!isStoppedSwap) {
-          flow.finishStep({
-            isBtcScriptFunded: true,
-          }, { step: 'lock-btc' })
         }
       },
 
       // 5. Wait participant creates ETH Contract
 
-      async () => {
-        flow.swap.room.sendMessage({
-          event: 'request eth contract',
-        })
-
-        flow.swap.room.once('request btc script', () => {
-          const { btcScriptValues, btcScriptCreatingTransactionHash } = flow.state
-
-          flow.swap.room.sendMessage({
-            event:  'create btc script',
-            data: {
-              scriptValues: btcScriptValues,
-              btcScriptCreatingTransactionHash,
-            }
-          })
-        })
-
+      () => {
         const { participant } = flow.swap
+        let timer
 
-        flow.swap.room.on('create eth contract', ({ ethSwapCreationTransactionHash }) => {
+        flow.swap.room.once('create eth contract', ({ ethSwapCreationTransactionHash }) => {
           flow.setState({
             ethSwapCreationTransactionHash,
           })
         })
 
-        const isEthBalanceOk = await util.helpers.repeatAsyncUntilResult(async () => {
-          const balance = await flow.ethSwap.getBalance({
-            ownerAddress: participant.eth.address,
-          })
+        const checkEthBalance = () => {
+          timer = setTimeout(async () => {
+            const balance = await flow.ethSwap.getBalance({
+              ownerAddress: participant.eth.address,
+            })
 
-          if (balance > 0) {
-            return true
-          }
+            if (balance > 0) {
+              if (!flow.state.isEthContractFunded) { // redundant condition but who cares :D
+                flow.finishStep({
+                  isEthContractFunded: true,
+                }, { step: 'wait-lock-eth' })
+              }
+            }
+            else {
+              checkEthBalance()
+            }
+          }, 5 * 1000)
+        }
 
-          return false
-        })
+        checkEthBalance()
 
-        if (isEthBalanceOk) {
-          const { isEthContractFunded } = flow.state
+        flow.swap.room.once('create eth contract', () => {
+          if (!flow.state.isEthContractFunded) {
+            clearTimeout(timer)
+            timer = null
 
-          if (!isEthContractFunded) {
             flow.finishStep({
               isEthContractFunded: true,
             }, { step: 'wait-lock-eth' })
           }
-        }
+        })
       },
 
       // 6. Withdraw
@@ -323,6 +322,7 @@ class BTC2ETH extends Flow {
 
         const onWithdrawReady = () => {
           flow.swap.room.on('request ethWithdrawTxHash', () => {
+            // Spot where there was an a vulnerability
             flow.swap.room.sendMessage({
               event: 'ethWithdrawTxHash',
               data: {
@@ -336,14 +336,11 @@ class BTC2ETH extends Flow {
           })
 
           flow.finishStep({
-            isEthWithdrawn: true,
+            isEthWithdrawn,
           }, 'withdraw-eth')
         }
-
         const tryWithdraw = async (stopRepeater) => {
-          const { isEthWithdrawn } = flow.state
-
-          if (!isEthWithdrawn) {
+          if (!flow.state.isEthWithdrawn) {
             try {
               const { withdrawFee } = flow.state
 
@@ -362,7 +359,6 @@ class BTC2ETH extends Flow {
                 flow.setState({
                   ethSwapWithdrawTransactionHash: hash,
                   canCreateEthTransaction: true,
-                  requireWithdrawFee: false,
                 })
 
                 // Spot where there was an a vulnerability
@@ -376,8 +372,6 @@ class BTC2ETH extends Flow {
             } catch (err) {
               if ( /known transaction/.test(err.message) ) {
                 console.error(`known tx: ${err.message}`)
-                stopRepeater()
-                return true
               } else if ( /out of gas/.test(err.message) ) {
                 console.error(`tx failed (wrong secret?): ${err.message}`)
               } else if ( /insufficient funds for gas/.test(err.message) ) {
@@ -398,7 +392,11 @@ class BTC2ETH extends Flow {
 
                   flow.setState({
                     requireWithdrawFee: true,
+                    canCreateEthTransaction: true,
                   })
+
+                  stopRepeater()
+                  return false
                 }
 
               } else {
@@ -428,13 +426,13 @@ class BTC2ETH extends Flow {
       // 7. Finish
 
       () => {
-        flow.swap.room.once('swap finished', ({btcSwapWithdrawTransactionHash}) => {
+        flow.swap.room.once('swap finished', ({bchSwapWithdrawTransactionHash}) => {
           flow.setState({
-            btcSwapWithdrawTransactionHash,
+            bchSwapWithdrawTransactionHash,
           })
           flow.finishStep({
             isFinished: true,
-          }, 'finish')
+          })
         })
       },
 
@@ -458,17 +456,14 @@ class BTC2ETH extends Flow {
   sendWithdrawRequestToAnotherParticipant() {
     const flow = this
 
-    const { requireWithdrawFee, requireWithdrawFeeSended } = flow.state
+    if (!this.state.requireWithdrawFee) return
+    if (this.state.requireWithdrawFeeSended) return
 
-    if (!requireWithdrawFee || requireWithdrawFeeSended) {
-      return
-    }
-
-    flow.setState({
+    this.setState({
       requireWithdrawFeeSended: true,
     })
 
-    flow.swap.room.on('accept withdraw request', () => {
+    this.swap.room.on('accept withdraw request', () => {
       flow.swap.room.sendMessage({
         event: 'do withdraw',
         data: {
@@ -477,7 +472,7 @@ class BTC2ETH extends Flow {
       })
     })
 
-    flow.swap.room.sendMessage({
+    this.swap.room.sendMessage({
       event: 'request withdraw',
     })
   }
@@ -491,8 +486,8 @@ class BTC2ETH extends Flow {
 
     const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
-    /* Secret hash generated - create BTC script - and only after this notify other part */
-    this.createWorkBTCScript(secretHash);
+    /* Secret hash generated - create BCH script - and only after this notify other part */
+    this.createWorkBCHScript(secretHash);
 
     const _secret = `0x${secret.replace(/^0x/, '')}`
 
@@ -502,33 +497,28 @@ class BTC2ETH extends Flow {
     }, { step: 'submit-secret' })
   }
 
-  getBTCScriptAddress() {
-    const { scriptAddress } = this.state
-    return scriptAddress;
-  }
-
-  createWorkBTCScript(secretHash) {
-    if (this.state.btcScriptValues) {
-      debug('swap.core:flow')('BTC Script already generated', this.state.btcScriptValues)
+  createWorkBCHScript(secretHash) {
+    if (this.state.bchScriptValues) {
+      debug('swap.core:flow')('BCH Script already generated', this.state.bchScriptValues)
       return
     }
 
     const { participant } = this.swap
-
+    // TODO move this somewhere!
     const utcNow = () => Math.floor(Date.now() / 1000)
-    const getLockTime = () => utcNow() + 60 * 60 * 3 // 3 hours from now
+    const getLockTime = () => utcNow() + 3600 * 3 // 3 hours from now
 
     const scriptValues = {
       secretHash:         secretHash,
-      ownerPublicKey:     this.app.services.auth.accounts.btc.getPublicKey(),
-      recipientPublicKey: participant.btc.publicKey,
+      ownerPublicKey:     this.app.services.auth.accounts.bch.getPublicKey(),
+      recipientPublicKey: participant.bch.publicKey,
       lockTime:           getLockTime(),
     }
-    const { scriptAddress } = this.btcSwap.createScript(scriptValues)
+    const { scriptAddress } = this.bchSwap.createScript(scriptValues)
 
     this.setState({
       scriptAddress: scriptAddress,
-      btcScriptValues: scriptValues,
+      bchScriptValues: scriptValues,
       scriptBalance: 0,
       scriptUnspendBalance: 0
     })
@@ -541,12 +531,9 @@ class BTC2ETH extends Flow {
       isBalanceFetching: true,
     })
 
-    const btcAddress = this.app.services.auth.accounts.btc.getAddress()
-
-    const txFee = await this.btcSwap.estimateFeeValue({ method: 'swap', fixed: true, address: btcAddress })
-    const unspents = await this.btcSwap.fetchUnspents(btcAddress)
-    const totalUnspent = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
-    const balance = BigNumber(totalUnspent).dividedBy(1e8)
+    const bchAddress = this.app.services.auth.accounts.bch.getAddress()
+    const balance = await this.bchSwap.fetchBalance()
+    const txFee = await this.bchSwap.estimateFeeValue({ method: 'swap', fixed: true, address: bchAddress })
 
     const needAmount = sellAmount.plus(txFee)
     const isEnoughMoney = needAmount.isLessThanOrEqualTo(balance)
@@ -564,9 +551,16 @@ class BTC2ETH extends Flow {
     }
   }
 
+  stopSwapProcess() { // вызывается из реакте
+    this.setState({
+      isStoppedSwap: true,
+    })
+    this.sendMessageAboutClose()
+  }
+
   getRefundTxHex = () => {
-    this.btcSwap.getRefundHexTransaction({
-      scriptValues: this.state.btcScriptValues,
+    this.bchSwap.getRefundHexTransaction({
+      scriptValues: this.state.bchScriptValues,
       secret: this.state.secret,
     })
       .then((txHex) => {
@@ -577,52 +571,24 @@ class BTC2ETH extends Flow {
   }
 
   tryRefund() {
-    const flow = this
-    const { isRefunded, btcScriptValues, secret } = flow.state
-
-    if (isRefunded) {
-      return false
-    }
-
-    return flow.btcSwap.refund({
-      scriptValues: btcScriptValues,
-      secret: secret,
+    return this.bchSwap.refund({
+      scriptValues: this.state.bchScriptValues,
+      secret: this.state.secret,
+    }, (hash) => {
+      this.setState({
+        refundTransactionHash: hash,
+        isRefunded: true,
+      })
     })
-      .then((hash) => {
-        if (!hash) {
-          return false
-        }
-
-        flow.setState({
-          refundTransactionHash: hash,
-          isRefunded: true,
+      .then(() => {
+        this.setState({
           isSwapExist: false,
-        }, true)
-        flow.swap.room.sendMessage({
-          event: 'btc refund completed',
         })
-
-        return true
       })
-      .catch((error) => {
-        console.warn('Btc withdraw:', error)
-
-        return false
-      })
-  }
-
-  stopSwapProcess() {
-    const flow = this
-
-    console.warn('Swap was stoped')
-
-    flow.setState({
-      isStoppedSwap: true,
-    }, true)
   }
 
   async tryWithdraw(_secret) {
-    const { secret, secretHash, isEthWithdrawn } = this.state
+    const { secret, secretHash, isEthWithdrawn, isBchWithdrawn } = this.state
 
     if (!_secret)
       throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
@@ -643,8 +609,8 @@ class BTC2ETH extends Flow {
     const { participant } = this.swap
 
     const data = {
-      ownerAddress: participant.eth.address,
-      secret: _secret,
+      ownerAddress:   participant.eth.address,
+      secret:         _secret,
     }
 
     await this.ethSwap.withdraw(data, (hash) => {
@@ -662,4 +628,4 @@ class BTC2ETH extends Flow {
   }
 }
 
-export default BTC2ETH
+export default BCH2ETH

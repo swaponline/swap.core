@@ -1,6 +1,7 @@
 export const NATIVE = {
   eth: 'ETH',
   btc: 'BTC',
+  bch: 'BCH',
   ltc: 'LTC',
   eos: 'EOS',
   nim: 'NIM',
@@ -56,6 +57,10 @@ export const ETH_TOKENS = {
   xsat: 'XSAT',
   hdp: 'HDP',
   satx: 'SATX',
+  bnb: 'BNB',
+  scro: 'SCRO',
+  xeur: 'XEUR',
+  eurs: 'EURS',
 }
 
 export default {

@@ -313,7 +313,7 @@ class EthSwap extends SwapInterface {
     const [ create, close ] = await this.findSwap(data)
 
     if (!create) {
-      debug(`No swap ${secretHash}`)
+      debug(`No swap with hash ${data.secretHash}`)
       return 'no swap'
     } else if (create && !close) {
       debug(`Open yet!`)
@@ -338,9 +338,11 @@ class EthSwap extends SwapInterface {
    * @param {string} data.secretHash
    * @returns {Promise(boolean)}
    */
-  async wasRefunded(data) {
-    const status = await this.wasClosed(data)
-    return stats === 'refunded'
+  wasRefunded(data) {
+    return this.wasClosed(data)
+      .then((result) =>
+        stats === 'refunded'
+      )
   }
 
   /**
@@ -353,7 +355,6 @@ class EthSwap extends SwapInterface {
     const status = await this.wasClosed(data)
     return stats === 'withdrawn'
   }
-
 
   /**
    *
@@ -529,10 +530,12 @@ class EthSwap extends SwapInterface {
             handleTransactionHash(hash)
           }
         })
-        .on('error', (err) => {
-          reject(err)
+        .catch((error) => {
+          console.warn('ETH refund', error)
+          reject(error)
         })
 
+      console.warn('ETH refund', receipt)
       resolve(receipt)
     })
   }
