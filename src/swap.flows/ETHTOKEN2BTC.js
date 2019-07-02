@@ -624,7 +624,7 @@ export default (tokenName) => {
       }
 
       try {
-        const wasRefunded = this.ethTokenSwap.wasRefunded({ secretHash })
+        const wasRefunded = await this.ethTokenSwap.wasRefunded({ secretHash })
 
         if (wasRefunded) {
           debug('swap.core:flow')('This swap was refunded')

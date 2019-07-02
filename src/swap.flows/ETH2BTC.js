@@ -579,7 +579,7 @@ class ETH2BTC extends Flow {
     }
 
     try {
-      const wasRefunded = this.ethSwap.wasRefunded({ secretHash })
+      const wasRefunded = await this.ethSwap.wasRefunded({ secretHash })
 
       if (wasRefunded) {
         debug('swap.core:flow')('This swap was refunded')
