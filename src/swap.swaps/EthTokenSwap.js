@@ -457,8 +457,8 @@ class EthTokenSwap extends SwapInterface {
    */
   wasRefunded(data) {
     return this.wasClosed(data)
-      .then((result) =>
-        stats === 'refunded'
+      .then((status) =>
+        status === 'refunded'
       )
   }
 
@@ -470,7 +470,7 @@ class EthTokenSwap extends SwapInterface {
    */
   async wasWithdrawn(data) {
     const status = await this.wasClosed(data)
-    return stats === 'withdrawn'
+    return status === 'withdrawn'
   }
 
 
