@@ -119,7 +119,7 @@ class ETH2BTC extends Flow {
         flow.swap.room.on('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
           const { step } = flow.state
 
-          if (step === 3) {
+          if (step >= 3) {
             return
           }
 
@@ -637,7 +637,7 @@ class ETH2BTC extends Flow {
     debug('swap.core:flow')(`WITHDRAW using secret = ${_secret}`)
 
     const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
-    
+
     if (secretHash != _secretHash)
       console.warn(`Hash does not match! state: ${secretHash}, given: ${_secretHash}`)
 
