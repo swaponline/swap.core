@@ -160,7 +160,7 @@ class Swap {
   }
 
   checkTimeout(timeoutUTS) {
-    // return false if timeout
+    // return true if timeout passed
     return !((this.createUnixTimeStamp + timeoutUTS) > Math.floor(new Date().getTime() / 1000))
   }
 
