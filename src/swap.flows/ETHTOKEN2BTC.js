@@ -123,7 +123,7 @@ export default (tokenName) => {
           flow.swap.room.on('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
             const { step } = flow.state
 
-            if (step === 3) {
+            if (step >= 3) {
               return
             }
 
