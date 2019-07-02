@@ -516,28 +516,6 @@ class EthSwap extends SwapInterface {
     await this.updateGasPrice()
 
     return this.send('refund', [ participantAddress ], {}, handleTransactionHash)
-
-    return new Promise(async (resolve, reject) => {
-      const params = {
-        from: this.app.services.auth.accounts.eth.address,
-        gas: this.gasLimit,
-        gasPrice: this.gasPrice,
-      }
-
-      const receipt = await this.contract.methods.refund(participantAddress).send(params)
-        .on('transactionHash', (hash) => {
-          if (typeof handleTransactionHash === 'function') {
-            handleTransactionHash(hash)
-          }
-        })
-        .catch((error) => {
-          console.warn('ETH refund', error)
-          reject(error)
-        })
-
-      console.warn('ETH refund', receipt)
-      resolve(receipt)
-    })
   }
 
   /**
