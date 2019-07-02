@@ -20,6 +20,7 @@ class Swap {
     this.destinationBuyAddress  = null
     this.destinationSellAddress = null
     this.app                    = null
+    this.createUnixTimeStamp    = Math.floor(new Date().getTime() / 1000)
 
     this._attachSwapApp(app)
 
@@ -148,6 +149,7 @@ class Swap {
       'sellAmount',
       'destinationBuyAddress',
       'destinationSellAddress',
+      'createUnixTimeStamp',
     )
   }
 
@@ -155,6 +157,11 @@ class Swap {
     const data = this._pullRequiredData(this)
 
     this.app.env.storage.setItem(`swap.${this.id}`, data)
+  }
+
+  checkTimeout(timeoutUTS) {
+    // return true if timeout passed
+    return !((this.createUnixTimeStamp + timeoutUTS) > Math.floor(new Date().getTime() / 1000))
   }
 
   setDestinationBuyAddress(address) {
