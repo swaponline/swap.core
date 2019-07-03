@@ -436,11 +436,11 @@ class BtcSwap extends SwapInterface {
         resolve(txRaw.getId())
       }
       catch (error) {
-        const { text } = error.res
+        console.warn('BtcSwap: cant withdraw', error)
 
         let errorMessage
 
-        if (/non-final/.test(text)) {
+        if (error.res && /non-final/.test(error.res.text)) {
           errorMessage = 'Try it later'
         } else {
           errorMessage = error

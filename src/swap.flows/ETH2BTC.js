@@ -518,45 +518,33 @@ class ETH2BTC extends Flow {
   }
 
   async syncBalance() {
-    const checkBalance = async () => {
-      const { sellAmount } = this.swap
+    const { sellAmount } = this.swap
 
-      this.setState({
-        isBalanceFetching: true,
-      })
-
-      const balance = await this.ethSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
-      const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
-
-      this.setState({
-        isEnoughMoney,
-      })
-
-      if (isEnoughMoney) {
-        this.finishStep({
-          balance,
-          isBalanceFetching: false,
-          isBalanceEnough: true,
-        }, { step: 'sync-balance' })
-      }
-      else {
-        this.setState({
-          balance,
-          isBalanceFetching: false,
-          isBalanceEnough: false,
-        })
-      }
-    }
-
-    await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
-      const { isStoppedSwap, isEnoughMoney } = this.state
-
-      if (!isStoppedSwap && !isEnoughMoney) {
-        checkBalance()
-      } else {
-        stopRepeat()
-      }
+    this.setState({
+      isBalanceFetching: true,
     })
+
+    const balance = await this.ethSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
+    const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
+
+    this.setState({
+      isEnoughMoney,
+    })
+
+    if (isEnoughMoney) {
+      this.finishStep({
+        balance,
+        isBalanceFetching: false,
+        isBalanceEnough: true,
+      }, { step: 'sync-balance' })
+    }
+    else {
+      this.setState({
+        balance,
+        isBalanceFetching: false,
+        isBalanceEnough: false,
+      })
+    }
   }
 
   async tryRefund() {
