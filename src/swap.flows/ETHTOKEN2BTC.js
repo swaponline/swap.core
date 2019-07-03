@@ -89,6 +89,7 @@ export default (tokenName) => {
         isMeSigned: false,
 
         isFailedTransaction: false,
+        gasAmountNeeded: 0,
       }
 
       super._persistSteps()
@@ -246,21 +247,25 @@ export default (tokenName) => {
 
                   debug('swap.core:flow')('created swap!', hash)
                 })
+
               } catch (error) {
-                if ( /insufficient funds/.test(error.message) ) {
-                  console.error(`Insufficient ETH for gas: ${error.message}`)
+                const { message, gasAmount } = error
+
+                if ( /insufficient funds/.test(message) ) {
+                  console.error(`Insufficient ETH for gas: ${gasAmount} ETH needed`)
 
                   flow.setState({
                     canCreateEthTransaction: false,
+                    gasAmountNeeded: gasAmount,
                   })
 
                   return null
-                } else if ( /known transaction/.test(error.message) ) {
-                  console.error(`known tx: ${error.message}`)
-                } else if ( /out of gas/.test(error.message) ) {
-                  console.error(`tx failed (wrong secret?): ${error.message}`)
-                } else if ( /always failing transaction/.test(error.message) ) {
-                  console.error(`Insufficient Token for transaction: ${error.message}`)
+                } else if ( /known transaction/.test(message) ) {
+                  console.error(`known tx: ${message}`)
+                } else if ( /out of gas/.test(message) ) {
+                  console.error(`tx failed (wrong secret?): ${message}`)
+                } else if ( /always failing transaction/.test(message) ) {
+                  console.error(`Insufficient Token for transaction: ${message}`)
                 } else {
                   console.error(error)
                 }
@@ -563,45 +568,33 @@ export default (tokenName) => {
     }
 
     async syncBalance() {
-      const checkBalance = async () => {
-        const { sellAmount } = this.swap
+      const { sellAmount } = this.swap
 
-        this.setState({
-          isBalanceFetching: true,
-        })
-
-        const balance = await this.ethTokenSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
-        const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
-
-        this.setState({
-          isEnoughMoney,
-        })
-
-        if (isEnoughMoney) {
-          this.finishStep({
-            balance,
-            isBalanceFetching: false,
-            isBalanceEnough: true,
-          }, { step: 'sync-balance' })
-        }
-        else {
-          this.setState({
-            balance,
-            isBalanceFetching: false,
-            isBalanceEnough: false,
-          })
-        }
-      }
-
-      await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
-        const { isStoppedSwap, isEnoughMoney } = this.state
-
-        if (!isStoppedSwap && !isEnoughMoney) {
-          checkBalance()
-        } else {
-          stopRepeat()
-        }
+      this.setState({
+        isBalanceFetching: true,
       })
+
+      const balance = await this.ethTokenSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
+      const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
+
+      this.setState({
+        isEnoughMoney,
+      })
+
+      if (isEnoughMoney) {
+        this.finishStep({
+          balance,
+          isBalanceFetching: false,
+          isBalanceEnough: true,
+        }, { step: 'sync-balance' })
+      }
+      else {
+        this.setState({
+          balance,
+          isBalanceFetching: false,
+          isBalanceEnough: false,
+        })
+      }
     }
 
     async tryRefund() {

@@ -122,8 +122,8 @@ class EthTokenSwap extends SwapInterface {
             handleTransactionHash(hash)
           }
         })
-        .on('error', (err) => {
-          reject(err)
+        .catch((error) => {
+          reject({ message: error.message, gasAmount: BigNumber(gasAmount).dividedBy(1e8).toString() })
         })
 
       resolve(receipt)
@@ -592,8 +592,8 @@ class EthTokenSwap extends SwapInterface {
       }
 
       try {
-        const gasFee = await this.contract.methods.withdrawOther(_secret, ownerAddress, participantAddress).estimateGas(params);
-        resolve(gasFee)
+        const gasAmount = await this.contract.methods.withdrawOther(_secret, ownerAddress, participantAddress).estimateGas(params);
+        resolve(gasAmount)
       }
       catch (err) {
         reject(err)
