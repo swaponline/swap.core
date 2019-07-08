@@ -271,15 +271,14 @@ class EthTokenSwap extends SwapInterface {
    * @param {string} data.participantAddress
    * @returns {Promise}
    */
-  checkSwapExists(data) {
-    return new Promise(async (resolve) => {
-      const swap = await this.swaps(data)
+  async checkSwapExists(data) {
+    const swap = await this.swaps(data)
 
-      debug('swap.core:swaps')('swapExists', swap)
+    debug('swapExists', swap)
 
-      const balance = swap && swap.balance ? parseInt(swap.balance) : 0
-      resolve(balance > 0)
-    })
+    const balance = swap && swap.balance ? parseInt(swap.balance) : 0
+
+    return balance > 0
   }
 
   /**
@@ -291,19 +290,8 @@ class EthTokenSwap extends SwapInterface {
   getBalance(data) {
     const { ownerAddress } = data
 
-    return new Promise(async (resolve, reject) => {
-      let balance
-
-      try {
-        balance = await this.contract.methods.getBalance(ownerAddress).call({
-          from: this.app.services.auth.accounts.eth.address,
-        })
-      }
-      catch (err) {
-        reject(err)
-      }
-      debug('swap.core:swaps')('balance', balance)
-      resolve(balance)
+    return this.contract.methods.getBalance(ownerAddress).call({
+      from: this.app.services.auth.accounts.eth.address,
     })
   }
 
@@ -676,7 +664,6 @@ class EthTokenSwap extends SwapInterface {
           return
         }
       })
-
 }
 
 

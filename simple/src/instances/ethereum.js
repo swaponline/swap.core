@@ -96,13 +96,13 @@ class Ethereum {
     try {
       return await this.estimateGasPriceEtherChain(options)
     } catch (etherChainError) {
-      console.error(`EstimateFeeError: EtherChain ${etherChainError.message}, falling back to EthGasStation estimation...`)
+      console.error('EstimateFeeError: EtherChain, falling back to EthGasStation estimation...')
     }
 
     try {
       return await this.estimateGasPriceEthGasStation(options)
     } catch(ethGasStationError) {
-      console.error(`EstimateFeeError: EthGasStation ${ethGasStationError.message}, falling back to Web3 estimation...`)
+      console.error('EstimateFeeError: EthGasStation, falling back to Web3 estimation...')
     }
 
     return await this.estimateGasPriceWeb3(options)

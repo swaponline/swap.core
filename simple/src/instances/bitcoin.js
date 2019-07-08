@@ -10,7 +10,7 @@ const BITPAY_MAIN = `https://insight.bitpay.com/api`
 const BLOCKCYPHER_API = `https://api.blockcypher.com/v1/btc/main/`
 const BLOCKCYPHER_API_TESTNET = `https://api.blockcypher.com/v1/btc/test3/`
 const EARN_COM = `https://bitcoinfees.earn.com/api/v1/fees/recommended`
-const BLOCKCYPHER_API_TOKEN = process.env.BLOCKCYPHER_API_TOKEN
+// const BLOCKCYPHER_API_TOKEN = process.env.BLOCKCYPHER_API_TOKEN
 
 
 const filterError = (error) => {
@@ -83,10 +83,6 @@ class Bitcoin {
   }
 
   async estimateFeeRate(options) {
-    if (this.network === 'testnet') {
-      return this.estimateFeeRateBLOCKCYPHER(options)
-    }
-
     try {
       return await this.estimateFeeRateBLOCKCYPHER(options)
     } catch (err) {
@@ -201,48 +197,13 @@ class Bitcoin {
       })
   }
 
-  fetchTxConfidence(hash) {
-    const API_ROOT = this.network === 'testnet'
-      ? BLOCKCYPHER_API_TESTNET
-      : BLOCKCYPHER_API
-
-    // 5 seconds cache
-    // query request
-    return request
-      .get(`${API_ROOT}/txs/${hash}/confidence?token=${BLOCKCYPHER_API_TOKEN}`, {
-        cacheResponse: 5*1000,
-        queryResponse: true,
-      } )
-      .then(json => JSON.parse(json))
-      .catch(error => {
-        error = error.message
-
-        if (/not found/.test(error)) {
-          return {
-            confidence: 0.1,
-          }
-        } else if (/already been confirmed/.test(error)) {
-          return {
-            confidence: 1,
-          }
-        } else {
-          debug('swap.core:bitcoin')('BlockCypher:', error)
-          return {
-            confidence: 0,
-          }
-        }
-      })
-  }
-
   fetchTxInfo(hash) {
-    return Promise.all([
-      this.fetchTx(hash),
-      this.fetchTxConfidence(hash),
-    ]).then(([{ vin, ...rest }, confidence ]) => ({
-      senderAddress: vin ? vin[0].addr : null,
-      ...rest,
-      ...confidence,
-    }))
+    return this.fetchTx(hash)
+      .then(({ vin, ...rest }) => ({
+        senderAddress: vin[0].addr,
+        ...rest,
+      }))
+      .catch((error) => error)
   }
 
   fetchOmniBalance(address, assetId = 31) {

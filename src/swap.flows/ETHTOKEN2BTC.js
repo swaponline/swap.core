@@ -48,7 +48,6 @@ export default (tokenName) => {
         step: 0,
 
         isStoppedSwap: false,
-        isEnoughMoney: false,
 
         signTransactionHash: null,
         isSignFetching: false,
@@ -239,6 +238,15 @@ export default (tokenName) => {
                     },
                   })
 
+                  flow.swap.room.on('request eth contract', () => {
+                    flow.swap.room.sendMessage({
+                      event: 'create eth contract',
+                      data: {
+                        ethSwapCreationTransactionHash: hash,
+                      },
+                    })
+                  })
+
                   flow.setState({
                     ethSwapCreationTransactionHash: hash,
                     canCreateEthTransaction: true,
@@ -298,21 +306,10 @@ export default (tokenName) => {
         // 6. Wait participant withdraw
 
         async () => {
-          flow.swap.room.once('request eth contract', () => {
-            const { ethSwapCreationTransactionHash } = flow.state
-
-            flow.swap.room.sendMessage({
-              event: 'create eth contract',
-              data: {
-                ethSwapCreationTransactionHash,
-              },
-            })
-          })
-
-          flow.swap.room.on('ethWithdrawTxHash', async ({ethSwapWithdrawTransactionHash}) => {
+          flow.swap.room.once('ethWithdrawTxHash', async ({ethSwapWithdrawTransactionHash}) => {
             flow.setState({
               ethSwapWithdrawTransactionHash,
-            })
+            }, true)
 
             let secretFromTxhash = await util.helpers.repeatAsyncUntilResult(() => {
               const { secret } = flow.state
@@ -358,27 +355,18 @@ export default (tokenName) => {
 
                 return secretFromContract
               } else {
-                console.warn('Secret still not exists')
-
                 return null
               }
             }
             catch (error) {
-              console.error(error)
-
               return null
             }
           }
 
-          flow.swap.room.once('finish eth withdraw', () =>
-            checkSecretExist()
-          )
-
           const secretFromContract = await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
-            const { isEthWithdrawn } = flow.state
+            const { isEthWithdrawn, isRefunded } = flow.state
 
-            if (isEthWithdrawn) {
-              console.warn('Secret already exists')
+            if (isEthWithdrawn || isRefunded) {
               stopRepeat()
 
               return false
@@ -402,24 +390,31 @@ export default (tokenName) => {
         // 7. Withdraw
 
         async () => {
-          const { secret, btcScriptValues, destinationBuyAddress } = flow.state
+          await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
+            const { secret, btcScriptValues, destinationBuyAddress, btcSwapWithdrawTransactionHash } = flow.state
 
-          if (!btcScriptValues) {
-            console.error('There is no "btcScriptValues" in state. No way to continue swap...')
-            return
-          }
+            if (btcSwapWithdrawTransactionHash) {
+              return true
+            }
 
-          console.log("Debug - destination address....")
-          await flow.btcSwap.withdraw({
-            scriptValues: btcScriptValues,
-            secret,
-            destinationAddress: destinationBuyAddress,
-          })
-            .then((hash) => {
-              flow.setState({
-                btcSwapWithdrawTransactionHash: hash,
-              })
+            if (!btcScriptValues) {
+              console.error('There is no "btcScriptValues" in state. No way to continue swap...')
+              return null
+            }
+
+            return flow.btcSwap.withdraw({
+              scriptValues: btcScriptValues,
+              secret,
+              destinationAddress: destinationBuyAddress,
             })
+              .then((hash) => {
+                flow.setState({
+                  btcSwapWithdrawTransactionHash: hash,
+                }, true)
+                return true
+              })
+              .catch((error) => null)
+          })
 
           flow.finishStep({
             isBtcWithdrawn: true,
@@ -429,13 +424,15 @@ export default (tokenName) => {
         // 8. Finish
 
         () => {
-          const { btcSwapWithdrawTransactionHash } = flow.state
+          flow.swap.room.once('request swap finished', () => {
+            const { btcSwapWithdrawTransactionHash } = flow.state
 
-          flow.swap.room.sendMessage({
-            event: 'swap finished',
-            data: {
-              btcSwapWithdrawTransactionHash,
-            },
+            flow.swap.room.sendMessage({
+              event: 'swap finished',
+              data: {
+                btcSwapWithdrawTransactionHash,
+              },
+            })
           })
 
           flow.finishStep({
@@ -445,9 +442,7 @@ export default (tokenName) => {
 
         // 9. Finished!
 
-        () => {
-
-        },
+        () => {},
       ]
     }
 
@@ -508,17 +503,11 @@ export default (tokenName) => {
           event: 'swap exists',
         })
 
-        flow.swap.room.once('btc refund completed', () => {
-          flow.tryRefund()
-
-          flow.setState({
-            isRefunded: true,
-          }, true)
-        })
-
         flow.setState({
           isSwapExist: true,
         })
+
+        flow.stopSwapProcess()
       } else {
         const { isSignFetching, isMeSigned } = flow.state
 
@@ -528,6 +517,10 @@ export default (tokenName) => {
 
         flow.setState({
           isSignFetching: true,
+        })
+
+        flow.swap.room.once('btc refund completed', () => {
+          flow.tryRefund()
         })
 
         flow.swap.room.on('request sign', () => {
@@ -577,23 +570,17 @@ export default (tokenName) => {
       const balance = await this.ethTokenSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
       const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
-      this.setState({
-        isEnoughMoney,
-      })
+      const stateData = {
+        balance,
+        isBalanceFetching: false,
+        isBalanceEnough: isEnoughMoney,
+      }
 
       if (isEnoughMoney) {
-        this.finishStep({
-          balance,
-          isBalanceFetching: false,
-          isBalanceEnough: true,
-        }, { step: 'sync-balance' })
+        this.finishStep(stateData, { step: 'sync-balance' })
       }
       else {
-        this.setState({
-          balance,
-          isBalanceFetching: false,
-          isBalanceEnough: false,
-        })
+        this.setState(stateData, true)
       }
     }
 
@@ -609,6 +596,7 @@ export default (tokenName) => {
         this.swap.room.sendMessage({
           event: 'eth refund completed',
         })
+
         this.setState({
           refundTransactionHash: hash,
           isRefunded: true,
@@ -650,7 +638,7 @@ export default (tokenName) => {
     stopSwapProcess() {
       const flow = this
 
-      console.warn('Swap was stoped')
+      console.warn('Swap was stopped')
 
       flow.setState({
         isStoppedSwap: true,
