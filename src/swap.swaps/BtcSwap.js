@@ -87,8 +87,6 @@ class BtcSwap extends SwapInterface {
     const feesToConfidence = async (fees, size, address) => {
       const currentFastestFee = await this.getTxFee({ inSatoshis: true, size, speed: 'fast', address })
 
-      debug('swap.core:swaps')(`currentFastestFee: ${currentFastestFee}`)
-
       return BigNumber(fees).isLessThan(currentFastestFee)
         ? BigNumber(fees).dividedBy(currentFastestFee).toNumber()
         : 1
@@ -106,19 +104,13 @@ class BtcSwap extends SwapInterface {
       try {
         const info = await this.fetchTxInfo(txid)
 
-        const { confidence, fees, size, senderAddress } = info
-
-        debug('swap.core:swaps')(`tx ${txid}:`, { confidence, confirmations, fees, size, senderAddress })
-
-        if (BigNumber(confidence).isGreaterThan(0)) {
-          return confidence
-        }
+        const { fees, size, senderAddress } = info
 
         if (fees) {
           return await feesToConfidence(fees, size, senderAddress)
         }
 
-        throw new Error(`txinfo=${{ confidence, confirmations, fees, size, senderAddress }}`)
+        throw new Error(`txinfo=${{ confirmations, fees, size, senderAddress }}`)
 
       } catch (err) {
         console.error(`BtcSwap: Error fetching confidence: using confirmations > 0:`, err.message)
@@ -341,11 +333,9 @@ class BtcSwap extends SwapInterface {
    * @returns {Promise}
    */
   async getWithdrawRawTransaction(data, isRefund, hashName) {
-    const { scriptValues, secret } = data
+    const { scriptValues, secret, destinationAddress } = data
 
     const { script, scriptAddress } = this.createScript(scriptValues, hashName)
-
-     const { destinationAddress } = data
 
     const tx            = new this.app.env.bitcoin.TransactionBuilder(this.network)
     const unspents      = await this.fetchUnspents(scriptAddress)
@@ -436,7 +426,7 @@ class BtcSwap extends SwapInterface {
         resolve(txRaw.getId())
       }
       catch (error) {
-        console.warn('BtcSwap: cant withdraw', error)
+        console.warn('BtcSwap: cant withdraw', error.message)
 
         let errorMessage
 

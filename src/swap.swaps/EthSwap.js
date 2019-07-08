@@ -169,6 +169,7 @@ class EthSwap extends SwapInterface {
 
     return this.send('createSwapTarget', [...values], { value: amountWei }, handleTransactionHash)
   }
+  
   /**
    *
    * @param {object} data
@@ -527,24 +528,15 @@ class EthSwap extends SwapInterface {
   getSecret(data) {
     const { participantAddress } = data
 
-    return new Promise(async (resolve, reject) => {
-      try {
-        const secret = await this.contract.methods.getSecret(participantAddress).call({
-          from: this.app.services.auth.accounts.eth.address,
-        })
-
-        debug('secret ethswap.js', secret)
-
-        const secretValue = secret && !/^0x0+$/.test(secret) ? secret : null
-
-        resolve(secretValue)
-      }
-      catch (err) {
-        reject(err)
-      }
+    return this.contract.methods.getSecret(participantAddress).call({
+      from: this.app.services.auth.accounts.eth.address,
     })
+      .then((secret) => {
+        debug('secret ethswap.js', secret)
+        return secret && !/^0x0+$/.test(secret) ? secret : null
+      })
+      .catch((error) => error)
   }
-
 
 /*
   Function: withdraw(bytes32 _secret, address _ownerAddress)
