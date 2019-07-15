@@ -549,6 +549,10 @@ class BTC2ETH extends Flow {
     })
   }
 
+  async skipSyncBalance() {
+    this.finishStep({}, { step: 'sync-balance' })
+  }
+
   async syncBalance() {
     const { sellAmount } = this.swap
 
