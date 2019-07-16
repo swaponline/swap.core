@@ -60,7 +60,7 @@ export default (tokenName) => {
         btcScriptVerified: false,
 
         isBalanceFetching: false,
-        isBalanceEnough: false,
+        isBalanceEnough: true,
         balance: null,
 
         btcScriptCreatingTransactionHash: null,
