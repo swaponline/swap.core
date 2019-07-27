@@ -93,6 +93,9 @@ class Order {
       if (orderId === this.id) {
         const { buyAmount, sellAmount } = updatedOrder
 
+        // todo: add check reputation like as 'request swap'
+        let reputation = 0
+
         const filteredUpdatedOrder = {
           buyAmount,
           sellAmount,
