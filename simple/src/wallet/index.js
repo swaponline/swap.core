@@ -44,7 +44,7 @@ class Wallet {
     const data = this.auth.getPublicData()
 
     const addresses = currencies.reduce((obj, symbol) => {
-      const { address } = (symbol == 'BTC' || symbol == 'BCH' || symbol == 'USDT')
+      const { address } = (symbol == 'BTC' || symbol == 'BCH' /*|| symbol == 'USDT' */)
         ? data.btc : data.eth
 
       return {
@@ -76,7 +76,7 @@ class Wallet {
 
   fetchBalance(symbol) {
     const data = this.auth.getPublicData()
-    const account = symbol == 'BTC' || symbol == 'BCH' || symbol == 'USDT' ? data.btc : data.eth
+    const account = symbol == 'BTC' || symbol == 'BCH' /*|| symbol == 'USDT' */ ? data.btc : data.eth
     const instance = this.swapApp.swaps[symbol]
 
     return instance ? instance.fetchBalance(account.address) : '-'

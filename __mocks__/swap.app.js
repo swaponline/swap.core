@@ -147,7 +147,7 @@ class SwapInterface {
 }
 
 const constants = {
-  COINS: { btc: 'BTC', eth: 'ETH', swap: 'SWAP', usdt: 'USDT', eos: 'EOS' },
+  COINS: { btc: 'BTC', eth: 'ETH', swap: 'SWAP', /* usdt: 'USDT' */ eos: 'EOS' },
 }
 
 export default mockSwapApp

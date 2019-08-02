@@ -4,7 +4,7 @@ import BtcSwap from './BtcSwap'
 import BchSwap from './BchSwap'
 import LtcSwap from './LtcSwap'
 import EosSwap from './EosSwap'
-import UsdtSwap from './UsdtSwap'
+// import UsdtSwap from './UsdtSwap'
 
 export {
   EthSwap,
@@ -13,5 +13,5 @@ export {
   LtcSwap,
   EthTokenSwap,
   EosSwap,
-  UsdtSwap,
+  // UsdtSwap,
 }
