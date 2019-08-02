@@ -169,6 +169,7 @@ class EthSwap extends SwapInterface {
 
     return this.send('createSwapTarget', [...values], { value: amountWei }, handleTransactionHash)
   }
+  
   /**
    *
    * @param {object} data
@@ -340,8 +341,8 @@ class EthSwap extends SwapInterface {
    */
   wasRefunded(data) {
     return this.wasClosed(data)
-      .then((result) =>
-        stats === 'refunded'
+      .then((status) =>
+        status === 'refunded'
       )
   }
 
@@ -353,7 +354,7 @@ class EthSwap extends SwapInterface {
    */
   async wasWithdrawn(data) {
     const status = await this.wasClosed(data)
-    return stats === 'withdrawn'
+    return status === 'withdrawn'
   }
 
   /**
@@ -516,28 +517,6 @@ class EthSwap extends SwapInterface {
     await this.updateGasPrice()
 
     return this.send('refund', [ participantAddress ], {}, handleTransactionHash)
-
-    return new Promise(async (resolve, reject) => {
-      const params = {
-        from: this.app.services.auth.accounts.eth.address,
-        gas: this.gasLimit,
-        gasPrice: this.gasPrice,
-      }
-
-      const receipt = await this.contract.methods.refund(participantAddress).send(params)
-        .on('transactionHash', (hash) => {
-          if (typeof handleTransactionHash === 'function') {
-            handleTransactionHash(hash)
-          }
-        })
-        .catch((error) => {
-          console.warn('ETH refund', error)
-          reject(error)
-        })
-
-      console.warn('ETH refund', receipt)
-      resolve(receipt)
-    })
   }
 
   /**
@@ -549,24 +528,15 @@ class EthSwap extends SwapInterface {
   getSecret(data) {
     const { participantAddress } = data
 
-    return new Promise(async (resolve, reject) => {
-      try {
-        const secret = await this.contract.methods.getSecret(participantAddress).call({
-          from: this.app.services.auth.accounts.eth.address,
-        })
-
-        debug('secret ethswap.js', secret)
-
-        const secretValue = secret && !/^0x0+$/.test(secret) ? secret : null
-
-        resolve(secretValue)
-      }
-      catch (err) {
-        reject(err)
-      }
+    return this.contract.methods.getSecret(participantAddress).call({
+      from: this.app.services.auth.accounts.eth.address,
     })
+      .then((secret) => {
+        debug('secret ethswap.js', secret)
+        return secret && !/^0x0+$/.test(secret) ? secret : null
+      })
+      .catch((error) => error)
   }
-
 
 /*
   Function: withdraw(bytes32 _secret, address _ownerAddress)

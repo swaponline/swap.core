@@ -89,16 +89,19 @@ class Order {
       }
     })
 
-    this.app.services.room.on('request partial fulfilment', ({ orderId, participant, updatedOrder }) => {
+    this.app.services.room.on('request partial fulfilment', ({ orderId, participant, participantMetadata, destination, updatedOrder }) => {
       if (orderId === this.id) {
         const { buyAmount, sellAmount } = updatedOrder
+
+        // todo: add check reputation like as 'request swap'
+        let reputation = 0
 
         const filteredUpdatedOrder = {
           buyAmount,
           sellAmount,
         }
 
-        this.requests.push({ participant, updatedOrder: filteredUpdatedOrder })
+        this.requests.push({ participant, destination, updatedOrder: filteredUpdatedOrder })
 
         events.dispatch('new partial fulfilment request', {
           orderId,
@@ -106,7 +109,6 @@ class Order {
           updatedOrder: filteredUpdatedOrder,
         })
 
-        console.log('filteredUpdatedOrder', filteredUpdatedOrder)
 
         this._autoReplyToPartial('buyAmount', filteredUpdatedOrder, participant)
         this._autoReplyToPartial('sellAmount', filteredUpdatedOrder, participant)
@@ -136,10 +138,8 @@ class Order {
       return
     }
 
-    console.log(changedKey, updatedOrder)
     updatedOrder[changedKey] = BigNumber(updatedOrder[changedKey])
 
-    console.log(this[changedKey], updatedOrder)
     if (this[changedKey].comparedTo(updatedOrder[changedKey]) === 0) {
       return
     }
@@ -191,6 +191,11 @@ class Order {
       return
     }
 
+    const {
+      address: destinationAddress,
+      participantMetadata,
+    } = requestOptions
+
     const participant = this.app.services.auth.getPublicData()
 
     this.app.services.room.sendMessagePeer(this.owner.peer, {
@@ -198,6 +203,10 @@ class Order {
       data: {
         orderId: this.id,
         participant,
+        participantMetadata,
+        destination: {
+          address: destinationAddress
+        },
         updatedOrder,
       },
     })
@@ -393,6 +402,7 @@ class Order {
 
   acceptRequest(participantPeer) {
     const { participant, destination } = this.requests.find(({ participant: { peer } }) => peer === participantPeer)
+
     const { address } = destination
 
     this.update({
