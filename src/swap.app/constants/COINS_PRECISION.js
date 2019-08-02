@@ -5,7 +5,7 @@ export const NATIVE_PRECISION = {
   BCH: 8,
   ETH: 18,
   LTC: 8,
-  USDT: 8,
+  // USDT: 8,
 }
 
 export const ETH_TOKEN_PRECISION =
