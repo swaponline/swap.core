@@ -343,7 +343,7 @@ class ETH2BTC extends Flow {
 
       async () => {
         await util.helpers.repeatAsyncUntilResult((stopRepeat) => {
-          const { secret, btcScriptValues, destinationBuyAddress, btcSwapWithdrawTransactionHash } = flow.state
+          const { secret, btcScriptValues, btcSwapWithdrawTransactionHash } = flow.state
 
           if (btcSwapWithdrawTransactionHash) {
             return true
@@ -357,7 +357,7 @@ class ETH2BTC extends Flow {
           return flow.btcSwap.withdraw({
             scriptValues: btcScriptValues,
             secret,
-            destinationAddress: destinationBuyAddress,
+            destinationAddress: flow.swap.destinationBuyAddress,
           })
             .then((hash) => {
               flow.setState({
