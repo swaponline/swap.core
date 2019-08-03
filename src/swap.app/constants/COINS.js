@@ -5,6 +5,7 @@ export const NATIVE = {
   ltc: 'LTC',
   eos: 'EOS',
   nim: 'NIM',
+  qtum: 'QTUM',
   // usdtOmni: 'USDTomni',
 }
 
@@ -17,7 +18,7 @@ export const ETH_TOKENS = {
   scro: 'SCRO',
   xeur: 'XEUR',
   eurs: 'EURS',
-  usdt: 'USDT'
+  usdt: 'USDT',
 }
 
 export default {
