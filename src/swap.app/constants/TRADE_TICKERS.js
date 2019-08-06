@@ -8,5 +8,5 @@ export default [
   'ETH-LTC',
 
   ...Object.values(ETH_TOKENS).map(token => `${token}-BTC`),
-  ...Object.values(ETH_TOKENS).map(token => `${token}-USDT`),
+  // ...Object.values(ETH_TOKENS).map(token => `${token}-USDT`),
 ]

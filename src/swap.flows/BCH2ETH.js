@@ -305,7 +305,7 @@ class BCH2ETH extends Flow {
             ? flow.swap.destinationBuyAddress
             : this.app.services.auth.accounts.eth.address
 
-          if (targetWallet !== needTargetWallet) {
+          if (targetWallet.toLowerCase() !== needTargetWallet.toLowerCase()) {
             console.error(
               'Destination address for ether dismatch with needed (Needed, Getted). Stop swap now!',
               needTargetWallet,

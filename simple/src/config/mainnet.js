@@ -32,12 +32,12 @@ module.exports = {
     fetchTxInfo: txid => bitcoin.fetchTxInfo(txid),
     estimateFeeValue: ({ inSatoshis, speed, address, txSize } = {}) => bitcoin.estimateFeeValue({ inSatoshis, speed, address, txSize }),
   }),
-  usdtSwap: () => ({
-    fetchBalance: (address) => bitcoin.fetchOmniBalance(address, 31),
-    fetchUnspents: (scriptAddress) => bitcoin.fetchUnspents(scriptAddress),
-    broadcastTx: (txRaw) => bitcoin.broadcastTx(txRaw),
-    fetchTx: hash => bitcoin.fetchTx(hash),
-  }),
+  // usdtSwap: () => ({
+  //   fetchBalance: (address) => bitcoin.fetchOmniBalance(address, 31),
+  //   fetchUnspents: (scriptAddress) => bitcoin.fetchUnspents(scriptAddress),
+  //   broadcastTx: (txRaw) => bitcoin.broadcastTx(txRaw),
+  //   fetchTx: hash => bitcoin.fetchTx(hash),
+  // }),
   noxonTokenSwap: tokenSwap({
     network: 'mainnet',
     name: 'NOXON',
