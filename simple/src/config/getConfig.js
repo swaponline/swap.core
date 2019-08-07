@@ -81,6 +81,7 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
     swaps: [
       new EthSwap(config.ethSwap(ETH)),
       new BtcSwap(config.btcSwap()),
+      new QtumSwap(config.qtumSwap()),
       /*config.network === 'mainnet'
         ? new UsdtSwap(config.usdtSwap())
         : null,*/
@@ -98,6 +99,8 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
     flows: [
       ETH2BTC,
       BTC2ETH,
+      QTUM2BTC,
+      BTC2QTUM,
       ETHTOKEN2BTC(constants.COINS.noxon),
       BTC2ETHTOKEN(constants.COINS.noxon),
       ETHTOKEN2BTC(constants.COINS.swap),
