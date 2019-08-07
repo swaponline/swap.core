@@ -14,11 +14,11 @@ class BTC2QTUM extends Flow {
 
     this._flowName = BTC2QTUM.getName()
 
-    this.qtumSwap = SwapApp.swaps[constants.COINS.qtum]
-    this.btcSwap = SwapApp.swaps[constants.COINS.btc]
+    this.qtumSwap = swap.ownerSwap
+    this.btcSwap = swap.participantSwap
 
     // TODO DELETE THIS SHIT
-    this.myBtcAddress = SwapApp.services.auth.accounts.btc.getAddress()
+    const btcAddress = this.app.services.auth.accounts.btc.getAddress()
 
     if (!this.qtumSwap) {
       throw new Error('BTC2QTUM: "qtumSwap" of type object required')
@@ -69,9 +69,19 @@ class BTC2QTUM extends Flow {
 
       () => {
         flow.swap.room.once('swap sign', () => {
+          const { step } = flow.state
+
+          if (step >= 2) {
+            return
+          }
+
+          flow.swap.room.once('eth refund completed', () => {
+            flow.tryRefund()
+          })
+
           flow.finishStep({
             isParticipantSigned: true,
-          })
+          }, { step: 'sign', silentError: true })
         })
       },
 
@@ -100,7 +110,7 @@ class BTC2QTUM extends Flow {
           lockTime: getLockTime(),
           secretHash: flow.state.secretHash,
           recipientPublicKey: participant.btc.publicKey,
-          ownerPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
+          ownerPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
         }
 
         await flow.btcSwap.fundScript({

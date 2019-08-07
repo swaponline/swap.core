@@ -109,9 +109,13 @@ class SwapApp {
 
   _addFlow(Flow) {
     const flowName = Flow.getName()
+    const flowNameLeftPart = flowName.match(/^[^\d]+/)
+    const flowNameRightPart = flowName.match(/[^\d]+$/)
 
-    if ( !Object.values(constants.COINS).includes( Flow.getFromName() )
-      || !Object.values(constants.COINS).includes( Flow.getToName() )
+    if (
+      !flowNameLeftPart || !flowNameRightPart
+      || !Object.values(constants.COINS).includes(flowNameLeftPart[0].toUpperCase())
+      || !Object.values(constants.COINS).includes(flowNameRightPart[0].toUpperCase())
     ) {
       throw new Error(`SwapApp flow "_flowName" property should contain only: ${Object.values(constants.COINS)}. Got: "${flowName.toUpperCase()}"`)
     }
