@@ -26,7 +26,9 @@ class QtumInstance {
     this._swapName = constants.COINS.qtum
   }
 
-  _initSwap() {
+  _initSwap(app) {
+
+    this.app = app
     this.methods = this.abi.reduce((acc, params) => {
       const { name, type } = params
 
@@ -40,14 +42,13 @@ class QtumInstance {
       return acc
     })
 
-    const network = SwapApp.isMainNet()
+    const network = this.app.isMainNet()
       ? networks.mainnet
       : networks.testnet
 
-    const privateKey = SwapApp.env.storage.getItem(`${SwapApp.network}:qtum:privateKey`)
+    const privateKey = this.app.env.storage.storage.getItem(`${this.app.network}:qtum:privateKey`)
 
     this.wallet = network.fromWIF(privateKey)
-    console.log('wallet', { wallet: this.wallet })
   }
 
   executeMethod(executor, method, args = [], params = {}) {

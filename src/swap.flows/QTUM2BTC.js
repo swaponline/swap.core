@@ -13,8 +13,8 @@ class QTUM2BTC extends Flow {
 
     this._flowName = QTUM2BTC.getName()
 
-    this.qtumSwap = SwapApp.swaps[constants.COINS.qtum]
-    this.btcSwap = SwapApp.swaps[constants.COINS.btc]
+    this.qtumSwap = swap.participantSwap
+    this.btcSwap = swap.ownerSwap
 
     if (!this.qtumSwap) {
       throw new Error('QTUM2BTC: "qtumSwap" of type object required')
@@ -72,11 +72,22 @@ class QTUM2BTC extends Flow {
       // 2. Wait participant create, fund BTC Script
 
       () => {
-        flow.swap.room.once('create btc script', ({ scriptValues }) => {
+        flow.swap.room.on('create btc script', ({ scriptValues, btcScriptCreatingTransactionHash }) => {
+          const { step } = flow.state
+
+          if (step >= 3) {
+            return
+          }
+
           flow.finishStep({
             secretHash: scriptValues.secretHash,
             btcScriptValues: scriptValues,
-          })
+            btcScriptCreatingTransactionHash,
+          }, { step: 'wait-lock-btc', silentError: true })
+        })
+
+        flow.swap.room.sendMessage({
+          event: 'request btc script',
         })
       },
 
@@ -103,7 +114,7 @@ class QTUM2BTC extends Flow {
 
         const scriptCheckResult = await flow.btcSwap.checkScript(flow.state.btcScriptValues, {
           value: buyAmount,
-          recipientPublicKey: SwapApp.services.auth.accounts.btc.getPublicKey(),
+          recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
           lockTime: getLockTime(),
         })
 
@@ -216,7 +227,9 @@ class QTUM2BTC extends Flow {
     })
 
     this.swap.room.sendMessage('swap sign')
-
+    this.swap.room.sendMessage({
+      event: 'swap sign',
+    })
     this.finishStep({
       isMeSigned: true,
     })
@@ -227,6 +240,7 @@ class QTUM2BTC extends Flow {
       btcScriptVerified: true,
     })
   }
+
 
   async syncBalance() {
     const { sellAmount } = this.swap
@@ -254,6 +268,8 @@ class QTUM2BTC extends Flow {
     }
   }
 }
+
+
 
 
 export default QTUM2BTC
