@@ -1,12 +1,15 @@
 import SwapApp from 'swap.app'
 import { networks, generateMnemonic } from 'qtumjs-wallet'
 
-const login = (_privateKey) => {
-  const storageKey = `${SwapApp.network}:qtum:privateKey`
-  const privateKey = _privateKey || SwapApp.env.storage.getItem(storageKey)
+
+const login = (_privateKey, app) => {
+  SwapApp.required(app)
+
+  const storageKey = `${app.network}:qtum:privateKey`
+  const privateKey = _privateKey || app.env.storage.getItem(storageKey)
   let account
 
-  const network = SwapApp.isMainNet()
+  const network = app.isMainNet()
     ? networks.mainnet
     : networks.testnet
 
@@ -16,7 +19,7 @@ const login = (_privateKey) => {
   } else {
     const mnemonic  = generateMnemonic()
     account = network.fromMnemonic(mnemonic)
-    SwapApp.env.storage.setItem(storageKey, account.toWIF())
+    app.env.storage.setItem(storageKey, account.toWIF())
     console.log('account', account.address)
   }
 

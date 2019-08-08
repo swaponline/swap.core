@@ -148,7 +148,7 @@ class Flow {
   goNextStep(data) {
     const { step } = this.state
     const newStep = step + 1
-
+    console.warn("this.state", this.state)
     this.swap.events.dispatch('leave step', step)
 
     this.setState({
