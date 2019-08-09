@@ -81,9 +81,7 @@ class ETH2BTC extends Flow {
       isSwapExist: false,
 
       withdrawRequestIncoming: false,
-      withdrawRequestAccepted: false,
-      isSignFetching: false,
-      isMeSigned: false,
+      withdrawRequestAccepted: false
     }
 
     super._persistSteps()

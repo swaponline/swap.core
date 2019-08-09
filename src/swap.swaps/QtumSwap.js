@@ -1,6 +1,6 @@
 import { encodeMethod } from 'qtumjs-ethjs-abi'
 import qtum from 'qtumjs-lib'
-import SwapApp, { constants } from 'swap.app'
+import { constants } from 'swap.app'
 import {networks} from "qtumjs-wallet";
 
 class QtumInstance {
@@ -43,6 +43,18 @@ class QtumInstance {
       return acc
     })
 
+    try {
+      this.initWallet()
+    } catch (err) {
+      const time = setTimeout(() => {
+        this.initWallet()
+      }, 0);
+
+      clearInterval(time)
+    }
+  }
+
+  initWallet() {
     const network = this.app.isMainNet()
       ? networks.mainnet
       : networks.testnet
@@ -50,6 +62,7 @@ class QtumInstance {
     const privateKey = this.app.env.storage.storage.getItem(`${this.app.network}:qtum:privateKey`)
 
     this.wallet = network.fromWIF(privateKey)
+    console.log('this wallet', this.wallet)
   }
 
   executeMethod(executor, method, args = [], params = {}) {
@@ -98,7 +111,8 @@ class QtumInstance {
 
   async createSwap({ secretHash, address, amount }, hashListener) {
     // TODO add error handler
-    const amountSatoshi = amount * 1e8
+
+    const amountSatoshi = amount.multipliedBy(1e8).integerValue().toNumber()
 
     const args    = [ secretHash, QtumInstance.modifyWalletAddress(address) ]
     const params  = { amount: amountSatoshi }

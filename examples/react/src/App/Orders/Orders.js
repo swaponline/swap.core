@@ -45,10 +45,10 @@ export default class Orders extends Component {
 
   createOrder = () => {
     const data = {
-      buyCurrency: constants.COINS.eth,
+      buyCurrency: constants.COINS.qtum,
       sellCurrency: constants.COINS.btc,
-      buyAmount: 0.01,
-      sellAmount: 0.0013,
+      buyAmount: 0.05,
+      sellAmount: 0.004,
     }
 
     this.app.services.orders.create(data)

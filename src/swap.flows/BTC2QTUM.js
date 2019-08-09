@@ -1,5 +1,5 @@
 import crypto from 'bitcoinjs-lib/src/crypto'
-import SwapApp, { constants } from 'swap.app'
+import { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
 
@@ -9,26 +9,24 @@ class BTC2QTUM extends Flow {
     return `${constants.COINS.btc}2${constants.COINS.qtum}`
   }
 
-
   constructor(swap) {
     super(swap)
 
     this._flowName = BTC2QTUM.getName()
-
-    this.qtumSwap = this.app.swaps[constants.COINS.qtum]
-    this.btcSwap = this.app.swaps[constants.COINS.btc]
 
     this.stepNumbers = {
       'sign': 1,
       'submit-secret': 2,
       'sync-balance': 3,
       'lock-btc': 4,
-      'wait-lock-qtum': 5,
-      'withdraw-qtum': 6,
+      'wait-lock-eth': 5,
+      'withdraw-eth': 6,
       'finish': 7,
       'end': 8
     }
 
+    this.qtumSwap = this.app.swaps[constants.COINS.qtum]
+    this.btcSwap = this.app.swaps[constants.COINS.btc]
 
     // TODO DELETE THIS SHIT
     this.myBtcAddress = this.app.services.auth.accounts.btc.getAddress()
@@ -84,8 +82,7 @@ class BTC2QTUM extends Flow {
         flow.swap.room.once('swap sign', () => {
           flow.finishStep({
             isParticipantSigned: true,
-          }, { step: 'sign'})
-
+          }, { step: 'sign' })
         })
       },
 
@@ -126,15 +123,21 @@ class BTC2QTUM extends Flow {
           })
         })
 
+        console.log('create btc script')
+
         flow.swap.room.sendMessage({
           event: 'create btc script',
-          data: { btcScriptValues: scriptValues }
+          data: {
+            scriptValues
+          }
         })
+
+        console.log('send message btc script')
 
         flow.finishStep({
           isBtcScriptFunded: true,
           btcScriptValues: scriptValues,
-        }, {step: 'lock-btc'})
+        }, { step: 'lock-btc' })
       },
 
       // 5. Wait participant creates ETH Contract
@@ -154,7 +157,7 @@ class BTC2QTUM extends Flow {
               if (!flow.state.isQtumContractFunded) { // redundant condition but who cares :D
                 flow.finishStep({
                   isQtumContractFunded: true,
-                }, { step: 'wait-lock-qtum'})
+                }, { step: 'wait-lock-eth' })
               }
             }
             else {
@@ -172,7 +175,7 @@ class BTC2QTUM extends Flow {
 
             flow.finishStep({
               isEthContractFunded: true,
-            }, { step: 'wait-lock-qtum' })
+            }, { step: 'wait-lock-eth' })
           }
         })
       },
@@ -198,8 +201,8 @@ class BTC2QTUM extends Flow {
         console.log('finish check balance')
 
         if (balanceCheckResult) {
-          console.error(`Qtum balance check error:`, balanceCheckResult)
-          flow.swap.events.dispatch('qtum balance check error', balanceCheckResult)
+          console.error(`Eth balance check error:`, balanceCheckResult)
+          flow.swap.events.dispatch('eth balance check error', balanceCheckResult)
           return
         }
 
@@ -207,18 +210,20 @@ class BTC2QTUM extends Flow {
 
         await flow.qtumSwap.withdraw(data, (hash) => {
           flow.setState({
-            ethSwapWithdrawTransactionHash: hash,
+            qtumSwapWithdrawTransactionHash: hash,
           })
         })
 
         flow.swap.room.sendMessage({
           event: 'finish qtum withdraw',
-          data: { secret: flow.state.secret }
+          data: {
+            secret: flow.state.secret
+          }
         })
 
         flow.finishStep({
-          isQtumWithdrawn: true,
-        }, { step: 'withdraw-qtum' })
+          isEthWithdrawn: true,
+        }, { step: 'withdraw-eth' })
       },
 
       // 7. Finish
@@ -245,7 +250,6 @@ class BTC2QTUM extends Flow {
       isBalanceFetching: true,
     })
 
-    console.log("this.myBtcAddress", this.myBtcAddress)
     const balance = await this.btcSwap.fetchBalance(this.myBtcAddress)
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
@@ -255,8 +259,7 @@ class BTC2QTUM extends Flow {
         isBalanceFetching: false,
         isBalanceEnough: true,
       }, { step: 'sync-balance' })
-    }
-    else {
+    } else {
       this.setState({
         balance,
         isBalanceFetching: false,

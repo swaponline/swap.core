@@ -3,18 +3,14 @@ import Swap from 'swap.swap'
 
 import BtcToEth from './BtcToEth'
 import EthToBtc from './EthToBtc'
-import EthTokenToBtc from './EthTokenToBtc'
-import BtcToEthToken from './BtcToEthToken'
 
 import app from '../../swapApp'
 
 const swapComponents = {
   'BTC2ETH': BtcToEth,
   'ETH2BTC': EthToBtc,
-  'NOXON2BTC': EthTokenToBtc,
-  'BTC2NOXON': BtcToEthToken,
-  'FOO2BTC': EthTokenToBtc,
-  'BTC2FOO': BtcToEthToken,
+  'BTC2QTUM': BtcToEth,
+  'QTUM2BTC': EthToBtc,
 }
 
 export default class SwapComponent extends Component {

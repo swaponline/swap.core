@@ -41,7 +41,7 @@ class BtcSwap extends SwapInterface {
     this.broadcastTx    = options.broadcastTx
     this.feeValue       = options.feeValue || 546
     this.fetchTxInfo    = options.fetchTxInfo || (() => {})
-    this.estimateFeeValue = options.estimateFeeValue || (() => 0)
+    this.estimateFeeValue = options.estimateFeeValue || (() => '5000')
   }
 
   _initSwap(app) {
@@ -235,9 +235,6 @@ class BtcSwap extends SwapInterface {
     if (expected.recipientPublicKey !== recipientPublicKey) {
       return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
     }
-    if (expectedValue.isGreaterThan(totalConfidentUnspent)) {
-      return `Expected script value: ${expectedValue.toString()} with confidence above ${expectedConfidence}, got: ${totalConfidentUnspent}, address: ${scriptAddress}`
-    }
   }
 
   /**
@@ -334,7 +331,6 @@ class BtcSwap extends SwapInterface {
    */
   async getWithdrawRawTransaction(data, isRefund, hashName) {
     const { scriptValues, secret, destinationAddress } = data
-
     const { script, scriptAddress } = this.createScript(scriptValues, hashName)
 
     const tx            = new this.app.env.bitcoin.TransactionBuilder(this.network)
@@ -347,7 +343,7 @@ class BtcSwap extends SwapInterface {
       throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue}`)
     }
 
-    if (isRefund) {
+    if (typeof isRefund === "boolean") {
       tx.setLockTime(scriptValues.lockTime)
     }
 
@@ -421,13 +417,11 @@ class BtcSwap extends SwapInterface {
         const txRaw = await this.getWithdrawRawTransaction(data, isRefund, hashName)
         debug('swap.core:swaps')('raw tx withdraw', txRaw.toHex())
 
-        const result = await this.broadcastTx(txRaw.toHex())
+        await this.broadcastTx(txRaw.toHex())
 
         resolve(txRaw.getId())
       }
       catch (error) {
-        console.warn('BtcSwap: cant withdraw', error.message)
-
         let errorMessage
 
         if (error.res && /non-final/.test(error.res.text)) {
