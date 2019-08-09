@@ -9,16 +9,29 @@ class BTC2QTUM extends Flow {
     return `${constants.COINS.btc}2${constants.COINS.qtum}`
   }
 
+
   constructor(swap) {
     super(swap)
 
     this._flowName = BTC2QTUM.getName()
 
-    this.qtumSwap = swap.ownerSwap
-    this.btcSwap = swap.participantSwap
+    this.qtumSwap = this.app.swaps[constants.COINS.qtum]
+    this.btcSwap = this.app.swaps[constants.COINS.btc]
+
+    this.stepNumbers = {
+      'sign': 1,
+      'submit-secret': 2,
+      'sync-balance': 3,
+      'lock-btc': 4,
+      'wait-lock-qtum': 5,
+      'withdraw-qtum': 6,
+      'finish': 7,
+      'end': 8
+    }
+
 
     // TODO DELETE THIS SHIT
-    const btcAddress = this.app.services.auth.accounts.btc.getAddress()
+    this.myBtcAddress = this.app.services.auth.accounts.btc.getAddress()
 
     if (!this.qtumSwap) {
       throw new Error('BTC2QTUM: "qtumSwap" of type object required')
@@ -69,19 +82,10 @@ class BTC2QTUM extends Flow {
 
       () => {
         flow.swap.room.once('swap sign', () => {
-          const { step } = flow.state
-
-          if (step >= 2) {
-            return
-          }
-
-          flow.swap.room.once('eth refund completed', () => {
-            flow.tryRefund()
-          })
-
           flow.finishStep({
             isParticipantSigned: true,
-          }, { step: 'sign', silentError: true })
+          }, { step: 'sign'})
+
         })
       },
 
@@ -122,14 +126,15 @@ class BTC2QTUM extends Flow {
           })
         })
 
-        flow.swap.room.sendMessage('create btc script', {
-          scriptValues,
+        flow.swap.room.sendMessage({
+          event: 'create btc script',
+          data: { btcScriptValues: scriptValues }
         })
 
         flow.finishStep({
           isBtcScriptFunded: true,
           btcScriptValues: scriptValues,
-        })
+        }, {step: 'lock-btc'})
       },
 
       // 5. Wait participant creates ETH Contract
@@ -149,7 +154,7 @@ class BTC2QTUM extends Flow {
               if (!flow.state.isQtumContractFunded) { // redundant condition but who cares :D
                 flow.finishStep({
                   isQtumContractFunded: true,
-                })
+                }, { step: 'wait-lock-qtum'})
               }
             }
             else {
@@ -167,7 +172,7 @@ class BTC2QTUM extends Flow {
 
             flow.finishStep({
               isEthContractFunded: true,
-            })
+            }, { step: 'wait-lock-qtum' })
           }
         })
       },
@@ -193,8 +198,8 @@ class BTC2QTUM extends Flow {
         console.log('finish check balance')
 
         if (balanceCheckResult) {
-          console.error(`Eth balance check error:`, balanceCheckResult)
-          flow.swap.events.dispatch('eth balance check error', balanceCheckResult)
+          console.error(`Qtum balance check error:`, balanceCheckResult)
+          flow.swap.events.dispatch('qtum balance check error', balanceCheckResult)
           return
         }
 
@@ -206,13 +211,14 @@ class BTC2QTUM extends Flow {
           })
         })
 
-        flow.swap.room.sendMessage('finish qtum withdraw', {
-          secret: flow.state.secret
+        flow.swap.room.sendMessage({
+          event: 'finish qtum withdraw',
+          data: { secret: flow.state.secret }
         })
 
         flow.finishStep({
-          isEthWithdrawn: true,
-        })
+          isQtumWithdrawn: true,
+        }, { step: 'withdraw-qtum' })
       },
 
       // 7. Finish
@@ -229,7 +235,7 @@ class BTC2QTUM extends Flow {
     this.finishStep({
       secret,
       secretHash,
-    })
+    }, { step: 'submit-secret' })
   }
 
   async syncBalance() {
@@ -239,6 +245,7 @@ class BTC2QTUM extends Flow {
       isBalanceFetching: true,
     })
 
+    console.log("this.myBtcAddress", this.myBtcAddress)
     const balance = await this.btcSwap.fetchBalance(this.myBtcAddress)
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
@@ -247,7 +254,7 @@ class BTC2QTUM extends Flow {
         balance,
         isBalanceFetching: false,
         isBalanceEnough: true,
-      })
+      }, { step: 'sync-balance' })
     }
     else {
       this.setState({

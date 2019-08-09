@@ -27,6 +27,7 @@ class QtumInstance {
   }
 
   _initSwap(app) {
+    console.warn("CREATE")
 
     this.app = app
     this.methods = this.abi.reduce((acc, params) => {
@@ -162,6 +163,7 @@ class QtumInstance {
 
     return info.balance
   }
+
 }
 
 export default QtumInstance
