@@ -5,6 +5,7 @@ export const NATIVE_PRECISION = {
   BCH: 8,
   ETH: 18,
   LTC: 8,
+  QTUM: 18,
   // USDT: 8,
 }
 
