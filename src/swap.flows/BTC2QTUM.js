@@ -9,6 +9,12 @@ class BTC2QTUM extends Flow {
     return `${constants.COINS.btc}2${constants.COINS.qtum}`
   }
 
+  static getFromName() {
+    return constants.COINS.btc
+  }
+  static getToName() {
+    return constants.COINS.qtum
+  }
 
   constructor(swap) {
     super(swap)
