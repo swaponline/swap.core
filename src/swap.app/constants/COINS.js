@@ -19,6 +19,7 @@ export const ETH_TOKENS = {
   xeur: 'XEUR',
   eurs: 'EURS',
   usdt: 'USDT',
+  snm: 'SNM',
 }
 
 export default {
