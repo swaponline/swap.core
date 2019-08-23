@@ -351,8 +351,12 @@ class ETH2LTC extends Flow {
       })
   }
 
+  async isRefundSuccess() {
+    return true
+  }
+
   async tryWithdraw(_secret) {
-  const { secret, secretHash, isEthWithdrawn, isLtcWithdrawn, ltcScriptValues } = this.state
+    const { secret, secretHash, isEthWithdrawn, isLtcWithdrawn, ltcScriptValues } = this.state
     if (!_secret)
       throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
 

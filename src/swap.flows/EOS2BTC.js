@@ -226,6 +226,10 @@ class EOS2BTC extends Flow {
     })
   }
 
+  async isRefundSuccess() {
+    return true
+  }
+
   listenRequests() {
     const flow = this
 

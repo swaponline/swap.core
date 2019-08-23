@@ -255,6 +255,10 @@ class QTUM2BTC extends Flow {
     }, { step: 'verify-script' })
   }
 
+  async isRefundSuccess() {
+    return true
+  }
+
   async syncBalance() {
     const { sellAmount } = this.swap
 

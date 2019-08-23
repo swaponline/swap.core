@@ -597,6 +597,10 @@ class ETH2BTC extends Flow {
     }, true)
   }
 
+  async isRefundSuccess() {
+    return true
+  }
+
   async tryWithdraw(_secret) {
     const { secret, secretHash, isEthWithdrawn, isBtcWithdrawn, btcScriptValues } = this.state
 

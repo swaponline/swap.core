@@ -388,8 +388,12 @@ class LTC2BTC extends Flow {
       })
   }
 
+  async isRefundSuccess() {
+    return true
+  }
+
   async tryWithdraw(_secret) {
-  const { secret, secretHash, isLtcWithdrawn, isBtcWithdrawn, btcScriptValues } = this.state
+    const { secret, secretHash, isLtcWithdrawn, isBtcWithdrawn, btcScriptValues } = this.state
     if (!_secret)
       throw new Error(`Withdrawal is automatic. For manual withdrawal, provide a secret`)
 
