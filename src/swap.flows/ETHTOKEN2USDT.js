@@ -424,6 +424,10 @@ export default (tokenName) => {
       }, { step: 'withdraw-usdt' })
     }
 
+    async isRefundSuccess() {
+      return true
+    }
+
     async tryRefund() {
       const { participant } = this.swap
       let { secret, usdtScriptValues } = this.state

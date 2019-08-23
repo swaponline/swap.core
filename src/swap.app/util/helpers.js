@@ -27,6 +27,18 @@ const repeatAsyncUntilResult = (action, delay = 10 * 1000) =>
     iteration()
   })
 
+/**
+ * @param {number} inSeconds
+ * @returns {Promise<any>}
+ */
+const waitDelay = async (inSeconds) => 
+  new Promise(async (resolve, reject) => {
+    setTimeout(() => {
+      resolve(true)
+    }, inSeconds*1000)
+  })
+
 export default {
   repeatAsyncUntilResult,
+  waitDelay,
 }
