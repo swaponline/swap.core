@@ -363,6 +363,10 @@ class LTC2ETH extends Flow {
       })
   }
 
+  async isRefundSuccess() {
+    return true
+  }
+
   tryRefund() {
     return this.ltcSwap.refund({
       scriptValues: this.state.ltcScriptValues,

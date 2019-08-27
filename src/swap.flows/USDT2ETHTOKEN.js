@@ -360,6 +360,10 @@ export default (tokenName) => {
         })
     }
 
+    async isRefundSuccess() {
+      return true
+    }
+
     tryRefund() {
       return this.usdtSwap.refund({
         amount: this.swap.sellAmount.toNumber(),

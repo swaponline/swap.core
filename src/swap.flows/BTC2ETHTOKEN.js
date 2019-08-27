@@ -650,6 +650,23 @@ export default (tokenName) => {
       }, true)
     }
 
+    async isRefundSuccess() {
+      const { refundTransactionHash, isRefunded } = this.state
+      if (refundTransactionHash && isRefunded) {
+        if (await this.btcSwap.checkTX(refundTransactionHash)) {
+          return true
+        } else {
+          console.warn('BTC2ETHTOKEN - unknown refund transaction')
+          this.setState( {
+            refundTransactionHash: null,
+            isRefunded: false,
+          } )
+          return false
+        }
+      }
+      return false
+    }
+
     async tryWithdraw(_secret) {
       const { secret, secretHash, isEthWithdrawn } = this.state
 

@@ -626,6 +626,10 @@ class BCH2ETH extends Flow {
       }, 'withdraw-eth')
     })
   }
+
+  async isRefundSuccess() {
+    return true
+  }
 }
 
 export default BCH2ETH

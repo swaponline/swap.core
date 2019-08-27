@@ -1,5 +1,5 @@
 import debug from 'debug'
-import SwapApp, { SwapInterface, constants } from 'swap.app'
+import SwapApp, { SwapInterface, constants, util } from 'swap.app'
 import BigNumber from 'bignumber.js'
 
 
@@ -423,7 +423,17 @@ class BtcSwap extends SwapInterface {
 
         const result = await this.broadcastTx(txRaw.toHex())
 
-        resolve(txRaw.getId())
+        // Wait some delay until transaction can be rejected or broadcast failed
+        await util.helpers.waitDelay(10)
+
+        const txSuccess = await this.checkTX(txRaw.getId())
+
+        if (txSuccess) {
+          resolve(txRaw.getId())
+        } else {
+          console.warn('BtcSwap: cant withdraw', 'Generated TX not found')
+          reject('TX not found. Try it later. ',txRaw.getId())
+        }
       }
       catch (error) {
         console.warn('BtcSwap: cant withdraw', error.message)
@@ -441,6 +451,22 @@ class BtcSwap extends SwapInterface {
     })
   }
 
+  /**
+   * 
+   * @param {string} txID
+   * @returns {Promise}
+   */
+  async checkTX(txID) {
+    const txInfo = await this.fetchTxInfo(txID)
+    if (txInfo
+      && txInfo.senderAddress
+      && txInfo.txid
+      && (txInfo.txid.toLowerCase() == txID.toLowerCase())
+    ) {
+      return true
+    }
+    return false
+  }
   /**
    *
    * @param {object} data

@@ -541,6 +541,10 @@ class ETH2BCH extends Flow {
     this.sendMessageAboutClose()
   }
 
+  async isRefundSuccess() {
+    return true
+  }
+
   async tryWithdraw(_secret) {
     const { secret, secretHash, isEthWithdrawn, isBchWithdrawn, bchScriptValues } = this.state
 

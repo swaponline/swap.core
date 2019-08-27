@@ -200,8 +200,29 @@ class BTC2EOS extends Flow {
     const flow = this
 
     return flow.transact.refund().then((btcRefundTx) => {
-      flow.setState({ btcRefundTx })
+      flow.setState({
+        btcRefundTx,
+        refundTransactionHash: btcRefundTx,
+        isRefunded: true,
+      })
     })
+  }
+
+  async isRefundSuccess() {
+    const { refundTransactionHash, isRefunded } = this.state
+    if (refundTransactionHash && isRefunded) {
+      if (await this.btcSwap.checkTX(refundTransactionHash)) {
+        return true
+      } else {
+        console.warn('BTC2EOS - unknown refund transaction')
+        this.setState( {
+          refundTransactionHash: null,
+          isRefunded: false,
+        } )
+        return false
+      }
+    }
+    return false
   }
 
   listenRequests() {
