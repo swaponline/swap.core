@@ -423,6 +423,8 @@ class BtcSwap extends SwapInterface {
 
         const result = await this.broadcastTx(txRaw.toHex())
 
+        console.log('BtcSwap: broadcastTx', result)
+
         // Wait some delay until transaction can be rejected or broadcast failed
         await util.helpers.waitDelay(10)
 
@@ -442,6 +444,12 @@ class BtcSwap extends SwapInterface {
 
         if (error.res && /non-final/.test(error.res.text)) {
           errorMessage = 'Try it later'
+        } else if (/Total less than fee/.test(error.message)) {
+          if (/Total less than fee: 0/.test(error.message)) {
+            errorMessage = 'Address is empty'
+          } else {
+            errorMessage = 'Less than fee'
+          }
         } else {
           errorMessage = error
         }
