@@ -625,9 +625,18 @@ class BTC2ETH extends Flow {
         return true
       })
       .catch((error) => {
-        console.warn('Btc withdraw:', error)
+        if (/Address is empty/.test(error)) {
+          // TODO - fetch TX list to script for refund TX
+          flow.setState({
+            isRefunded: true,
+            isSwapExist: false,
+          }, true)
+          return true
+        } else {
+          console.warn('Btc refund:', error)
 
-        return false
+          return false
+        }
       })
   }
 
