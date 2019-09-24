@@ -16,6 +16,17 @@ const responseCacheGet = (req, opts) => {
   } return false
 }
 
+const responseCacheGetTimeout = (req, opts) => {
+  const cacheKey =  responseCacheGetKey(req, opts)
+
+  if (opts
+    && opts.cacheResponse
+    && responseCacheStorage[cacheKey]
+  ) {
+    return responseCacheStorage[cacheKey]
+  } return false
+}
+
 const responseCacheAdd = (req, opts, resData) => {
   const cacheKey = responseCacheGetKey(req, opts)
   const cacheResponse = opts.cacheResponse
@@ -43,7 +54,7 @@ responseQueryWorker()
 const createResponseHandler = (req, opts) => {
   const debug = `${opts.method.toUpperCase()} ${opts.endpoint}`
 
-
+  const responseQueryTimeout = 1000
   // no cache - do request
   return new Promise((fulfill, reject) => {
     const doRequest = ( nextTick ) => {
@@ -51,7 +62,7 @@ const createResponseHandler = (req, opts) => {
       const cachedAnswer = responseCacheGet(req, opts)
 
       if (cachedAnswer) {
-        setTimeout( nextTick, 500 )
+        setTimeout( nextTick, responseQueryTimeout )
         fulfill(cachedAnswer.resData)
         return
       }
@@ -59,11 +70,18 @@ const createResponseHandler = (req, opts) => {
         if (opts.cacheResponse) {
           responseCacheAdd(req, opts, answer)
         }
-        setTimeout( nextTick, 500 )
+        setTimeout( nextTick, responseQueryTimeout )
         fulfill(answer)
       })
       .catch( error => {
-        setTimeout( nextTick, 500 )
+        setTimeout( nextTick, responseQueryTimeout )
+        if (opts.cacheOnFail) {
+          const cachedData = responseCacheGetTimeout(req, opts)
+          if (cachedData) {
+            fulfill(cachedData.resData)
+            return
+          }
+        }
         reject(error)
       })
     }

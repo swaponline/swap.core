@@ -143,10 +143,12 @@ class Ethereum {
 
     // cache 10 minute
     // query request
+    // use cache if fail
     return request
       .get(`${ETHERCHAIN_API}`, {
         cacheResponse: 10*60*1000,
         queryResponse: true,
+        cacheOnFail: true,
       })
       .then(json => JSON.parse(json))
       .then(fees => BigNumber(fees[_speed]).multipliedBy(1e9))
@@ -165,10 +167,12 @@ class Ethereum {
 
     // cache 10 minute
     // query request
+    // use cache if fail
     return request
       .get(`${ETHGASSTATION_API}`, {
         cacheResponse: 10*60*1000,
         queryResponse: true,
+        cacheOnFail: true,
       })
       .then(json => JSON.parse(json))
       .then(fees => BigNumber(fees[_speed]).dividedBy(10).multipliedBy(1e9))

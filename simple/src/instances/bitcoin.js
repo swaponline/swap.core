@@ -103,10 +103,12 @@ class Bitcoin {
 
     // 10 minuts cache
     // query request
+    // use cache if fail
     return request
       .get(`${EARN_COM}`, {
         cacheResponse: 10*60*1000,
         queryResponse: true,
+        cacheOnFail: true,
       } )
       .then(json => JSON.parse(json))
       .then(fees => Number(fees[_speed]) * 1024)
@@ -133,6 +135,7 @@ class Bitcoin {
       .get(`${API_ROOT}`, {
         cacheResponse: 10*60*1000,
         queryResponse: true,
+        cacheOnFail: true,
       } )
       .then(json => JSON.parse(json))
       .then(info => Number(info[_speed]))
@@ -179,11 +182,11 @@ class Bitcoin {
   }
 
   fetchTx(hash) {
-    // 5 seconds cache
+    // 10 seconds cache
     // query request
     return request
       .get(`${this.root}/tx/${hash}`, {
-        cacheResponse: 5*1000,
+        cacheResponse: 10*1000,
         queryResponse: true,
       } )
       .then(json => JSON.parse(json))
