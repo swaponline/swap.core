@@ -252,12 +252,20 @@ export default (tokenName) => {
                     ethSwapCreationTransactionHash: hash,
                     canCreateEthTransaction: true,
                     isFailedTransaction: false,
-                  })
+                  }, true)
 
                   debug('swap.core:flow')('created swap!', hash)
                 })
 
               } catch (error) {
+                if (flow.state.ethSwapCreationTransactionHash) {
+                  console.error('fail create swap, but tx already exists')
+                  flow.setState({
+                    canCreateEthTransaction: true,
+                    isFailedTransaction: false,
+                  }, true)
+                  return true
+                }
                 const { message, gasAmount } = error
 
                 if ( /insufficient funds/.test(message) ) {
@@ -270,18 +278,15 @@ export default (tokenName) => {
 
                   return null
                 } else if ( /known transaction/.test(message) ) {
-                  if (flow.state.ethSwapCreationTransactionHash) {
-                    flow.setState({
-                      canCreateEthTransaction: true,
-                      isFailedTransaction: false,
-                    })
-                    return true
-                  }
                   console.error(`known tx: ${message}`)
                 } else if ( /out of gas/.test(message) ) {
                   console.error(`tx failed (wrong secret?): ${message}`)
                 } else if ( /always failing transaction/.test(message) ) {
                   console.error(`Insufficient Token for transaction: ${message}`)
+                } else if ( /Failed to check for transaction receipt/.test(message) ) {
+                  console.error(error)
+                } else if ( /replacement transaction underpriced/.test(message) ) {
+                  console.error(error)
                 } else {
                   console.error(error)
                 }
