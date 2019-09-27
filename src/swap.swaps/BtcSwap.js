@@ -172,10 +172,6 @@ class BtcSwap extends SwapInterface {
 
     const script = this.app.env.bitcoin.script.compile([
 
-      this.app.env.bitcoin.opcodes.OP_SIZE,
-      Buffer.from('20' ,'hex'),
-      this.app.env.bitcoin.opcodes.OP_EQUALVERIFY,
-
       hashOpcode,
       Buffer.from(secretHash, 'hex'),
       this.app.env.bitcoin.opcodes.OP_EQUALVERIFY,
