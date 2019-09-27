@@ -224,17 +224,18 @@ class ETH2BTC extends Flow {
                   ethSwapCreationTransactionHash: hash,
                   canCreateEthTransaction: true,
                   isFailedTransaction: false,
-                })
+                }, true)
               })
             } catch (err) {
+              if (flow.state.ethSwapCreationTransactionHash) {
+                console.error('fail create swap, but tx already exists')
+                flow.setState({
+                  canCreateEthTransaction: true,
+                  isFailedTransaction: false,
+                }, true)
+                return true
+              }
               if ( /known transaction/.test(err.message) ) {
-                if (flow.state.ethSwapCreationTransactionHash) {
-                  flow.setState({
-                    canCreateEthTransaction: true,
-                    isFailedTransaction: false,
-                  })
-                  return true
-                }
                 console.error(`known tx: ${err.message}`)
               } else if ( /out of gas/.test(err.message) ) {
                 console.error(`tx failed (wrong secret?): ${err.message}`)
@@ -246,7 +247,7 @@ class ETH2BTC extends Flow {
                 canCreateEthTransaction: false,
                 isFailedTransaction: true,
                 isFailedTransactionError: message,
-              })
+              }, true)
 
               return null
             }
