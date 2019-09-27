@@ -88,6 +88,7 @@ export default (tokenName) => {
         isMeSigned: false,
 
         isFailedTransaction: false,
+        isFailedTransactionError: null,
         gasAmountNeeded: 0,
       }
 
@@ -269,6 +270,13 @@ export default (tokenName) => {
 
                   return null
                 } else if ( /known transaction/.test(message) ) {
+                  if (flow.state.ethSwapCreationTransactionHash) {
+                    flow.setState({
+                      canCreateEthTransaction: true,
+                      isFailedTransaction: false,
+                    })
+                    return true
+                  }
                   console.error(`known tx: ${message}`)
                 } else if ( /out of gas/.test(message) ) {
                   console.error(`tx failed (wrong secret?): ${message}`)
@@ -280,6 +288,7 @@ export default (tokenName) => {
 
                 flow.setState({
                   isFailedTransaction: true,
+                  isFailedTransactionError: message,
                 })
 
                 return null
