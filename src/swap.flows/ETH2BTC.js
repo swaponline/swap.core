@@ -84,6 +84,9 @@ class ETH2BTC extends Flow {
       withdrawRequestAccepted: false,
       isSignFetching: false,
       isMeSigned: false,
+
+      isFailedTransaction: false,
+      isFailedTransactionError: null,
     }
 
     super._persistSteps()
@@ -220,9 +223,18 @@ class ETH2BTC extends Flow {
                 flow.setState({
                   ethSwapCreationTransactionHash: hash,
                   canCreateEthTransaction: true,
-                })
+                  isFailedTransaction: false,
+                }, true)
               })
             } catch (err) {
+              if (flow.state.ethSwapCreationTransactionHash) {
+                console.error('fail create swap, but tx already exists')
+                flow.setState({
+                  canCreateEthTransaction: true,
+                  isFailedTransaction: false,
+                }, true)
+                return true
+              }
               if ( /known transaction/.test(err.message) ) {
                 console.error(`known tx: ${err.message}`)
               } else if ( /out of gas/.test(err.message) ) {
@@ -233,7 +245,9 @@ class ETH2BTC extends Flow {
 
               flow.setState({
                 canCreateEthTransaction: false,
-              })
+                isFailedTransaction: true,
+                isFailedTransactionError: message,
+              }, true)
 
               return null
             }
