@@ -597,11 +597,7 @@ class BTC2ETH extends Flow {
 
   tryRefund() {
     const flow = this
-    const { isRefunded, btcScriptValues, secret } = flow.state
-
-    if (isRefunded) {
-      return false
-    }
+    const { btcScriptValues, secret } = flow.state
 
     return flow.btcSwap.refund({
       scriptValues: btcScriptValues,

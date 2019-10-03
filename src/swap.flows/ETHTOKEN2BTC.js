@@ -600,11 +600,7 @@ export default (tokenName) => {
 
     async tryRefund() {
       const { participant } = this.swap
-      const { secretHash, isEthContractFunded, isRefunded } = this.state
-
-      if (!isEthContractFunded || isRefunded) {
-        return false
-      }
+      const { secretHash } = this.state
 
       const refundHandler = (hash = null) => {
         this.swap.room.sendMessage({
