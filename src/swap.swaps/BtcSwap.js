@@ -84,12 +84,12 @@ class BtcSwap extends SwapInterface {
    * @private
    */
   async filterConfidentUnspents(unspents, expectedConfidenceLevel = 0.95) {
-    const feesToConfidence = async (fees, size, address) => {
-      const currentFastestFee = await this.getTxFee({ inSatoshis: true, size, speed: 'fast', address })
+    const feesToConfidence = async (fees, size) => {
+      const currentFastestFee = await this.getTxFee({ inSatoshis: true, size, speed: 'fast' })
 
-      return BigNumber(fees).isLessThan(currentFastestFee)
-        ? BigNumber(fees).dividedBy(currentFastestFee).toNumber()
-        : 1
+      debug('swap.core:swaps')(`currentFastestFee: ${currentFastestFee}`)
+
+      return fees < currentFastestFee ? (fees / currentFastestFee) : 1
     }
 
     const confirmationsToConfidence = confs => confs > 0 ? 1 : 0
@@ -97,20 +97,26 @@ class BtcSwap extends SwapInterface {
     const fetchConfidence = async ({ txid, confirmations }) => {
       const confidenceFromConfirmations = confirmationsToConfidence(confirmations)
 
-      if (BigNumber(confidenceFromConfirmations).isGreaterThanOrEqualTo(expectedConfidenceLevel)) {
+      if (confidenceFromConfirmations > expectedConfidenceLevel) {
         return confidenceFromConfirmations
       }
 
       try {
         const info = await this.fetchTxInfo(txid)
 
-        const { fees, size, senderAddress } = info
+        const { confidence, fees, size } = info
 
-        if (fees) {
-          return await feesToConfidence(fees, size, senderAddress)
+        debug('swap.core:swaps')(`tx ${txid}:`, { confidence, confirmations, fees, size })
+
+        if (confidence && !Number.isNaN(Number(confidence))) {
+          return confidence
         }
 
-        throw new Error(`txinfo=${{ confirmations, fees, size, senderAddress }}`)
+        if (fees) {
+          return await feesToConfidence(fees, size)
+        }
+
+        throw new Error(`txinfo=${{ confidence, confirmations, fees, size }}`)
 
       } catch (err) {
         console.error(`BtcSwap: Error fetching confidence: using confirmations > 0:`, err.message)
@@ -122,7 +128,7 @@ class BtcSwap extends SwapInterface {
 
     return unspents.filter((utxo, index) => {
       debug('swap.core:swaps')(`confidence[${index}]:`, confidences[index])
-      return BigNumber(confidences[index]).isGreaterThanOrEqualTo(expectedConfidenceLevel)
+      return BigNumber(confidences[index]).isGreaterThan(expectedConfidenceLevel)
     })
   }
 
