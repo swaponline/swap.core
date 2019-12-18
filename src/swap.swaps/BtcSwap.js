@@ -66,14 +66,27 @@ class BtcSwap extends SwapInterface {
    * @returns {BigNumber}
    * @public
    */
-  async getTxFee({ inSatoshis, size, speed = 'fast', address } = {}) {
-    let estimatedFee = BigNumber(await this.estimateFeeValue({ inSatoshis, address, speed, txSize: size }))
+  async getTxFee({ inSatoshis, size = 550, speed = 'fast' } = {}) {
+    try {
+      const estimatedRate = await this.estimateFeeRate({ speed })
+      const estimatedFee = BigNumber.maximum(DUST, BigNumber(estimatedRate)
+        .multipliedBy(size)
+        .div(1024)
+        .dp(0, BigNumber.ROUND_UP)
+      )
 
-    this.feeValue = estimatedFee
+      if (estimatedFee.isGreaterThan(0)) {
+        this.feeValue = estimatedFee
+      } else {
+        throw new Error(`Not an Integer: ${estimatedFee}`)
+      }
+    } catch (err) {
+      debug('swap.core:swaps')(`BtcSwap: Error with fee update: ${err.message}, using old value feeValue=${this.feeValue}`)
+    }
 
     return inSatoshis
-      ? estimatedFee
-      : estimatedFee.dividedBy(1e8).dp(0, BigNumber.ROUND_UP)
+      ? this.feeValue
+      : this.feeValue.div(1e8)
   }
 
   /**
