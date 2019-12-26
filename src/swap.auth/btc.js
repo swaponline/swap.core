@@ -25,6 +25,7 @@ const login = (_privateKey, app) => {
   const { publicKey } = account
 
   account.getPublicKey = () => publicKey.toString('hex')
+  account.getPublicKeyBuffer = () => publicKey
   account.getPrivateKey = () => privateKey
   account.getAddress = () => address
 
