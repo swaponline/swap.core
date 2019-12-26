@@ -20,8 +20,13 @@ const login = (_privateKey, app) => {
 
   account = new app.env.bitcoin.ECPair.fromWIF(privateKey, network)
 
-  account.getPublicKey = () => account.getPublicKeyBuffer().toString('hex')
+  const { address } = app.env.bitcoin.payments.p2pkh({ pubkey: account.publicKey, network })
+  const { publicKey } = account
+
+  account.getPublicKey = () => publicKey.toString('hex')
+  account.getPublicKeyBuffer = () => publicKey
   account.getPrivateKey = () => privateKey
+  account.getAddress = () => address
 
   if (!_privateKey) {
     app.env.storage.setItem(storageKey, privateKey)
