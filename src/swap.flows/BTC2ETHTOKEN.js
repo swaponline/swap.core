@@ -1,5 +1,4 @@
 import debug from 'debug'
-import crypto from 'bitcoinjs-lib/src/crypto'
 import SwapApp, { constants, util } from 'swap.app'
 import { Flow } from 'swap.swap'
 import { BigNumber } from 'bignumber.js'
@@ -516,7 +515,7 @@ export default (tokenName) => {
         throw new Error(`Cannot proceed: participant not signed. step=${this.state.step}`)
       }
 
-      const secretHash = crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
+      const secretHash = this.app.env.bitcoin.crypto.ripemd160(Buffer.from(secret, 'hex')).toString('hex')
 
       /* Secret hash generated - create BTC script - and only after this notify other part */
       this.createWorkBTCScript(secretHash);
@@ -686,7 +685,7 @@ export default (tokenName) => {
 
       debug('swap.core:flow')(`WITHDRAW using secret = ${_secret}`)
 
-      const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
+      const _secretHash = this.app.env.bitcoin.crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
 
       if (secretHash != _secretHash)
         console.warn(`Hash does not match! state: ${secretHash}, given: ${_secretHash}`)

@@ -139,20 +139,26 @@ class BtcSwap extends SwapInterface {
     debug('swap.core:swaps')('signing script input', inputIndex)
     const { script, txRaw, secret } = data
 
+    const scriptData = this.app.env.bitcoin.payments.p2sh({ redeem: { output: script, network: this.network }, network: this.network })
+
     const hashType      = this.app.env.bitcoin.Transaction.SIGHASH_ALL
-    const signatureHash = txRaw.hashForSignature(inputIndex, script, hashType)
-    const signature     = this.app.services.auth.accounts.btc.sign(signatureHash).toScriptSignature(hashType)
+    const privKey = this.app.env.bitcoin.ECPair.fromWIF(this.app.services.auth.accounts.btc.getPrivateKey(), this.network)
+    const signatureHash = txRaw.hashForSignature(inputIndex, scriptData.redeem.output, hashType);
 
-    const scriptSig = this.app.env.bitcoin.script.scriptHash.input.encode(
-      [
-        signature,
-        this.app.services.auth.accounts.btc.getPublicKeyBuffer(),
-        Buffer.from(secret.replace(/^0x/, ''), 'hex'),
-      ],
-      script,
-    )
+    const redeemScriptSig = this.app.env.bitcoin.payments.p2sh({ 
+      network: this.network, 
+      redeem: { 
+        network: this.network, 
+        output: scriptData.redeem.output, 
+        input: this.app.env.bitcoin.script.compile([ 
+          this.app.env.bitcoin.script.signature.encode(privKey.sign(signatureHash), hashType),
+          this.app.services.auth.accounts.btc.getPublicKeyBuffer(),
+          Buffer.from(secret.replace(/^0x/, ''), 'hex'),
+        ]) 
+      } 
+    }).input 
 
-    txRaw.setInputScript(inputIndex, scriptSig)
+    txRaw.setInputScript(inputIndex, redeemScriptSig);
   }
 
   /**
@@ -194,8 +200,8 @@ class BtcSwap extends SwapInterface {
       this.app.env.bitcoin.opcodes.OP_ENDIF,
     ])
 
-    const scriptPubKey  = this.app.env.bitcoin.script.scriptHash.output.encode(this.app.env.bitcoin.crypto.hash160(script))
-    const scriptAddress = this.app.env.bitcoin.address.fromOutputScript(scriptPubKey, this.network)
+    const scriptData = this.app.env.bitcoin.payments.p2sh({ redeem: { output: script, network: this.network }, network: this.network })
+    const scriptAddress = scriptData.address
 
     return {
       scriptAddress,
@@ -273,7 +279,7 @@ class BtcSwap extends SwapInterface {
         unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout))
         tx.addOutput(scriptAddress, fundValue)
         tx.addOutput(this.app.services.auth.accounts.btc.getAddress(), skipValue)
-        tx.inputs.forEach((input, index) => {
+        tx.__INPUTS.forEach((input, index) => {
           tx.sign(index, this.app.services.auth.accounts.btc)
         })
 
@@ -356,7 +362,7 @@ class BtcSwap extends SwapInterface {
 
     const txRaw = tx.buildIncomplete()
 
-    unspents.map((_, index) =>
+    tx.__INPUTS.map((_, index) =>
       this._signTransaction({
         script,
         secret,
@@ -364,6 +370,13 @@ class BtcSwap extends SwapInterface {
       }, index)
     )
 
+    const txHex = txRaw.toHex()
+    const txId = txRaw.getId()
+
+    return {
+      txHex,
+      txId,
+    }
     return txRaw
   }
 
@@ -378,7 +391,7 @@ class BtcSwap extends SwapInterface {
   async getWithdrawHexTransaction(data, isRefund) {
     const txRaw = await this.getWithdrawRawTransaction(data, isRefund)
 
-    return txRaw.toHex()
+    return txRaw.txHex
   }
 
   /**
@@ -402,7 +415,7 @@ class BtcSwap extends SwapInterface {
   async getRefundHexTransaction(data) {
     const txRaw = await this.getRefundRawTransaction(data)
 
-    return txRaw.toHex()
+    return txRaw.txHex
   }
 
   /**
@@ -419,22 +432,23 @@ class BtcSwap extends SwapInterface {
     return new Promise(async (resolve, reject) => {
       try {
         const txRaw = await this.getWithdrawRawTransaction(data, isRefund, hashName)
-        debug('swap.core:swaps')('raw tx withdraw', txRaw.toHex())
 
-        const result = await this.broadcastTx(txRaw.toHex())
+        debug('swap.core:swaps')('raw tx withdraw', txRaw.txHex)
+
+        const result = await this.broadcastTx(txRaw.txHex)
 
         console.log('BtcSwap: broadcastTx', result)
 
         // Wait some delay until transaction can be rejected or broadcast failed
         await util.helpers.waitDelay(10)
 
-        const txSuccess = await this.checkTX(txRaw.getId())
+        const txSuccess = await this.checkTX(txRaw.txId)
 
         if (txSuccess) {
-          resolve(txRaw.getId())
+          resolve(txRaw.txId)
         } else {
           console.warn('BtcSwap: cant withdraw', 'Generated TX not found')
-          reject('TX not found. Try it later. ',txRaw.getId())
+          reject('TX not found. Try it later. ',txRaw.txId)
         }
       }
       catch (error) {
