@@ -2,6 +2,7 @@ export const NATIVE = {
   eth: 'ETH',
   btc: 'BTC',
   bch: 'BCH',
+  sum: 'SUM',
   ltc: 'LTC',
   eos: 'EOS',
   nim: 'NIM',
