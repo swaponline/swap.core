@@ -6,7 +6,11 @@ export default [
   'LTC-BTC',
   'ETH-BCH',
   'ETH-LTC',
+  'SUM-LTC',
+  'BTC-SUM',
+  'SUM-BTC',
   'QTUM-BTC',
+  
 
   ...Object.values(ETH_TOKENS).map(token => `${token}-BTC`),
   // ...Object.values(ETH_TOKENS).map(token => `${token}-USDT`),
