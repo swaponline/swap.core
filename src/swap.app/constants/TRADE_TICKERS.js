@@ -9,6 +9,7 @@ export default [
   'SUM-LTC',
   'BTC-SUM',
   'SUM-BTC',
+  'SUM-ETH',
   'QTUM-BTC',
   
 
