@@ -12,7 +12,6 @@ export const NATIVE = {
 export const ETH_TOKENS = {
   noxon: 'NOXON',
   swap: 'SWAP',
-  ton: 'TON',
   pbl: 'PBL',
   xsat: 'XSAT',
   hdp: 'HDP',
