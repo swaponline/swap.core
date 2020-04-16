@@ -4,7 +4,6 @@ export default [
   'ETH-BTC',
   'EOS-BTC',
   'LTC-BTC',
-  'ETH-BCH',
   'ETH-LTC',
   'QTUM-BTC',
 
