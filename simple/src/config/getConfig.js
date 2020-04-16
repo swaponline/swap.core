@@ -4,10 +4,9 @@ const SwapAuth = require('swap.auth')
 const SwapRoom = require('swap.room')
 const SwapOrders = require('swap.orders')
 
-const { EthSwap, EthTokenSwap, BtcSwap, /*UsdtSwap,*/ BchSwap, } = require('swap.swaps')
+const { EthSwap, EthTokenSwap, BtcSwap, /*UsdtSwap,*/ } = require('swap.swaps')
 const {
   ETH2BTC, BTC2ETH,
-  ETH2BCH, BCH2ETH,
   ETHTOKEN2BTC, BTC2ETHTOKEN,
   /*USDT2ETHTOKEN, ETHTOKEN2USDT*/ } = require('swap.flows')
 
@@ -48,7 +47,7 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
 
   const storage = new LocalStorage(config.storageDir)
 
-  const web3    = eth[config.network]().core
+  const web3 = eth[config.network]().core
   const bitcoin = btc[config.network]().core
 
   const tokens = (config.ERC20TOKENS || [])
@@ -94,7 +93,7 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
         tokens.map(_token => new EthTokenSwap(tokenSwap(_token)()))
       )
     ]
-    .filter(a=>!!a),
+      .filter(a => !!a),
 
     flows: [
       ETH2BTC,
@@ -111,18 +110,16 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
       /*USDT2ETHTOKEN(constants.COINS.swap),*/
       ...(config.flows || []),
       ...((
-          [].concat.apply([],
-            tokens.map(({ name }) => ([
-              /*ETHTOKEN2USDT(name),*/
-              /*USDT2ETHTOKEN(name),*/
-              ETHTOKEN2BTC(name),
-              BTC2ETHTOKEN(name),
-            ]))
-          )
-        ) || []
+        [].concat.apply([],
+          tokens.map(({ name }) => ([
+            /*ETHTOKEN2USDT(name),*/
+            /*USDT2ETHTOKEN(name),*/
+            ETHTOKEN2BTC(name),
+            BTC2ETHTOKEN(name),
+          ]))
+        )
+      ) || []
       )
-      // ETH2BCH,
-      // BCH2ETH,
     ],
   }
 }

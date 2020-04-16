@@ -2,7 +2,6 @@ import { ETH_TOKENS } from './COINS'
 
 export const NATIVE_PRECISION = {
   BTC: 8,
-  BCH: 8,
   ETH: 18,
   LTC: 8,
   QTUM: 18,
