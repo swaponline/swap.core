@@ -10,9 +10,6 @@ import LTC2ETH from './LTC2ETH'
 import BCH2ETH from './BCH2ETH'
 import ETH2BCH from './ETH2BCH'
 
-import EOS2BTC from './EOS2BTC'
-import BTC2EOS from './BTC2EOS'
-
 import ETHTOKEN2BTC from './ETHTOKEN2BTC'
 import BTC2ETHTOKEN from './BTC2ETHTOKEN'
 
@@ -34,9 +31,6 @@ export {
 
   BCH2ETH,
   ETH2BCH,
-
-  EOS2BTC,
-  BTC2EOS,
 
   ETHTOKEN2BTC,
   BTC2ETHTOKEN,
