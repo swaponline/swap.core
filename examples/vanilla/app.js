@@ -17,11 +17,6 @@ const config = {
       gas: 2e6,
       gasPrice: '20000000000',
     },
-
-    eos: {
-      chainId: '038f4b0fc8ff18a4f0842a8f0564611f6e96e8535901dd45e43ac8691a1c4dca',
-      httpEndpoint: 'https://jungle.eosio.cr',
-    },
   },
 
   token: {
@@ -50,7 +45,6 @@ const config = {
   link: {
     bitpay: 'https://test-insight.bitpay.com',
     etherscan: 'https://rinkeby.etherscan.io',
-    eos: 'http://jungle.cryptolions.io/#accountInfo',
   },
 
   api: {

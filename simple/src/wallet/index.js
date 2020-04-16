@@ -22,7 +22,7 @@ class Wallet {
         const account = this.auth.accounts.btc
         return await this.bitcoin.sendTransaction({ account, to, value })
       case 'eth':
-        return await this.ethereum.sendTransaction({to, value})
+        return await this.ethereum.sendTransaction({ to, value })
       default:
         return Promise.reject('not implemented')
     }
@@ -30,7 +30,7 @@ class Wallet {
 
   async getBalanceBySymbol(symbol) {
 
-    if(!this.balances[symbol]) {
+    if (!this.balances[symbol]) {
       debug('updating balance', Date())
       let balances = await this.getBalance()
       balances.map(x => this.balances[x.symbol] = x)
@@ -44,7 +44,7 @@ class Wallet {
     const data = this.auth.getPublicData()
 
     const addresses = currencies.reduce((obj, symbol) => {
-      const { address } = (symbol == 'BTC' || symbol == 'BCH' /*|| symbol == 'USDT' */)
+      const { address } = (symbol == 'BTC' /*|| symbol == 'USDT' */)
         ? data.btc : data.eth
 
       return {
@@ -65,7 +65,7 @@ class Wallet {
       }
     })
 
-    const values = await Promise.all( fetchBalances )
+    const values = await Promise.all(fetchBalances)
 
     return values.map((value, index) => ({
       symbol: currencies[index],
@@ -76,7 +76,7 @@ class Wallet {
 
   fetchBalance(symbol) {
     const data = this.auth.getPublicData()
-    const account = symbol == 'BTC' || symbol == 'BCH' /*|| symbol == 'USDT' */ ? data.btc : data.eth
+    const account = symbol == 'BTC' /*|| symbol == 'USDT' */ ? data.btc : data.eth
     const instance = this.swapApp.swaps[symbol]
 
     return instance ? instance.fetchBalance(account.address) : '-'
