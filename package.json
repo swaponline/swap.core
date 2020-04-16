@@ -34,7 +34,6 @@
     "command-line-args": "^5.0.2",
     "command-line-usage": "^5.0.5",
     "debug": "^4.1.0",
-    "eosjs": "^15.0.3",
     "ethereum-input-data-decoder": "0.0.12",
     "node-gyp": "^3.8.0",
     "rebuild": "^0.1.2",
