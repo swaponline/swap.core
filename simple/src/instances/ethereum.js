@@ -22,6 +22,8 @@ const ETHGASSTATION_API = `https://ethgasstation.info/json/ethgasAPI.json`
 const BigNumber = require('bignumber.js')
 const TEN = new BigNumber(10)
 
+const ETHERSCAN_APIKEY = `87F9B9IH33JPVRM5ZVFEK1DQTM64FUZFMV`
+
 const filterError = (error) => {
   const { name, code, statusCode, options } = error
 
@@ -64,7 +66,7 @@ class Ethereum {
 
   fetchTokenBalance(address, tokenAddress, decimals) {
     const base = TEN.pow(decimals) // 1e18 usually
-    const url = `${this.etherscan}/api?module=account&action=tokenbalance&contractaddress=${tokenAddress}&address=${address}`
+    const url = `${this.etherscan}/api?module=account&action=tokenbalance&contractaddress=${tokenAddress}&address=${address}&apikey=${ETHERSCAN_APIKEY}`
 
     // cache 10 seconds
     // query request

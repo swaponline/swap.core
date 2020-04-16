@@ -1,5 +1,4 @@
 import debug from 'debug'
-import crypto from 'bitcoinjs-lib/src/crypto' // move to BtcSwap
 import SwapApp, { constants, util } from 'swap.app'
 import { Flow } from 'swap.swap'
 
@@ -676,7 +675,7 @@ export default (tokenName) => {
 
       debug('swap.core:flow')(`WITHDRAW using secret = ${_secret}`)
 
-      const _secretHash = crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
+      const _secretHash = this.app.env.bitcoin.crypto.ripemd160(Buffer.from(_secret, 'hex')).toString('hex')
 
       if (secretHash != _secretHash)
         console.warn(`Hash does not match! state: ${secretHash}, given: ${_secretHash}`)
