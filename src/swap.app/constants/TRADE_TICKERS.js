@@ -3,7 +3,6 @@ import { NATIVE, ETH_TOKENS } from './COINS'
 export default [
   'ETH-BTC',
   'LTC-BTC',
-  'ETH-BCH',
   'ETH-LTC',
   'QTUM-BTC',
 

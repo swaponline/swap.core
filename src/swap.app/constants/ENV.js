@@ -3,7 +3,6 @@ export default {
   bitcoin: 'bitcoin',
   bitcoincash: 'bitcoincash',
   coininfo: 'coininfo',
-  bchaddr: 'bchaddr',
   Ipfs: 'Ipfs',
   IpfsRoom: 'IpfsRoom',
   storage: 'storage',
