@@ -1,7 +1,6 @@
 export const NATIVE = {
   eth: 'ETH',
   btc: 'BTC',
-  ltc: 'LTC',
   nim: 'NIM',
   qtum: 'QTUM',
   // usdtOmni: 'USDTomni',
