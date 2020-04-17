@@ -80,10 +80,6 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
     swaps: [
       new EthSwap(config.ethSwap(ETH)),
       new BtcSwap(config.btcSwap()),
-      /* new QtumSwap(config.qtumSwap()), */
-      /*config.network === 'mainnet'
-        ? new UsdtSwap(config.usdtSwap())
-        : null,*/
       new EthTokenSwap(config.noxonTokenSwap(TOKEN)),
       new EthTokenSwap(config.swapTokenSwap(TOKEN)),
       ...(
@@ -98,22 +94,14 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
     flows: [
       ETH2BTC,
       BTC2ETH,
-      /*QTUM2BTC,*/
-      /*BTC2QTUM,*/
       ETHTOKEN2BTC(constants.COINS.noxon),
       BTC2ETHTOKEN(constants.COINS.noxon),
       ETHTOKEN2BTC(constants.COINS.swap),
       BTC2ETHTOKEN(constants.COINS.swap),
-      /*ETHTOKEN2USDT(constants.COINS.noxon),*/
-      /*USDT2ETHTOKEN(constants.COINS.noxon),*/
-      /*ETHTOKEN2USDT(constants.COINS.swap),*/
-      /*USDT2ETHTOKEN(constants.COINS.swap),*/
       ...(config.flows || []),
       ...((
         [].concat.apply([],
           tokens.map(({ name }) => ([
-            /*ETHTOKEN2USDT(name),*/
-            /*USDT2ETHTOKEN(name),*/
             ETHTOKEN2BTC(name),
             BTC2ETHTOKEN(name),
           ]))
