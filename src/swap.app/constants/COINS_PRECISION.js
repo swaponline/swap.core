@@ -3,6 +3,7 @@ import { ETH_TOKENS } from './COINS'
 export const NATIVE_PRECISION = {
   BTC: 8,
   ETH: 18,
+  // USDT: 8,
 }
 
 export const ETH_TOKEN_PRECISION =

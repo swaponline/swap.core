@@ -80,6 +80,10 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
     swaps: [
       new EthSwap(config.ethSwap(ETH)),
       new BtcSwap(config.btcSwap()),
+      /*config.network === 'mainnet'
+        ? new UsdtSwap(config.usdtSwap())
+        : null,*/
+
       new EthTokenSwap(config.noxonTokenSwap(TOKEN)),
       new EthTokenSwap(config.swapTokenSwap(TOKEN)),
       ...(
