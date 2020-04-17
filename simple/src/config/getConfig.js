@@ -83,6 +83,7 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
       /*config.network === 'mainnet'
         ? new UsdtSwap(config.usdtSwap())
         : null,*/
+
       new EthTokenSwap(config.noxonTokenSwap(TOKEN)),
       new EthTokenSwap(config.swapTokenSwap(TOKEN)),
       ...(
@@ -101,16 +102,10 @@ module.exports = (config) => ({ account, contracts: { ETH, TOKEN }, ...custom })
       BTC2ETHTOKEN(constants.COINS.noxon),
       ETHTOKEN2BTC(constants.COINS.swap),
       BTC2ETHTOKEN(constants.COINS.swap),
-      /*ETHTOKEN2USDT(constants.COINS.noxon),*/
-      /*USDT2ETHTOKEN(constants.COINS.noxon),*/
-      /*ETHTOKEN2USDT(constants.COINS.swap),*/
-      /*USDT2ETHTOKEN(constants.COINS.swap),*/
       ...(config.flows || []),
       ...((
         [].concat.apply([],
           tokens.map(({ name }) => ([
-            /*ETHTOKEN2USDT(name),*/
-            /*USDT2ETHTOKEN(name),*/
             ETHTOKEN2BTC(name),
             BTC2ETHTOKEN(name),
           ]))
