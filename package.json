@@ -19,7 +19,7 @@
     "build:umd": "NODE_ENV=production webpack --config webpack.config.babel.js",
     "build:umd:win": "webpack --config webpack.config.babel.js",
     "preversion": "npm run build",
-    "postversion": "npm publish",
+    "postversion": "npm publish"
   },
   "peerDependencies": {
     "bitcoinjs-lib": "~3.3.2"
