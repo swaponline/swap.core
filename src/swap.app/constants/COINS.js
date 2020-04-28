@@ -1,19 +1,12 @@
 export const NATIVE = {
   eth: 'ETH',
   btc: 'BTC',
-  bch: 'BCH',
   sum: 'SUM',
-  ltc: 'LTC',
-  eos: 'EOS',
-  nim: 'NIM',
-  qtum: 'QTUM',
-  // usdtOmni: 'USDTomni',
 }
 
 export const ETH_TOKENS = {
   noxon: 'NOXON',
   swap: 'SWAP',
-  ton: 'TON',
   pbl: 'PBL',
   xsat: 'XSAT',
   hdp: 'HDP',
