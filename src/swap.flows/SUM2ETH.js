@@ -4,13 +4,13 @@ import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
 
 
-class LTC2ETH extends Flow {
+class SUM2ETH extends Flow {
 
   static getName() {
     return `${this.getFromName()}2${this.getToName()}`
   }
   static getFromName() {
-    return constants.COINS.ltc
+    return constants.COINS.sum
   }
   static getToName() {
     return constants.COINS.eth
@@ -19,13 +19,13 @@ class LTC2ETH extends Flow {
   constructor(swap) {
     super(swap)
 
-    this._flowName = LTC2ETH.getName()
+    this._flowName = SUM2ETH.getName()
 
     this.stepNumbers = {
       'sign': 1,
       'submit-secret': 2,
       'sync-balance': 3,
-      'lock-ltc': 4,
+      'lock-sum': 4,
       'wait-lock-eth': 5,
       'withdraw-eth': 6,
       'finish': 7,
@@ -33,13 +33,13 @@ class LTC2ETH extends Flow {
     }
 
     this.ethSwap = swap.ownerSwap
-    this.ltcSwap = swap.participantSwap
+    this.sumSwap = swap.participantSwap
 
     if (!this.ethSwap) {
-      throw new Error('LTC2ETH: "ethSwap" of type object required')
+      throw new Error('SUM2ETH: "ethSwap" of type object required')
     }
-    if (!this.ltcSwap) {
-      throw new Error('LTC2ETH: "ltcSwap" of type object required')
+    if (!this.sumSwap) {
+      throw new Error('SUM2ETH: "sumSwap" of type object required')
     }
 
     this.state = {
@@ -49,13 +49,13 @@ class LTC2ETH extends Flow {
       isSignFetching: false,
       isParticipantSigned: false,
 
-      ltcScriptCreatingTransactionHash: null,
+      sumScriptCreatingTransactionHash: null,
       ethSwapCreationTransactionHash: null,
 
       secretHash: null,
-      ltcScriptValues: null,
+      sumScriptValues: null,
 
-      ltcScriptVerified: false,
+      sumScriptVerified: false,
 
       isBalanceFetching: false,
       isBalanceEnough: false,
@@ -133,11 +133,11 @@ class LTC2ETH extends Flow {
         this.syncBalance()
       },
 
-      // 4. Create LTC Script, fund, notify participant
+      // 4. Create SUM Script, fund, notify participant
 
       async () => {
         const { sellAmount, participant } = flow.swap
-        let ltcScriptCreatingTransactionHash
+        let sumScriptCreatingTransactionHash
 
         // TODO move this somewhere!
         const utcNow = () => Math.floor(Date.now() / 1000)
@@ -145,43 +145,43 @@ class LTC2ETH extends Flow {
 
         const scriptValues = {
           secretHash:         flow.state.secretHash,
-          ownerPublicKey:     this.app.services.auth.accounts.ltc.getPublicKey(),
-          recipientPublicKey: participant.ltc.publicKey,
+          ownerPublicKey:     this.app.services.auth.accounts.sum.getPublicKey(),
+          recipientPublicKey: participant.sum.publicKey,
           lockTime:           getLockTime(),
         }
 
-        await flow.ltcSwap.fundScript({
+        await flow.sumSwap.fundScript({
           scriptValues,
           amount: sellAmount,
         }, (hash) => {
-          ltcScriptCreatingTransactionHash = hash
+          sumScriptCreatingTransactionHash = hash
           flow.setState({
-            ltcScriptCreatingTransactionHash: hash,
+            sumScriptCreatingTransactionHash: hash,
           })
         })
 
-        flow.swap.room.on('request ltc script', () => {
+        flow.swap.room.on('request sum script', () => {
           flow.swap.room.sendMessage({
-            event: 'create ltc script',
+            event: 'create sum script',
             data: {
               scriptValues,
-              ltcScriptCreatingTransactionHash,
+              sumScriptCreatingTransactionHash,
             }
           })
         })
 
         flow.swap.room.sendMessage({
-          event: 'create ltc script',
+          event: 'create sum script',
           data: {
             scriptValues,
-            ltcScriptCreatingTransactionHash,
+            sumScriptCreatingTransactionHash,
           }
         })
 
         flow.finishStep({
-          isLtcScriptFunded: true,
-          ltcScriptValues: scriptValues,
-        }, {  step: 'lock-ltc' })
+          isSumScriptFunded: true,
+          sumScriptValues: scriptValues,
+        }, {  step: 'lock-sum' })
       },
 
       // 5. Wait participant creates ETH Contract
@@ -331,7 +331,7 @@ class LTC2ETH extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.ltcSwap.fetchBalance(this.app.services.auth.accounts.ltc.getAddress())
+    const balance = await this.sumSwap.fetchBalance(this.app.services.auth.accounts.sum.getAddress())
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
     if (isEnoughMoney) {
@@ -352,8 +352,8 @@ class LTC2ETH extends Flow {
   }
 
   getRefundTxHex = () => {
-    this.ltcSwap.getRefundHexTransaction({
-      scriptValues: this.state.ltcScriptValues,
+    this.sumSwap.getRefundHexTransaction({
+      scriptValues: this.state.sumScriptValues,
       secret: this.state.secret,
     })
       .then((txHex) => {
@@ -368,8 +368,8 @@ class LTC2ETH extends Flow {
   }
 
   tryRefund() {
-    return this.ltcSwap.refund({
-      scriptValues: this.state.ltcScriptValues,
+    return this.sumSwap.refund({
+      scriptValues: this.state.sumScriptValues,
       secret: this.state.secret,
     }, (hash) => {
       this.setState({
@@ -386,4 +386,4 @@ class LTC2ETH extends Flow {
 }
 
 
-export default LTC2ETH
+export default SUM2ETH

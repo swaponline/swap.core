@@ -4,14 +4,14 @@ import SwapApp from 'swap.app'
 const login = (_privateKey, app) => {
   SwapApp.required(app)
 
-  const storageKey = `${app.network}:ltc:privateKey`
+  const storageKey = `${app.network}:sum:privateKey`
   let privateKey = _privateKey || app.env.storage.getItem(storageKey)
   let account
 
   const network = (
     app.isMainNet()
-      ? app.env.coininfo.litecoin.main
-      : app.env.coininfo.litecoin.test
+      ? app.env.coininfo.sumcoin.main
+      : app.env.coininfo.sumcoin.test
   ).toBitcoinJS()
 
   if (!privateKey) {

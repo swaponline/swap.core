@@ -1,7 +1,6 @@
 import bitcoin from 'bitcoinjs-lib'
 import Events from 'swap.app/Events'
 import EventEmitter from 'events'
-import Eos from "eosjs"
 
 let storage = {}
 
@@ -11,7 +10,7 @@ room.connection.hasPeer = jest.fn(peer => true)
 room.sendMessage = jest.fn()
 room.unsubscribe = jest.fn()
 room.sendConfirmation = jest.fn((peer, values) => {
-  const possibleSenderPeers = ['swaponlinBTC', 'swaponlinEOS', peer]
+  const possibleSenderPeers = ['swaponlinBTC', peer]
 
   let fromPeer = null
   switch (peer) {
@@ -38,24 +37,13 @@ room.sendConfirmation = jest.fn((peer, values) => {
 const btcKey = bitcoin.ECPair.fromWIF('KwMUy5TKPK51UTF7MFZWtdkWe4DV1uWQVcSc9Jz6g51MCn8jTSQd')
 btcKey.getPublicKey = () => btcKey.getPublicKeyBuffer().toString('hex')
 
-const eosMockProvider = () => {
-  return Eos({
-    mockTransactions: 'pass',
-    httpEndpoint: 'https://jungle.eosio.cr',
-    chainId: '038f4b0fc8ff18a4f0842a8f0564611f6e96e8535901dd45e43ac8691a1c4dca',
-    keyProvider: '5K7B6Pgwkv4Yydmw94Hk95uZnW2T4PMNRMKoJzAbfKPRQRkEcEm',
-    verbose: true
-  })
-}
+
 
 const accounts = {
   eth: {
     address: '0xdadadadadadadadadadadadadadadadadadadada',
   },
   btc: btcKey,
-  eos: {
-    address: 'swaponlinBTC'
-  }
 }
 
 const mockSwapApp = {
@@ -87,7 +75,7 @@ const mockSwapApp = {
           this.state = { swapExists: false, secret: null }
 
           this.methods = {
-            swaps:      jest.fn(view(
+            swaps: jest.fn(view(
               () => ({
                 secretHash: 'c0933f9be51a284acb6b1a6617a48d795bdeaa80',
                 balance: this.state.swapExists ? '2' : '0',
@@ -98,15 +86,15 @@ const mockSwapApp = {
               () => this.state.swapExists ? '2' : '0',
               { swapExists: false }
             )),
-            getSecret:  jest.fn(view(
+            getSecret: jest.fn(view(
               async () => this.state.secret
             )),
 
             createSwap: jest.fn(action(new EventEmitter)),
-            withdraw:   jest.fn(action(new EventEmitter)),
-            refund:     jest.fn(action(new EventEmitter)),
+            withdraw: jest.fn(action(new EventEmitter)),
+            refund: jest.fn(action(new EventEmitter)),
 
-            approve:    jest.fn(action(new EventEmitter)),
+            approve: jest.fn(action(new EventEmitter)),
           }
         },
       },
@@ -119,11 +107,6 @@ const mockSwapApp = {
       getItem: (key) => storage[key],
       setItem: (key, value) => storage[key] = value,
       remoteItem: (key, value) => delete storage[key],
-    },
-    eos: {
-      getInstance: () => {
-        return Promise.resolve(eosMockProvider())
-      }
     }
   },
   services: {
@@ -143,11 +126,11 @@ const util = {
 }
 
 class SwapInterface {
-  _initSwap(app) {}
+  _initSwap(app) { }
 }
 
 const constants = {
-  COINS: { btc: 'BTC', eth: 'ETH', swap: 'SWAP', /* usdt: 'USDT' */ eos: 'EOS' },
+  COINS: { btc: 'BTC', eth: 'ETH', swap: 'SWAP', /* usdt: 'USDT' */ },
 }
 
 export default mockSwapApp

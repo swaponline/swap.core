@@ -1,12 +1,7 @@
 export const NATIVE = {
   eth: 'ETH',
   btc: 'BTC',
-  bch: 'BCH',
-  ltc: 'LTC',
-  eos: 'EOS',
-  nim: 'NIM',
-  qtum: 'QTUM',
-  // usdtOmni: 'USDTomni',
+  sum: 'SUM',
 }
 
 export const ETH_TOKENS = {
