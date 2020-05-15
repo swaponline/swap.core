@@ -1,6 +1,7 @@
 export const NATIVE = {
   eth: 'ETH',
   btc: 'BTC',
+  sum: 'SUM',
 }
 
 export const ETH_TOKENS = {
