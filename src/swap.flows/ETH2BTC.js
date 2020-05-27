@@ -97,6 +97,21 @@ class ETH2BTC extends Flow {
         withdrawRequestIncoming: true,
       })
     })
+
+    flow.swap.room.on('request eth contract', () => {
+      console.log('Requesting eth contract')
+      const { ethSwapCreationTransactionHash } = flow.state
+
+      if (ethSwapCreationTransactionHash) {
+        console.log('Exists - send hash')
+        flow.swap.room.sendMessage({
+          event: 'create eth contract',
+          data: {
+            ethSwapCreationTransactionHash,
+          },
+        })
+      }
+    })
   }
 
   _persistState() {
@@ -208,15 +223,6 @@ class ETH2BTC extends Flow {
                   data: {
                     ethSwapCreationTransactionHash: hash,
                   },
-                })
-
-                flow.swap.room.on('request eth contract', () => {
-                  flow.swap.room.sendMessage({
-                    event: 'create eth contract',
-                    data: {
-                      ethSwapCreationTransactionHash: hash,
-                    },
-                  })
                 })
 
                 flow.setState({
@@ -373,6 +379,7 @@ class ETH2BTC extends Flow {
             destinationAddress: flow.swap.destinationBuyAddress,
           })
             .then((hash) => {
+              console.log('withdraw hash', hash)
               flow.setState({
                 btcSwapWithdrawTransactionHash: hash,
               }, true)

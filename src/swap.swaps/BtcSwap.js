@@ -39,6 +39,7 @@ class BtcSwap extends SwapInterface {
     this.fetchBalance   = options.fetchBalance
     this.fetchUnspents  = options.fetchUnspents
     this.broadcastTx    = options.broadcastTx
+    this.checkWithdraw  = options.checkWithdraw
     this.feeValue       = options.feeValue || 546
     this.fetchTxInfo    = options.fetchTxInfo || (() => {})
     this.estimateFeeValue = options.estimateFeeValue || (() => 0)
@@ -67,7 +68,7 @@ class BtcSwap extends SwapInterface {
    * @public
    */
   async getTxFee({ inSatoshis, size, speed = 'fast', address } = {}) {
-    let estimatedFee = BigNumber(await this.estimateFeeValue({ inSatoshis, address, speed, txSize: size }))
+    let estimatedFee = BigNumber(await this.estimateFeeValue({ inSatoshis, address, speed, method: 'swap' /*, txSize: size */}))
 
     this.feeValue = estimatedFee
 
@@ -340,17 +341,35 @@ class BtcSwap extends SwapInterface {
    */
   async getWithdrawRawTransaction(data, isRefund, hashName) {
     const { scriptValues, secret, destinationAddress } = data
+    const destAddress = (destinationAddress) ? destinationAddress : this.app.services.auth.accounts.btc.getAddress()
 
     const { script, scriptAddress } = this.createScript(scriptValues, hashName)
 
     const tx            = new this.app.env.bitcoin.TransactionBuilder(this.network)
     const unspents      = await this.fetchUnspents(scriptAddress)
+
     const feeValueBN    = await this.getTxFee({ inSatoshis: true, address: scriptAddress })
     const feeValue      = feeValueBN.integerValue().toNumber()
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
 
     if (BigNumber(totalUnspent).isLessThan(feeValue)) {
-      throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue}`)
+      /* Check - may be withdrawed */
+      if (typeof this.checkWithdraw === 'function') {
+        const hasWithdraw = await this.checkWithdraw(scriptAddress)
+        if (hasWithdraw
+          && hasWithdraw.address.toLowerCase() == destAddress.toLowerCase()
+        ) {
+          // already withdrawed
+          return {
+            txId: hasWithdraw.txid,
+            alreadyWithdrawed: true
+          }
+        } else {
+          throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue}`)
+        }
+      } else {
+        throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue}`)
+      }
     }
 
     if (isRefund) {
@@ -358,7 +377,7 @@ class BtcSwap extends SwapInterface {
     }
 
     unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
-    tx.addOutput((destinationAddress) ? destinationAddress : this.app.services.auth.accounts.btc.getAddress(), totalUnspent - feeValue)
+    tx.addOutput(destAddress, totalUnspent - feeValue)
 
     const txRaw = tx.buildIncomplete()
 
@@ -433,11 +452,15 @@ class BtcSwap extends SwapInterface {
       try {
         const txRaw = await this.getWithdrawRawTransaction(data, isRefund, hashName)
 
+        if (txRaw.alreadyWithdrawed) {
+          resolve(txRaw.txId)
+          return
+        }
+
         debug('swap.core:swaps')('raw tx withdraw', txRaw.txHex)
 
         const result = await this.broadcastTx(txRaw.txHex)
 
-        console.log('BtcSwap: broadcastTx', result)
 
         // Wait some delay until transaction can be rejected or broadcast failed
         await util.helpers.waitDelay(10)
