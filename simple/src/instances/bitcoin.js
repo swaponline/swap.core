@@ -246,6 +246,34 @@ class Bitcoin {
       .catch(error => filterError(error))
   }
 
+  /*
+    Проверяет списание со скрипта - последняя транзакция выхода
+    Возвращает txId, адресс и сумму
+  */
+  checkWithdraw = (scriptAddress) => {
+    const url = `/txs/?address=${scriptAddress}`
+
+    return request.get(`${this.root}${url}`)
+      .then(json => JSON.parse(json))
+      .then((res) => {
+        if (res.txs.length > 1
+          && res.txs[0].vout.length
+        ) {
+          const address = res.txs[0].vout[0].scriptPubKey.addresses[0]
+          const {
+            txid,
+            valueOut: amount,
+          } = res.txs[0]
+          return {
+            address,
+            txid,
+            amount,
+          }
+        }
+        return false
+      })
+  }
+
   async sendTransaction({ account, to, value }, handleTransactionHash) {
     const tx = new bitcoin.TransactionBuilder(this.net)
 
