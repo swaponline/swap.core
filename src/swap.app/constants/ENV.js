@@ -3,6 +3,7 @@ export default {
   bitcoin: 'bitcoin',
   bitcoincash: 'bitcoincash',
   sumcoin: 'sumcoin',
+  ghost: 'ghost',
   coininfo: 'coininfo',
   Ipfs: 'Ipfs',
   IpfsRoom: 'IpfsRoom',
