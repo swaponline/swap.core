@@ -12,7 +12,7 @@ const login = (_privateKey, app) => {
     app.isMainNet()
       ? app.env.coininfo.ghost.main
       : app.env.coininfo.ghost.test
-  ).toBitcoinJS()
+  )
 
   if (!privateKey) {
     privateKey = app.env.bitcoin.ECPair.makeRandom({ network }).toWIF()

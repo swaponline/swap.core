@@ -1,5 +1,6 @@
 import debug from 'debug'
 import SwapApp, { SwapInterface, constants, util } from 'swap.app'
+import BigNumber from 'bignumber.js'
 
 
 class GhostSwap extends SwapInterface {
@@ -10,7 +11,8 @@ class GhostSwap extends SwapInterface {
    * @param options.fetchBalance
    * @param options.fetchUnspents
    * @param options.broadcastTx
-   * @param options.fetchTx
+   * @param options.fetchTxInfo {(tx_hash) => Promise({ confidence, fees })}
+   * @param options.estimateFeeValue { ({ inSatoshis, speed, address, txSize }) => Promise(fee_value) }
    */
   constructor(options) {
     super()
@@ -24,16 +26,23 @@ class GhostSwap extends SwapInterface {
     if (typeof options.broadcastTx !== 'function') {
       throw new Error('GhostSwap: "broadcastTx" required')
     }
-    if (typeof options.fetchTx !== 'function') {
-      throw new Error('GhostSwap: "fetchTx" required')
+    if (typeof options.fetchTxInfo !== 'function') {
+      // tx_hash => { confidence, fees }
+      console.warn(`GhostSwap: "fetchTxInfo" is not a function. You will not be able to use tx-confidence feature`)
+    }
+    if (typeof options.estimateFeeValue !== 'function') {
+      // ({ speed } = {}) => feeRate
+      console.warn(`GhostSwap: "estimateFeeValue" is not a function. You will not be able use automatic mempool-based fee`)
     }
 
     this._swapName      = constants.COINS.ghost
     this.fetchBalance   = options.fetchBalance
     this.fetchUnspents  = options.fetchUnspents
     this.broadcastTx    = options.broadcastTx
-    this.fetchTx      = options.fetchTx
-    this.feeValue       = options.feeValue || 100000
+    this.checkWithdraw  = options.checkWithdraw
+    this.feeValue       = options.feeValue || 546
+    this.fetchTxInfo    = options.fetchTxInfo || (() => {})
+    this.estimateFeeValue = options.estimateFeeValue || (() => 0)
   }
 
   _initSwap(app) {
@@ -42,15 +51,76 @@ class GhostSwap extends SwapInterface {
     this.app = app
 
     this.network = this.app.services.auth.accounts.ghost.network // TODO: templess solution, try to find better solution
-     /*
-     * this.network != this.app.services.auth.accounts.ghost.network
-     *
-     this.network = (
-      this.app.isMainNet()
-        ? this.app.env.coininfo.ghost.main
-        : this.app.env.coininfo.ghost.test
-    ).toBitcoinJS()
-     */
+  }
+
+  /**
+   *
+   * @param {object} options
+   * @param {boolean} options.inSatoshis
+   * @param {Number} options.size
+   * @param {String} options.speed
+   * @param {String} options.address
+   * @returns {BigNumber}
+   * @public
+   */
+  async getTxFee({ inSatoshis, size, speed = 'fast', address } = {}) {
+    let estimatedFee = BigNumber(await this.estimateFeeValue({ inSatoshis, address, speed, method: 'swap' /*, txSize: size */}))
+
+    this.feeValue = estimatedFee
+
+    return inSatoshis
+      ? estimatedFee
+      : estimatedFee.dividedBy(1e8).dp(0, BigNumber.ROUND_UP)
+  }
+
+  /**
+   *
+   * @param {array} unspents
+   * @param {Number} expectedConfidenceLevel
+   * @returns {array}
+   * @private
+   */
+  async filterConfidentUnspents(unspents, expectedConfidenceLevel = 0.95) {
+    const feesToConfidence = async (fees, size, address) => {
+      const currentFastestFee = await this.getTxFee({ inSatoshis: true, size, speed: 'fast', address })
+
+      return BigNumber(fees).isLessThan(currentFastestFee)
+        ? BigNumber(fees).dividedBy(currentFastestFee).toNumber()
+        : 1
+    }
+
+    const confirmationsToConfidence = confs => confs > 0 ? 1 : 0
+
+    const fetchConfidence = async ({ txid, confirmations }) => {
+      const confidenceFromConfirmations = confirmationsToConfidence(confirmations)
+
+      if (BigNumber(confidenceFromConfirmations).isGreaterThanOrEqualTo(expectedConfidenceLevel)) {
+        return confidenceFromConfirmations
+      }
+
+      try {
+        const info = await this.fetchTxInfo(txid)
+
+        const { fees, size, senderAddress } = info
+
+        if (fees) {
+          return await feesToConfidence(fees, size, senderAddress)
+        }
+
+        throw new Error(`txinfo=${{ confirmations, fees, size, senderAddress }}`)
+
+      } catch (err) {
+        console.error(`GhostSwap: Error fetching confidence: using confirmations > 0:`, err.message)
+        return confidenceFromConfirmations
+      }
+    }
+
+    const confidences = await Promise.all(unspents.map(fetchConfidence))
+
+    return unspents.filter((utxo, index) => {
+      debug('swap.core:swaps')(`confidence[${index}]:`, confidences[index])
+      return BigNumber(confidences[index]).isGreaterThanOrEqualTo(expectedConfidenceLevel)
+    })
   }
 
   /**
@@ -59,25 +129,33 @@ class GhostSwap extends SwapInterface {
    * @param {object} data.script
    * @param {*} data.txRaw
    * @param {string} data.secret
+   * @param {number} inputIndex
    * @private
    */
-  _signTransaction(data) {
+  _signTransaction(data, inputIndex = 0) {
+    debug('swap.core:swaps')('signing script input', inputIndex)
     const { script, txRaw, secret } = data
 
+    const scriptData = this.app.env.bitcoin.payments.p2sh({ redeem: { output: script, network: this.network }, network: this.network })
+
     const hashType      = this.app.env.bitcoin.Transaction.SIGHASH_ALL
-    const signatureHash = txRaw.hashForSignature(0, script, hashType)
-    const signature     = this.app.services.auth.accounts.ghost.sign(signatureHash).toScriptSignature(hashType)
+    const privKey = this.app.env.bitcoin.ECPair.fromWIF(this.app.services.auth.accounts.ghost.getPrivateKey(), this.network)
+    const signatureHash = txRaw.hashForSignature(inputIndex, scriptData.redeem.output, hashType);
 
-    const scriptSig = this.app.env.bitcoin.script.scriptHash.input.encode(
-      [
-        signature,
-        this.app.services.auth.accounts.ghost.getPublicKeyBuffer(),
-        Buffer.from(secret.replace(/^0x/, ''), 'hex'),
-      ],
-      script,
-    )
+    const redeemScriptSig = this.app.env.bitcoin.payments.p2sh({ 
+      network: this.network, 
+      redeem: { 
+        network: this.network, 
+        output: scriptData.redeem.output, 
+        input: this.app.env.bitcoin.script.compile([ 
+          this.app.env.bitcoin.script.signature.encode(privKey.sign(signatureHash), hashType),
+          this.app.services.auth.accounts.ghost.getPublicKeyBuffer(),
+          Buffer.from(secret.replace(/^0x/, ''), 'hex'),
+        ]) 
+      } 
+    }).input 
 
-    txRaw.setInputScript(0, scriptSig)
+    txRaw.setInputScript(inputIndex, redeemScriptSig);
   }
 
   /**
@@ -94,8 +172,6 @@ class GhostSwap extends SwapInterface {
     const hashOpcode = this.app.env.bitcoin.opcodes[hashOpcodeName]
 
     const { secretHash, ownerPublicKey, recipientPublicKey, lockTime } = data
-
-    debug('swap.core:swaps')('DATA', data)
 
     const script = this.app.env.bitcoin.script.compile([
 
@@ -121,8 +197,8 @@ class GhostSwap extends SwapInterface {
       this.app.env.bitcoin.opcodes.OP_ENDIF,
     ])
 
-    const scriptPubKey  = this.app.env.bitcoin.script.scriptHash.output.encode(this.app.env.bitcoin.crypto.hash160(script))
-    const scriptAddress = this.app.env.bitcoin.address.fromOutputScript(scriptPubKey, this.network)
+    const scriptData = this.app.env.bitcoin.payments.p2sh({ redeem: { output: script, network: this.network }, network: this.network })
+    const scriptAddress = scriptData.address
 
     return {
       scriptAddress,
@@ -145,18 +221,25 @@ class GhostSwap extends SwapInterface {
     const { recipientPublicKey, lockTime } = data
     const { scriptAddress, script } = this.createScript(data, hashName)
 
+    const expectedConfidence = expected.confidence || 0.95
     const unspents      = await this.fetchUnspents(scriptAddress)
-    const totalUnspent  = unspents.reduce((ghostm, { satoshis }) => ghostm + satoshis, 0)
     const expectedValue = expected.value.multipliedBy(1e8).integerValue()
+    const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+
+    const confidentUnspents = await this.filterConfidentUnspents(unspents, expectedConfidence)
+    const totalConfidentUnspent = confidentUnspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
 
     if (expectedValue.isGreaterThan(totalUnspent)) {
-      return `Expected script value: ${expectedValue.toNumber()}, got: ${totalUnspent}`
+      return `Expected script value: ${expectedValue.toNumber()}, got: ${totalUnspent}, address: ${scriptAddress}`
     }
     if (expected.lockTime > lockTime) {
-      return `Expected script lockTime: ${expected.lockTime}, got: ${lockTime}`
+      return `Expected script lockTime: ${expected.lockTime}, got: ${lockTime}, address: ${scriptAddress}`
     }
     if (expected.recipientPublicKey !== recipientPublicKey) {
       return `Expected script recipient publicKey: ${expected.recipientPublicKey}, got: ${recipientPublicKey}`
+    }
+    if (expectedValue.isGreaterThan(totalConfidentUnspent)) {
+      return `Expected script value: ${expectedValue.toString()} with confidence above ${expectedConfidence}, got: ${totalConfidentUnspent}, address: ${scriptAddress}`
     }
   }
 
@@ -166,6 +249,7 @@ class GhostSwap extends SwapInterface {
    * @param {object} data.scriptValues
    * @param {BigNumber} data.amount
    * @param {function} handleTransactionHash
+   * @param {string} hashName
    * @returns {Promise}
    */
   fundScript(data, handleTransactionHash, hashName) {
@@ -174,13 +258,15 @@ class GhostSwap extends SwapInterface {
     return new Promise(async (resolve, reject) => {
       try {
         const { scriptAddress } = this.createScript(scriptValues, hashName)
+        const ownerAddress = this.app.services.auth.accounts.ghost.getAddress()
 
         const tx            = new this.app.env.bitcoin.TransactionBuilder(this.network)
-        const unspents      = await this.fetchUnspents(this.app.services.auth.accounts.ghost.getAddress())
+        const unspents      = await this.fetchUnspents(ownerAddress)
 
         const fundValue     = amount.multipliedBy(1e8).integerValue().toNumber()
-        const feeValue      = this.feeValue // TODO how to get this value
-        const totalUnspent  = unspents.reduce((ghostm, { satoshis }) => ghostm + satoshis, 0)
+        const feeValueBN    = await this.getTxFee({ inSatoshis: true, address: ownerAddress })
+        const feeValue      = feeValueBN.integerValue().toNumber()
+        const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
         const skipValue     = totalUnspent - fundValue - feeValue
 
         if (totalUnspent < feeValue + fundValue) {
@@ -190,7 +276,7 @@ class GhostSwap extends SwapInterface {
         unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout))
         tx.addOutput(scriptAddress, fundValue)
         tx.addOutput(this.app.services.auth.accounts.ghost.getAddress(), skipValue)
-        tx.inputs.forEach((input, index) => {
+        tx.__INPUTS.forEach((input, index) => {
           tx.sign(index, this.app.services.auth.accounts.ghost)
         })
 
@@ -236,7 +322,7 @@ class GhostSwap extends SwapInterface {
     }
 
     const unspents      = await this.fetchUnspents(address)
-    const totalUnspent  = unspents && unspents.length && unspents.reduce((ghostm, { satoshis }) => ghostm + satoshis, 0) || 0
+    const totalUnspent  = unspents && unspents.length && unspents.reduce((summ, { satoshis }) => summ + satoshis, 0) || 0
 
     return totalUnspent
   }
@@ -250,17 +336,36 @@ class GhostSwap extends SwapInterface {
    * @returns {Promise}
    */
   async getWithdrawRawTransaction(data, isRefund, hashName) {
-    const { scriptValues, secret } = data
+    const { scriptValues, secret, destinationAddress } = data
+    const destAddress = (destinationAddress) ? destinationAddress : this.app.services.auth.accounts.ghost.getAddress()
 
     const { script, scriptAddress } = this.createScript(scriptValues, hashName)
 
     const tx            = new this.app.env.bitcoin.TransactionBuilder(this.network)
     const unspents      = await this.fetchUnspents(scriptAddress)
-    const feeValue      = this.feeValue // TODO how to get this value
-    const totalUnspent  = unspents.reduce((ghostm, { satoshis }) => ghostm + satoshis, 0)
 
-    if (totalUnspent < feeValue) {
-      throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue}`)
+    const feeValueBN    = await this.getTxFee({ inSatoshis: true, address: scriptAddress })
+    const feeValue      = feeValueBN.integerValue().toNumber()
+    const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
+
+    if (BigNumber(totalUnspent).isLessThan(feeValue)) {
+      /* Check - may be withdrawed */
+      if (typeof this.checkWithdraw === 'function') {
+        const hasWithdraw = await this.checkWithdraw(scriptAddress)
+        if (hasWithdraw
+          && hasWithdraw.address.toLowerCase() == destAddress.toLowerCase()
+        ) {
+          // already withdrawed
+          return {
+            txId: hasWithdraw.txid,
+            alreadyWithdrawed: true
+          }
+        } else {
+          throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue}`)
+        }
+      } else {
+        throw new Error(`Total less than fee: ${totalUnspent} < ${feeValue}`)
+      }
     }
 
     if (isRefund) {
@@ -268,16 +373,25 @@ class GhostSwap extends SwapInterface {
     }
 
     unspents.forEach(({ txid, vout }) => tx.addInput(txid, vout, 0xfffffffe))
-    tx.addOutput(this.app.services.auth.accounts.ghost.getAddress(), totalUnspent - feeValue)
+    tx.addOutput(destAddress, totalUnspent - feeValue)
 
     const txRaw = tx.buildIncomplete()
 
-    this._signTransaction({
-      script,
-      secret,
-      txRaw,
-    })
+    tx.__INPUTS.map((_, index) =>
+      this._signTransaction({
+        script,
+        secret,
+        txRaw,
+      }, index)
+    )
 
+    const txHex = txRaw.toHex()
+    const txId = txRaw.getId()
+
+    return {
+      txHex,
+      txId,
+    }
     return txRaw
   }
 
@@ -292,7 +406,7 @@ class GhostSwap extends SwapInterface {
   async getWithdrawHexTransaction(data, isRefund) {
     const txRaw = await this.getWithdrawRawTransaction(data, isRefund)
 
-    return txRaw.toHex()
+    return txRaw.txHex
   }
 
   /**
@@ -316,26 +430,7 @@ class GhostSwap extends SwapInterface {
   async getRefundHexTransaction(data) {
     const txRaw = await this.getRefundRawTransaction(data)
 
-    return txRaw.toHex()
-  }
-
-  /**
-   *
-   * @param {object} data
-   * @param {string} data.ownerAddress
-   * @param {BigNumber} data.expectedValue
-   * @returns {Promise.<string>}
-   */
-  async checkBalance(data) {
-    const { ownerAddress, expectedValue } = data
-    let balance = await util.helpers.repeatAsyncUntilResult(() =>
-      this.getBalance( ownerAddress )
-    )
-
-
-    if (expectedValue.isGreaterThan(balance)) {
-      return `Expected value: ${expectedValue.toNumber()}, got: ${balance}`
-    }
+    return txRaw.txHex
   }
 
   /**
@@ -345,50 +440,87 @@ class GhostSwap extends SwapInterface {
    * @param {string} data.secret
    * @param {function} handleTransactionHash
    * @param {boolean} isRefund
+   * @param {string} hashName
    * @returns {Promise}
    */
-  withdraw(data, handleTransactionHash, isRefund, hashName) {
+  withdraw(data, isRefund, hashName) {
     return new Promise(async (resolve, reject) => {
       try {
         const txRaw = await this.getWithdrawRawTransaction(data, isRefund, hashName)
-        debug('swap.core:swaps')('raw tx withdraw', txRaw.toHex())
 
-        if (typeof handleTransactionHash === 'function') {
-          handleTransactionHash(txRaw.getId())
+        if (txRaw.alreadyWithdrawed) {
+          resolve(txRaw.txId)
+          return
         }
 
-        const result = await this.broadcastTx(txRaw.toHex())
+        debug('swap.core:swaps')('raw tx withdraw', txRaw.txHex)
 
-        resolve(result)
+        const result = await this.broadcastTx(txRaw.txHex)
+
+
+        // Wait some delay until transaction can be rejected or broadcast failed
+        await util.helpers.waitDelay(10)
+
+        const txSuccess = await this.checkTX(txRaw.txId)
+
+        if (txSuccess) {
+          resolve(txRaw.txId)
+        } else {
+          console.warn('GhostSwap: cant withdraw', 'Generated TX not found')
+          reject('TX not found. Try it later. ',txRaw.txId)
+        }
       }
-      catch (err) {
-        reject(err)
+      catch (error) {
+        console.warn('GhostSwap: cant withdraw', error.message)
+
+        let errorMessage
+
+        if (error.res && /non-final/.test(error.res.text)) {
+          errorMessage = 'Try it later'
+        } else if (/Total less than fee/.test(error.message)) {
+          if (/Total less than fee: 0/.test(error.message)) {
+            errorMessage = 'Address is empty'
+          } else {
+            errorMessage = 'Less than fee'
+          }
+        } else {
+          errorMessage = error
+        }
+
+        reject(errorMessage)
       }
     })
   }
 
+  /**
+   * 
+   * @param {string} txID
+   * @returns {Promise}
+   */
+  async checkTX(txID) {
+    const txInfo = await this.fetchTxInfo(txID)
+    if (txInfo
+      && txInfo.senderAddress
+      && txInfo.txid
+      && (txInfo.txid.toLowerCase() == txID.toLowerCase())
+    ) {
+      return true
+    }
+    return false
+  }
   /**
    *
    * @param {object} data
    * @param {object} data.scriptValues
    * @param {string} data.secret
    * @param {function} handleTransactionHash
+   * @param {string} hashName
    * @returns {Promise}
    */
-  refund(data, handleTransactionHash) {
-    return this.withdraw(data, handleTransactionHash, true)
+  refund(data, hashName) {
+    return this.withdraw(data, true, hashName)
   }
-
-  /**
-   *
-   * @param {string} transactionHash
-   * @returns {Promise<any>}
-   */
-  getSecretFromTxhash = (transactionHash) =>
-    util.helpers.repeatAsyncUntilResult(() =>
-      this.fetchTx(transactionHash)
-        .then(txResult => txResult.vin[0].scriptSig.asm.split(' ')[2])
-    )
 }
+
 
 export default GhostSwap
