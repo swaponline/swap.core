@@ -4,6 +4,7 @@ export const NATIVE_PRECISION = {
   BTC: 8,
   ETH: 18,
   SUM: 8,
+  GHOST: 8,
   // USDT: 8,
 }
 
