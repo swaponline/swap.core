@@ -137,7 +137,10 @@ class GhostSwap extends SwapInterface {
     debug('swap.core:swaps')('signing script input', inputIndex)
     const { script, tx, secret } = data
     const hashType = this.app.env.bitcoin.Transaction.SIGHASH_ALL
-    const privateKey = new PrivateKey(this.app.services.auth.accounts.ghost.getPrivateKey(), bitcore.Networks.testnet);
+    // At the moment we are using Bitcore lib from Ghost to handle signing logic. TODO: port Bitcoinjs-lib to be compatible with Ghost and
+    // to avoid lib's duplicate
+    const network = this.app.isMainNet() ? bitcore.Networks.mainnet : bitcore.Networks.testnet; 
+    const privateKey = new PrivateKey(this.app.services.auth.accounts.ghost.getPrivateKey(), network);
     const signature = bitcore.Transaction.Sighash.sign(tx, privateKey, hashType, inputIndex, script);
     const sigBuffer = BufferUtil.concat([
       signature.toDER(),
