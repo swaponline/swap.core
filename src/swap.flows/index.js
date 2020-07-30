@@ -1,8 +1,9 @@
 import ETH2BTC from './ETH2BTC'
 import BTC2ETH from './BTC2ETH'
 
-import GHOST2BTC from './GHOST2BTC'
 import GHOST2ETH from './GHOST2ETH'
+import ETH2GHOST from './ETH2GHOST'
+
 import GHOST2ETHTOKEN from './GHOST2ETHTOKEN'
 
 import ETHTOKEN2BTC from './ETHTOKEN2BTC'
@@ -17,8 +18,9 @@ export {
   ETH2BTC,
   BTC2ETH,
 
-  GHOST2BTC,
   GHOST2ETH,
+  ETH2GHOST,
+
   GHOST2ETHTOKEN,
   ETHTOKEN2GHOST,
 
