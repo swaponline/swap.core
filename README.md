@@ -1,18 +1,118 @@
+<img src="https://api.travis-ci.org/caffeinum/swap.core.svg?branch=master" />
+
 # Swap Core
 
 In-browser atomic swap protocol based on HTLC
 
-<img src="https://api.travis-ci.org/caffeinum/swap.core.svg?branch=master" />
-
-Try demo at https://testnet.swap.online
+Try demo at https://swaponline.io/#/exchange
 
 **THIS IS ALPHA VERSION AND CAN BE CHANGED SIGNIFICANTLY**
 
-Swap.online is a decentralized exchange protocol (DEP) for crosschain atomic swaps, based on HTLC. It is written on JavaScript and can be run in browser or via NodeJS.
+Swap Core is a decentralized exchange protocol (DEP) for crosschain atomic swaps, based on HTLC. It is written on JavaScript and can be run in browser or via NodeJS.
 
-tags: HTLC, atomic swap, javascript, browser, crypto, bitcoin, ethereum, erc20
+*tags: HTLC, atomic swap, javascript, browser, crypto, bitcoin, ethereum, erc20*
 
-Usage examples are located in `examples` directory.
+
+## Used currencies
+
+| ticker    | title |
+|-----------|---------|
+| ETH       | Ethereum |
+| * (ERC20) | ERC20 tokens (USDT, ...) |
+| BTC       | Bitcoin |
+| BCH       | Bitcoin Cash |
+| GHOST     | Ghost |
+| SUM       | Sumcoin |
+
+## Current swap directions support
+
+| tx\rx | ETH  | ERC20 | BTC | BCH | GHOST | SUM | NEXT |
+|-------|------|-------|-----|-----|-------|-----|------|
+| ETH   |      |       | +   |     | +     |     | soon |
+| ERC20 |      |       | +   |     | +     |     |      |
+| BTC   | +    | +     |     |     |       |     |      |
+| BCH   |      |       |     |     |       |     |      |
+| GHOST | +    | +     |     |     |       |     |      |
+| SUM   |      |       |     |     |       |     |      |
+| NEXT  | soon |       |     |     |       |     |      |
+
+## How it works step by step
+
+*deprecated*
+
+<table>
+  <thead style="font-weight: bold;">
+    <tr>
+      <td>Alice persist</td>
+      <td>Alice <b>BTC -> ETH</b></td>
+      <td>Bob <b>ETH -> BTC</b></td>
+      <td>Bob persist</td>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>EthContract.checkSign()</td>
+      <td>1) Wait for sign</td>
+      <td>1) Sign</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>2) Create secret hash</td>
+      <td rowspan="4">2) Wait for BTC script</td>
+      <td rowspan="4">BtcSwap.checkBalance()</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>3) Check balance (if not enough wait until user fill balance on this step)</td>
+      <!--td></td-->
+      <!--td></td-->
+    </tr>
+    <tr>
+      <td></td>
+      <td>4) Create BTC script</td>
+      <!--td></td-->
+      <!--td></td-->
+    </tr>
+    <tr>
+      <td></td>
+      <td>5) Fund BTC script</td>
+      <!--td></td-->
+      <!--td></td-->
+    </tr>
+    <tr>
+      <td rowspan="3">EthSwap.checkBalance()</td>
+      <td rowspan="3">6) Wait for ETH contract</td>
+      <td>3) Verify BTC script</td>
+      <td></td>
+    </tr>
+    <tr>
+      <!--td></td-->
+      <!--td></td-->
+      <td>4) Check balance (if not enough wait until user fill balance on this step)</td>
+      <td></td>
+    </tr>
+    <tr>
+      <!--td></td-->
+      <!--td></td-->
+      <td>5) Create ETH contract</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>7) Withdraw from ETH contract</td>
+      <td>6) Wait for withdraw from ETH contract</td>
+      <td>EthSwap.getSecret()</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td>7) Withdraw from BTC script</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
 
 ## Usage
 
@@ -117,8 +217,7 @@ SwapApp.services.orders.create({
 ```
 [
   {
-    id: '',
-
+    id: '...',
   }
 ]
 ```
@@ -295,7 +394,13 @@ For example swap.orders depends on swap.room, so it must wait until swap.room be
 
 ## [swap.auth] SwapApp.services.auth
 
-The service for authentication and storing auth data. Currently contains **eth** and **btc**
+The service for authentication and storing auth data. Currently contains:
+
+- **bch**
+- **btc**
+- **eth**
+- **ghost**
+- **sum**
 
 ```
 new SwapAuth({
@@ -939,6 +1044,8 @@ Requires: **BtcSwap**, **EthTokenSwap**
 
 ## Examples
 
+Usage examples are located in `examples` directory.
+
 ## React
 
 ```
@@ -949,7 +1056,7 @@ npm start
 
 ## Vanilla
 
-#### Still not working
+**Still not working**
 
 ## Your app
 
@@ -971,99 +1078,3 @@ resolve: {
 }
 ```
 
-
----
-
-
-## How swap works step by step (DEPRECATED)
-
-<table>
-  <thead style="font-weight: bold;">
-    <tr>
-      <td>Alice persist</td>
-      <td>Alice <b>BTC -> ETH</b></td>
-      <td>Bob <b>ETH -> BTC</b></td>
-      <td>Bob persist</td>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>EthContract.checkSign()</td>
-      <td>1) Wait for sign</td>
-      <td>1) Sign</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td></td>
-      <td>2) Create secret hash</td>
-      <td rowspan="4">2) Wait for BTC script</td>
-      <td rowspan="4">BtcSwap.checkBalance()</td>
-    </tr>
-    <tr>
-      <td></td>
-      <td>3) Check balance (if not enough wait until user fill balance on this step)</td>
-      <!--td></td-->
-      <!--td></td-->
-    </tr>
-    <tr>
-      <td></td>
-      <td>4) Create BTC script</td>
-      <!--td></td-->
-      <!--td></td-->
-    </tr>
-    <tr>
-      <td></td>
-      <td>5) Fund BTC script</td>
-      <!--td></td-->
-      <!--td></td-->
-    </tr>
-    <tr>
-      <td rowspan="3">EthSwap.checkBalance()</td>
-      <td rowspan="3">6) Wait for ETH contract</td>
-      <td>3) Verify BTC script</td>
-      <td></td>
-    </tr>
-    <tr>
-      <!--td></td-->
-      <!--td></td-->
-      <td>4) Check balance (if not enough wait until user fill balance on this step)</td>
-      <td></td>
-    </tr>
-    <tr>
-      <!--td></td-->
-      <!--td></td-->
-      <td>5) Create ETH contract</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td></td>
-      <td>7) Withdraw from ETH contract</td>
-      <td>6) Wait for withdraw from ETH contract</td>
-      <td>EthSwap.getSecret()</td>
-    </tr>
-    <tr>
-      <td></td>
-      <td></td>
-      <td>7) Withdraw from BTC script</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-<table>
-  <thead style="font-weight: bold;">
-    <tr>
-      <td></td>
-      <td></td>
-      <td></td>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td></td>
-      <td></td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
