@@ -9,20 +9,20 @@
 + `src/swap.app/constants/COINS_PRECISION.js`
 + `src/swap.app/constants/ENV.js`
 + `src/swap.app/constants/TRADE_TICKERS.js`
-- `src/swap.app/util/typeforce.js`
-- `src/swap.auth/*.js`
-- `src/swap.flows/ETHTOKEN2*.js`
-- `src/swap.flows/*2ETH.js`
-- `src/swap.flows/*2ETHTOKEN.js`
-- `src/swap.flows/ETH2*.js`
-- `src/swap.flows/index.js`
-- `src/swap.swaps/*Swap.js`
-- `src/swap.swaps/index.js`
++ `src/swap.app/util/typeforce.js`
+- (?) `src/swap.auth/*.js`
++ `src/swap.flows/index.js`
++ (need test) `src/swap.flows/*2ETH.js`
++ (need test) `src/swap.flows/ETH2*.js`
++ (need test) `src/swap.flows/*2ETHTOKEN.js`
++ `src/swap.flows/ETHTOKEN2*.js`
++ `src/swap.swaps/index.js`
++- (?) `src/swap.swaps/*Swap.js`
 - `package.json` (install lib via `npm i`)
 
 `*` = `ghost`, for example
 
-### Example PR (add `ghost`)
+### Example PR (`ghost` was added)
 
 - https://github.com/swaponline/swap.core/pull/500
 - https://github.com/swaponline/swap.core/pull/501
@@ -34,7 +34,7 @@
 
 See [instruction](https://github.com/swaponline/MultiCurrencyWallet/blob/master/ADD_BLOCKCHAIN.md)
 
-### Example PR (add `ghost`)
+### Example PR (`ghost` was added)
 
 - https://github.com/swaponline/MultiCurrencyWallet/pull/2891
 
