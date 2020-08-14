@@ -667,6 +667,25 @@ class ETH2GHOST extends Flow {
     }, { step: 'withdraw-ghost' })
   }
 
+  async checkOtherSideRefund() {
+    if (typeof this.ghostSwap.checkWithdraw === 'function') {
+      const { btcScriptValues } = this.state
+      if (btcScriptValues) {
+        const { scriptAddress } = this.ghostSwap.createScript(btcScriptValues)
+
+        const destinationAddress = this.swap.destinationBuyAddress
+        const destAddress = (destinationAddress) ? destinationAddress : this.app.services.auth.accounts.btc.getAddress()
+
+        const hasWithdraw = await this.ghostSwap.checkWithdraw(scriptAddress)
+        if (hasWithdraw
+          && hasWithdraw.address.toLowerCase() != destAddress.toLowerCase()
+        ) {
+          return true
+        }
+      }
+    }
+    return false
+  }
 }
 
 
