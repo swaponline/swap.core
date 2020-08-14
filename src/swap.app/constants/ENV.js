@@ -4,6 +4,7 @@ export default {
   bitcoincash: 'bitcoincash',
   sumcoin: 'sumcoin',
   ghost: 'ghost',
+  next: 'next',
   coininfo: 'coininfo',
   Ipfs: 'Ipfs',
   IpfsRoom: 'IpfsRoom',

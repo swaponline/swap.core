@@ -5,7 +5,7 @@ export const NATIVE_PRECISION = {
   ETH: 18,
   SUM: 8,
   GHOST: 8,
-  // USDT: 8,
+  NEXT: 8
 }
 
 export const ETH_TOKEN_PRECISION =

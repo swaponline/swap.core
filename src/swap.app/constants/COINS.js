@@ -3,6 +3,7 @@ export const NATIVE = {
   btc: 'BTC',
   sum: 'SUM',
   ghost: 'GHOST',
+  next: 'NEXT'
 }
 
 export const ETH_TOKENS = {
