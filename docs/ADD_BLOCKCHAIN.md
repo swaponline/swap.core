@@ -12,10 +12,10 @@
 + `src/swap.app/util/typeforce.js`
 - (?) `src/swap.auth/*.js`
 + `src/swap.flows/index.js`
-+ (need test) `src/swap.flows/*2ETH.js`
 + (need test) `src/swap.flows/ETH2*.js`
-+ (need test) `src/swap.flows/*2ETHTOKEN.js`
 + `src/swap.flows/ETHTOKEN2*.js`
++ (need test) `src/swap.flows/*2ETH.js`
++ (need test) `src/swap.flows/*2ETHTOKEN.js`
 + `src/swap.swaps/index.js`
 +- (?) `src/swap.swaps/*Swap.js`
 - `package.json` (install lib via `npm i`)

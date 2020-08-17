@@ -129,7 +129,7 @@ class ETH2NEXT extends Flow {
         // this.sign()
       },
 
-      // 2. Wait participant create, fund BTC Script
+      // 2. Wait participant create, fund NEXT Script
 
       () => {
         flow.swap.room.on('create next script', ({ scriptValues, nextScriptCreatingTransactionHash }) => {
@@ -184,7 +184,7 @@ class ETH2NEXT extends Flow {
 
           if (scriptCheckError) {
             if (/Expected script lockTime/.test(scriptCheckError)) {
-              console.error('Btc script check error: btc was refunded', scriptCheckError)
+              console.error('NEXT script check error: NEXT was refunded', scriptCheckError)
               flow.stopSwapProcess()
               stopRepeat()
             } else if (/Expected script value/.test(scriptCheckError)) {
@@ -652,21 +652,40 @@ class ETH2NEXT extends Flow {
     }
 
     await this.nextSwap.withdraw({
-      scriptValues: btcScriptValues,
+      scriptValues: nextScriptValues,
       secret: _secret,
     }, (hash) => {
       debug('swap.core:flow')(`TX hash=${hash}`)
       this.setState({
-        btcSwapWithdrawTransactionHash: hash,
+        nextSwapWithdrawTransactionHash: hash,
       })
     })
-    debug('swap.core:flow')(`TX withdraw sent: ${this.state.btcSwapWithdrawTransactionHash}`)
+    debug('swap.core:flow')(`TX withdraw sent: ${this.state.nextSwapWithdrawTransactionHash}`)
 
     this.finishStep({
       isNextWithdrawn: true,
     }, { step: 'withdraw-next' })
   }
 
+  async checkOtherSideRefund() {
+    if (typeof this.nextSwap.checkWithdraw === 'function') {
+      const { nextScriptValues } = this.state
+      if (nextScriptValues) {
+        const { scriptAddress } = this.nextSwap.createScript(nextScriptValues)
+
+        const destinationAddress = this.swap.destinationBuyAddress
+        const destAddress = (destinationAddress) ? destinationAddress : this.app.services.auth.accounts.next.getAddress()
+
+        const hasWithdraw = await this.nextSwap.checkWithdraw(scriptAddress)
+        if (hasWithdraw
+          && hasWithdraw.address.toLowerCase() != destAddress.toLowerCase()
+        ) {
+          return true
+        }
+      }
+    }
+    return false
+  }
 }
 
 

@@ -127,7 +127,7 @@ class NEXT2ETH extends Flow {
         })
       },
 
-      // 2. Create secret, secret hash and BTC script
+      // 2. Create secret, secret hash and NEXT script
 
       () => {
         // this.submitSecret()
@@ -139,7 +139,7 @@ class NEXT2ETH extends Flow {
         this.syncBalance()
       },
 
-      // 4. Create BTC Script, fund, notify participant
+      // 4. Create NEXT Script, fund, notify participant
 
       async () => {
         const onTransactionHash = (txID) => {
@@ -438,9 +438,9 @@ class NEXT2ETH extends Flow {
       // 7. Finish
 
       () => {
-        flow.swap.room.once('swap finished', ({btcSwapWithdrawTransactionHash}) => {
+        flow.swap.room.once('swap finished', ({nextSwapWithdrawTransactionHash}) => {
           flow.setState({
-            btcSwapWithdrawTransactionHash,
+            nextSwapWithdrawTransactionHash,
           })
         })
 
