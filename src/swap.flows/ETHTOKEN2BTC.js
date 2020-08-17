@@ -707,6 +707,26 @@ export default (tokenName) => {
         isBtcWithdrawn: true,
       }, { step: 'withdraw-btc' })
     }
+
+    async checkOtherSideRefund() {
+      if (typeof this.btcSwap.checkWithdraw === 'function') {
+        const { btcScriptValues } = this.state
+        if (btcScriptValues) {
+          const { scriptAddress } = this.btcSwap.createScript(btcScriptValues)
+
+          const destinationAddress = this.swap.destinationBuyAddress
+          const destAddress = (destinationAddress) ? destinationAddress : this.app.services.auth.accounts.btc.getAddress()
+
+          const hasWithdraw = await this.btcSwap.checkWithdraw(scriptAddress)
+          if (hasWithdraw
+            && hasWithdraw.address.toLowerCase() != destAddress.toLowerCase()
+          ) {
+            return true
+          }
+        }
+      }
+      return false
+    }
   }
 
   return ETHTOKEN2BTC
