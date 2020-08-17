@@ -1,7 +1,7 @@
 
 module.exports = {
   verbose: true,
-  testURL: "https://swap.online",
+  testURL: "https://swaponline.io",
   modulePaths: [
     "<rootDir>/src/",
     "<rootDir>/",
