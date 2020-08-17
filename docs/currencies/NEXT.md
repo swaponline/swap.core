@@ -9,6 +9,11 @@
 - buy: https://next.exchange/
 
 
+## Type
+
+btc-like
+
+
 ## Address example
 
 XCekEafQLQnvKTXcAfW5uQnnUu9MJkCfqB
