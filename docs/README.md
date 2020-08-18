@@ -35,7 +35,7 @@ Swap Core is a decentralized exchange protocol (DEP) for crosschain atomic swaps
 | BCH   |      |       |     |     |       |     |      |
 | GHOST | +    | +     |     |     |       |     |      |
 | SUM   |      |       |     |     |       |     |      |
-| NEXT  | soon |       |     |     |       |     |      |
+| NEXT  | soon |       | soon|     |       |     | soon |
 
 ## How it works step by step
 

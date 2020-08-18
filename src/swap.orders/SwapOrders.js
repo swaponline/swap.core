@@ -28,10 +28,10 @@ const checkIncomeOrderFormat = (order) => {
         return result
       })(),
     },
-    buyCurrency: util.typeforce.isCoinName,
-    buyAmount: util.typeforce.isNumeric,
     sellCurrency: util.typeforce.isCoinName,
     sellAmount: util.typeforce.isNumeric,
+    buyCurrency: util.typeforce.isCoinName,
+    buyAmount: util.typeforce.isNumeric,
     exchangeRate: util.typeforce.t.maybe(util.typeforce.isNumeric),
     isProcessing: '?Boolean',
     isRequested: '?Boolean',
