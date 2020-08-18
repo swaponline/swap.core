@@ -33,6 +33,7 @@ SwapApp.setup({
     IpfsRoom,
     storage: new LocalStorage('./.storage'),
   },
+
   services: [
     new SwapAuth({
       eth: null,

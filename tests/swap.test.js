@@ -6,10 +6,10 @@ jest.setTimeout(30000)
 const orders = app.services.orders
 
 const _ORDER = {
-  buyCurrency: 'ETH',
   sellCurrency: 'BTC',
+  sellAmount: 1,
+  buyCurrency: 'ETH',
   buyAmount: 20,
-  sellAmount: "1",
 }
 
 beforeAll(() => orders.getMyOrders().map(({ id }) => orders.remove(id)))
@@ -22,11 +22,11 @@ test('check app loaded', () => {
   expect(app.isLocalNet()).toBe(false)
 })
 
-xtest('sets the right type of room', () => {
+test('sets the right type of room', () => {
   expect(app.services.room.roomName).toBe('swap.core.tests.swap.online')
 })
 
-xtest('create an order', async () => {
+test('create an order', async () => {
   orders.remove()
   orders.create(_ORDER)
 

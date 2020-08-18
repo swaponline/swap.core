@@ -8,7 +8,7 @@ import Order from './Order'
 
 
 const checkIncomeOrderFormat = (order) => {
-  // Skip unkronw sell-buy currency
+  // Skip unknown currencies
   if (order && order.buyCurrency && !util.typeforce.isCoinName(order.buyCurrency)) return false
   if (order && order.sellCurrency && !util.typeforce.isCoinName(order.sellCurrency)) return false
 
@@ -29,8 +29,8 @@ const checkIncomeOrderFormat = (order) => {
       })(),
     },
     buyCurrency: util.typeforce.isCoinName,
-    sellCurrency: util.typeforce.isCoinName,
     buyAmount: util.typeforce.isNumeric,
+    sellCurrency: util.typeforce.isCoinName,
     sellAmount: util.typeforce.isNumeric,
     exchangeRate: util.typeforce.t.maybe(util.typeforce.isNumeric),
     isProcessing: '?Boolean',

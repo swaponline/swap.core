@@ -1,4 +1,3 @@
-
 module.exports = {
   verbose: true,
   testURL: "https://swaponline.io",

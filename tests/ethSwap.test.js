@@ -4,7 +4,6 @@ import bitcoin from 'bitcoinjs-lib'
 import { EthSwap } from 'swap.swaps'
 import config from './config'
 
-jest.mock('swap.app')
 
 const log = console.log
 const crypto = {
@@ -21,7 +20,7 @@ const ethSwap = new EthSwap({
   estimateGasPrice: ({ speed } = {}) => mainnet().estimateGasPrice({ speed }),
 })
 
-xtest('ethSwaps can estimate tx fee', async () => {
+test('ethSwaps can estimate tx fee', async () => {
   const result = await ethSwap.estimateGasPrice({ speed: 'normal '})
   const expected = 1e9
 

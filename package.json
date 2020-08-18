@@ -21,6 +21,11 @@
     "preversion": "npm run build",
     "postversion": "npm publish"
   },
+  "husky": {
+    "hooks": {
+      "post-commit": "npm test",
+    }
+  },
   "peerDependencies": {
     "bitcoinjs-lib": "~3.3.2"
   },
@@ -55,6 +60,7 @@
     "colors": "^1.2.1",
     "copy-and-watch": "^0.1.2",
     "cpx": "^1.5.0",
+    "husky": "^4.2.5",
     "ipfs": "^0.34.4",
     "ipfs-pubsub-room": "^1.4.1",
     "jest": "^23.4.2",
