@@ -9,6 +9,7 @@ import BTC2ETHTOKEN from './BTC2ETHTOKEN'
 // import ETHTOKEN2USDT from './ETHTOKEN2USDT'
 
 
+import GHOST2BTC from './GHOST2BTC'
 import GHOST2ETH from './GHOST2ETH'
 import ETH2GHOST from './ETH2GHOST'
 
@@ -16,6 +17,7 @@ import GHOST2ETHTOKEN from './GHOST2ETHTOKEN'
 import ETHTOKEN2GHOST from './ETHTOKEN2GHOST'
 
 
+import NEXT2BTC from './NEXT2BTC'
 import NEXT2ETH from './NEXT2ETH'
 import ETH2NEXT from './ETH2NEXT'
 
@@ -39,6 +41,7 @@ export {
   // ETHTOKEN2USDT,
 
 
+  GHOST2BTC,
   GHOST2ETH,
   ETH2GHOST,
 
@@ -46,6 +49,7 @@ export {
   ETHTOKEN2GHOST,
 
 
+  NEXT2BTC,
   NEXT2ETH,
   ETH2NEXT,
 
