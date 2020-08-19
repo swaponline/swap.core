@@ -19,7 +19,6 @@ afterAll(done => require('rimraf')('.storage', done))
 test('check app loaded', () => {
   expect(app.isTestNet()).toBe(true)
   expect(app.isMainNet()).toBe(false)
-  expect(app.isLocalNet()).toBe(false)
 })
 
 test('sets the right type of room', () => {

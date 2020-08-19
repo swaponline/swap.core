@@ -318,4 +318,3 @@ class Bitcoin {
 module.exports = new Bitcoin()
 module.exports.mainnet = () => new Bitcoin('mainnet')
 module.exports.testnet = () => new Bitcoin('testnet')
-module.exports.localnet = () => new Bitcoin('testnet')
