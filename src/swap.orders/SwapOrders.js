@@ -209,8 +209,8 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
 
     const buy = buyCurrency.toUpperCase()
     const sell = sellCurrency.toUpperCase()
-    const roundedBuyAmount = BigNumber(buyAmount).dp(constants.COINS_PRECISION[buy])
-    const roundedSellAmount = BigNumber(sellAmount).dp(constants.COINS_PRECISION[sell])
+    const roundedBuyAmount = BigNumber(buyAmount).dp(constants.COIN_DATA[buy].precision)
+    const roundedSellAmount = BigNumber(sellAmount).dp(constants.COIN_DATA[sell].precision)
 
     const order = new Order(this.app, this, {
       id:           id || this.getUniqueId(),

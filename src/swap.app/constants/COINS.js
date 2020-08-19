@@ -1,42 +1,14 @@
-export const NATIVE = {
-  eth: 'ETH',
-  btc: 'BTC',
-  sum: 'SUM',
-  ghost: 'GHOST',
-  next: 'NEXT'
-}
-
-export const ETH_TOKENS = {
-  noxon: 'NOXON',
-  swap: 'SWAP',
-  pbl: 'PBL',
-  xsat: 'XSAT',
-  hdp: 'HDP',
-  scro: 'SCRO',
-  xeur: 'XEUR',
-  eurs: 'EURS',
-  usdt: 'USDT',
-  snm: 'SNM',
-}
-
-export default {
-  ...NATIVE,
-  ...ETH_TOKENS,
-}
-
-
-
 export const COIN_TYPE = Object.freeze({
   'NATIVE': 'NATIVE',
   'ETH_TOKEN': 'ETH_TOKEN',
 })
 
-export default COIN_MODEL = Object.freeze({
+export const COIN_MODEL = Object.freeze({
   UTXO: 'UTXO', // Unspent Transaction Outputs model
   AB: 'AB' // Account/Balance model
 })
 
-export const COINS = {
+export const COIN_DATA = {
   'BTC': {
     ticker: 'BTC',
     name: 'Bitcoin',
@@ -58,12 +30,12 @@ export const COINS = {
     model: COIN_MODEL.AB,
     precision: 18,
   },
-  'SUM': {
-    ticker: 'SUM',
-    name: 'Sumcoin',
-    type: COIN_TYPE.NATIVE,
-    model: COIN_MODEL.UTXO,
-    precision: 8,
+  'EURS': {
+    ticker: 'EURS',
+    name: 'STASIS EURO',
+    type: COIN_TYPE.ETH_TOKEN,
+    model: COIN_MODEL.AB,
+    precision: 18,
   },
   'GHOST': {
     ticker: 'GHOST',
@@ -79,13 +51,6 @@ export const COINS = {
     model: COIN_MODEL.UTXO,
     precision: 8,
   },
-  'NOXON': {
-    ticker: 'NOXON',
-    name: 'NOXON',
-    type: COIN_TYPE.ETH_TOKEN,
-    model: COIN_MODEL.AB,
-    precision: 18,
-  },
   'SWAP': {
     ticker: 'SWAP',
     name: 'SWAP',
@@ -93,19 +58,12 @@ export const COINS = {
     model: COIN_MODEL.AB,
     precision: 18,
   },
-  'XEUR': {
-    ticker: 'XEUR',
-    name: 'xEURO',
-    type: COIN_TYPE.ETH_TOKEN,
-    model: COIN_MODEL.AB,
-    precision: 18,
-  },
-  'EURS': {
-    ticker: 'EURS',
-    name: 'STASIS EURO',
-    type: COIN_TYPE.ETH_TOKEN,
-    model: COIN_MODEL.AB,
-    precision: 18,
+  'SUM': {
+    ticker: 'SUM',
+    name: 'Sumcoin',
+    type: COIN_TYPE.NATIVE,
+    model: COIN_MODEL.UTXO,
+    precision: 8,
   },
   'SNM': {
     ticker: 'SONM',
@@ -114,4 +72,27 @@ export const COINS = {
     model: COIN_MODEL.AB,
     precision: 18,
   },
+}
+
+
+// todo: move to COIN_DATA
+
+export const NATIVE = {
+  btc: 'BTC',
+  eth: 'ETH',
+  ghost: 'GHOST',
+  next: 'NEXT',
+  sum: 'SUM',
+}
+
+export const ETH_TOKENS = {
+  usdt: 'USDT',
+  eurs: 'EURS',
+  swap: 'SWAP',
+  snm: 'SNM',
+}
+
+export default {
+  ...NATIVE,
+  ...ETH_TOKENS,
 }

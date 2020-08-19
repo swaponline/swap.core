@@ -6,7 +6,6 @@
 ### Edit files
 
 + `src/swap.app/constants/COINS.js`
-+ `src/swap.app/constants/COINS_PRECISION.js`
 + `src/swap.app/constants/ENV.js`
 + `src/swap.app/constants/TRADE_TICKERS.js`
 + `src/swap.app/util/typeforce.js`
