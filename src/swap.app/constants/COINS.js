@@ -90,6 +90,9 @@ export const ETH_TOKENS = {
   eurs: 'EURS',
   swap: 'SWAP',
   snm: 'SNM',
+
+  // need for examples
+  noxon: 'NOXON',
 }
 
 export default {

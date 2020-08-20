@@ -1,4 +1,4 @@
-const UTXO_2_AB = AB_2_AB = (from, to) => ({
+const UTXO_2_AB = (from, to) => ({
   [`sign`]: 1,
   [`submit-secret`]: 2,
   [`sync-balance`]: 3,
@@ -8,8 +8,9 @@ const UTXO_2_AB = AB_2_AB = (from, to) => ({
   [`finish`]: 7,
   [`end`]: 8
 })
+const AB_2_AB = UTXO_2_AB
 
-const UTXO_2_UTXO = AB_2_UTXO = (from, to) => ({
+const UTXO_2_UTXO = (from, to) => ({
   [`sign`]: 1,
   [`wait-lock-${to}`]: 2,
   [`verify-script`]: 3,
@@ -20,6 +21,7 @@ const UTXO_2_UTXO = AB_2_UTXO = (from, to) => ({
   [`finish`]: 8,
   [`end`]: 9
 })
+const AB_2_UTXO = UTXO_2_UTXO
 
 const stepsFromDirection = {
   UTXO_2_AB,

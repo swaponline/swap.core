@@ -23,8 +23,12 @@ class EthTokenSwap extends SwapInterface {
     if (!options.name) {
       throw new Error('EthTokenSwap: "name" required')
     }
-    if (!Object.values(constants.COINS).includes(options.name.toUpperCase())) {
-      throw new Error('EthTokenSwap: "name" should be correct')
+
+    const ticker = options.name.toUpperCase()
+    const knownTickers = Object.values(constants.COINS)
+
+    if (!knownTickers.includes(ticker)) {
+      throw new Error(`EthTokenSwap: "name" should be correct, received "${ticker}", expected one of ${JSON.stringify(knownTickers)}`)
     }
     if (typeof options.address !== 'string') {
       throw new Error('EthTokenSwap: "address" required')
@@ -48,7 +52,7 @@ class EthTokenSwap extends SwapInterface {
 
 
 
-    this._swapName      = options.name.toUpperCase()
+    this._swapName      = ticker
 
     this.address        = options.address
     this.abi            = options.abi

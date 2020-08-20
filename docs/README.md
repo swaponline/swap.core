@@ -1047,7 +1047,9 @@ Requires: **BtcSwap**, **EthTokenSwap**
 
 Usage examples are located in `examples` directory.
 
-## React
+### Browser
+
+#### React
 
 ```
 cd ./examples/react
@@ -1055,9 +1057,17 @@ npm i
 npm start
 ```
 
-## Vanilla
+#### Vanilla
 
 **Still not working**
+
+
+### Nodejs
+
+#### simple-bot
+
+See `./simple-bot/bot/README.md`
+
 
 ## Your app
 
