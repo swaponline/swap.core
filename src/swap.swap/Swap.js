@@ -108,23 +108,32 @@ class Swap {
       'isMy',
       'owner',
       'participant',
-      'buyCurrency',
       'sellCurrency',
-      'buyAmount',
       'sellAmount',
+      'buyCurrency',
+      'buyAmount',
       'destination',
     )
 
-    const { isMy, buyCurrency, sellCurrency, buyAmount, sellAmount, destination, ...rest } = data
+    const {
+      isMy,
+      sellCurrency,
+      sellAmount,
+      buyCurrency,
+      buyAmount,
+      destination,
+      ...rest
+    } = data
+
     const { ownerAddress, participantAddress } = destination
 
     const swap = {
       ...rest,
       isMy,
-      buyCurrency: isMy ? buyCurrency : sellCurrency,
       sellCurrency: isMy ? sellCurrency : buyCurrency,
-      buyAmount: isMy ? buyAmount : sellAmount,
       sellAmount: isMy ? sellAmount : buyAmount,
+      buyCurrency: isMy ? buyCurrency : sellCurrency,
+      buyAmount: isMy ? buyAmount : sellAmount,
       destinationBuyAddress: isMy ? ownerAddress : participantAddress,
       destinationSellAddress: isMy ? participantAddress : ownerAddress,
     }
@@ -143,10 +152,10 @@ class Swap {
       'isMy',
       'owner',
       'participant',
-      'buyCurrency',
       'sellCurrency',
-      'buyAmount',
       'sellAmount',
+      'buyCurrency',
+      'buyAmount',
       'destinationBuyAddress',
       'destinationSellAddress',
       'createUnixTimeStamp',

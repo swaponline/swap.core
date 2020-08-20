@@ -2,7 +2,11 @@ import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto' // move to BtcSwap
 import SwapApp, { constants } from 'swap.app'
 import { Flow } from 'swap.swap'
+import { COIN_DATA } from 'swap.app/constants'
+import stepsForCoins from 'swap.swap'
 
+const fromCoin = COIN_DATA['NEXT']
+const toCoin = COIN_DATA['BTC']
 
 class NEXT2BTC extends Flow {
 
@@ -10,16 +14,18 @@ class NEXT2BTC extends Flow {
     return `${this.getFromName()}2${this.getToName()}`
   }
   static getFromName() {
-    return constants.COINS.next
+    return fromCoin.ticker
   }
   static getToName() {
-    return constants.COINS.btc
+    return toCoin.ticker
   }
   constructor(swap) {
     super(swap)
 
     this._flowName = NEXT2BTC.getName()
 
+    // todo: remove for all flows
+    /*
     this.stepNumbers = {
       'sign': 1,
       'wait-lock-btc': 2,
@@ -31,6 +37,8 @@ class NEXT2BTC extends Flow {
       'finish': 8,
       'end': 9
     }
+    */
+    this.stepNumbers = stepsForCoins(fromCoin, toCoin)
 
     this.nextSwap = swap.participantSwap
     this.btcSwap = swap.ownerSwap

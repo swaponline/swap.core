@@ -180,11 +180,11 @@ class Flow {
 
   sendMessageAboutClose() {
     this.swap.room.sendMessage({
-      event: 'swap was canceled',// сее сообщение нужно для получение инфорамации о заверщении свапа в реакте
+      event: 'swap was canceled',// for front
     })
 
     this.swap.room.sendMessage({
-      event: 'swap was canceled for core',// сее сообщение нужно для изменения стейта и получения информации о заверщении свапа в коре
+      event: 'swap was canceled for core',
     })
     console.warn(`swap ${this.swap.id} was stoped`)
   }

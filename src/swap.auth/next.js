@@ -11,10 +11,8 @@ const login = (_privateKey, app) => {
 
   const network = (
     app.isMainNet()
-      // todo: next mainnet
-      // todo: remove `bitcoin` ?
-      ? app.env.todo/*{???}*/.mainnet
-      : app.env.todo/*{???}*/.testnet
+      ? app.env.bitcoin.mainnet
+      : app.env.bitcoin.testnet
   )
 
   if (!privateKey) {
@@ -23,7 +21,10 @@ const login = (_privateKey, app) => {
 
   account = new app.env.bitcoin.ECPair.fromWIF(privateKey, network)
 
-  const { address } = app.env.bitcoin.payments.p2pkh({ pubkey: account.publicKey, network })
+  const { address } = app.env.bitcoin.payments.p2pkh({
+    pubkey: account.publicKey,
+    network
+  })
   const { publicKey } = account
 
   account.getPublicKey = () => publicKey.toString('hex')
@@ -34,7 +35,6 @@ const login = (_privateKey, app) => {
   if (!_privateKey) {
     app.env.storage.setItem(storageKey, privateKey)
   }
-
 
   return account
 }

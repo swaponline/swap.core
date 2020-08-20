@@ -28,7 +28,7 @@ const stepsFromDirection = {
   AB_2_UTXO
 }
 
-const createSteps = (fromCoin, toCoin) => {
+const stepsForCoins = (fromCoin, toCoin) => {
   const direction = `${fromCoin.model}_2_${toCoin.model}`
   const form = fromCoin.ticker.toLowerCase()
   const to = toCoin.ticker.toLowerCase()
@@ -36,4 +36,4 @@ const createSteps = (fromCoin, toCoin) => {
   return steps
 }
 
-export default createSteps;
+export default stepsForCoins;
