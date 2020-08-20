@@ -2,7 +2,7 @@
 //const bitcoin = require('bitcoinjs-lib')
 
 import SwapApp, { SwapInterface } from 'swap.app'
-import { testnet } from 'simple/src/instances/bitcoin'
+import { testnet } from 'examples/simple-bot/core-wrapper/instances/bitcoin'
 import { BtcSwap } from 'swap.swaps'
 
 

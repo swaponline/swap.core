@@ -1,4 +1,4 @@
-const swap = require('../core-wrapper/index')
+const swap = require('../index')
 
 const {
   on: { onFinish },
@@ -8,21 +8,29 @@ const {
   history: { save, get, remove },
 } = swap.helpers
 
+const _ORDER = {
+  buyCurrency: 'ETH',
+  sellCurrency: 'BTC',
+  buyAmount: 20,
+  sellAmount: "1",
+}
+
 const { app, wallet, auth, room, orders } = swap.setup({
   swapRoom: {
     roomName: 'xxx.swap.online'
   }
 })
 
-beforeAll(done => {
-  ready(room).then(done)
+beforeAll(async () => {
+  await ready(room)
 })
 
 test('check app loaded', () => {
-  expect(app.isTestNet()).toBe(true)
-  expect(app.isMainNet()).toBe(false)
+  expect(orders.items.length).toBe(0)
 })
 
-test('sets the right type of room', () => {
-  expect(app.services.room.roomName).toBe('xxx.swap.online')
+test('check order creation', () => {
+  orders.create(_ORDER)
+
+  expect(orders.items.length).toBe(1)
 })

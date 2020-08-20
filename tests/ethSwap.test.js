@@ -1,5 +1,5 @@
 import SwapApp, { SwapInterface } from 'swap.app'
-import { mainnet } from 'simple/src/instances/ethereum'
+import { mainnet } from 'examples/simple-bot/core-wrapper/instances/ethereum'
 import bitcoin from 'bitcoinjs-lib'
 import { EthSwap } from 'swap.swaps'
 import config from './config'

@@ -1,4 +1,4 @@
-const swap = require('../core-wrapper/index')
+const swap = require('../index')
 
 const {
   on: { onFinish },
@@ -27,6 +27,5 @@ test('wallet can query balance', async () => {
 
 test('wallet can return crypto data', async () => {
   const data = await wallet.getData()
-
   expect(data.length).not.toBe(0)
 })

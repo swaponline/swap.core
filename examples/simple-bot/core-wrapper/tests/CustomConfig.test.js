@@ -1,4 +1,4 @@
-const swap = require('../core-wrapper/index')
+const swap = require('../index')
 
 const {
   room: { ready },
@@ -43,8 +43,6 @@ test('check testnet token is not added', () => {
 test('check flows are added', () => {
   expect(Object.keys(app.flows).length).toBe(14)
 
-  // expect(app.flows.USDT2BTRM).not.toBeUndefined()
-  // expect(app.flows.BTRM2USDT).not.toBeUndefined()
-  expect(app.flows.BTC2BTRM).not.toBeUndefined()
-  expect(app.flows.BTRM2BTC).not.toBeUndefined()
+  expect(app.flows.BTC2ETH).not.toBeUndefined()
+  expect(app.flows.ETH2BTC).not.toBeUndefined()
 })
