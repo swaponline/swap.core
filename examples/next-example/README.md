@@ -1,11 +1,12 @@
-# NEXT.coin examples
+# NEXT.coin example
 
 ## HOW TO
 
 Install dependencies
+
 `npm i`
 
 
-`node send` - generate a public transaction
-
 `node balance`
+
+`node send` - generate a public transaction
