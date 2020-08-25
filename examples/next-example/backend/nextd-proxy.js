@@ -22,16 +22,14 @@ app.use(bodyParser.urlencoded({
 }))
 
 
-app.get('/next/:network', async (req, res) => {
+// /next/:network
+// /next/:network/addr/:address'
+// /next/:network/tx/send
+// /next/:network/tx/:txId
+// /next/:network/rawtx/:txId
+// /next/:network/txs/:address
 
-  //const { network } = req.params
-
-  const network = 'mainnet'
-  if (!network) {
-    res.status(400).json({ error: 'bad request' })
-  }
-  
-  
+const sendRequest = ({ network, rpcMethod, params = [], onSuccess, onError }) => {
   const user = {
     name: 'test',
     password: 'test'
@@ -39,30 +37,52 @@ app.get('/next/:network', async (req, res) => {
   const nextCoinNodePort = nextCoinNode[network].port
   const url = `http://${user.name}:${user.password}@localhost:${nextCoinNodePort}`
 
-  //const method = 'getblockchaininfo'
-  const body = '{"jsonrpc":"1.0","id":"curltext","method":"getblockchaininfo","params":[]}'
+  const body = `{"jsonrpc":"1.0","id":"curltext","method":"getblockchaininfo","params":[]}`
   const header = 'content-type:text/plain;'
 
-  request
+  return request
     .post(url)
     .set('content-type', 'text/plain')
     .send(body)
     .then((req) => {
-      const answer = JSON.parse(req.text)
-      if (!answer) {
-        res.status(503).json({ error: 'api answer empty' })
-      }
-      /*res.status(200).json({
-        rawtx: answer.hex,
-      })*/
-      res.status(200).json(answer)
+      const data = JSON.parse(req.text)
+      onSuccess(data)
     })
     .catch((e) => {
       console.log('Error', e)
-      res.status(503).json({ error: e.message })
+      let resultError = e
+      if (e.code == 'ECONNREFUSED') {
+        resultError = new Error('Node is offline')
+      }
+      onError(resultError)
     })
+}
 
+app.get('/next/:network', async (req, res) => {
+
+  const { network } = req.params
+  const networks = Object.keys(nextCoinNode)
+
+  if (!networks.includes(network)) {
+    res.status(400).json({ error: 'bad request: wrong network' })
+    return
+  }
+
+  sendRequest({
+    network,
+    rpcMethod: 'getblockchaininfo',
+    onSuccess: (data) => {
+      /*res.status(200).json({
+        rawtx: answer.hex,
+      })*/
+      res.status(200).json(data)
+    },
+    onError: (e) => {
+      res.status(503).json({ error: e.message })
+    },
+  })
 })
 
-app.listen((process.env.PORT) ? process.env.PORT : portDefault)
+
+app.listen(process.env.PORT ? process.env.PORT : portDefault)
 console.log(`NEXT proxy listening: localhost:${portDefault} ⇄ NEXT.coin node`)
