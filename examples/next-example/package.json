@@ -4,6 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "bignumber.js": "^7.2.1",
     "bip32": "^2.0.5",
     "bip39": "^3.0.2",
     "bitcoinjs-lib": "^5.1.10",

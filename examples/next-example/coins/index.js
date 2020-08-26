@@ -1,6 +1,6 @@
-const BTC = require('./BTC/BTC')
-const GHOST = require('./GHOST/GHOST')
-const NEXT = require('./NEXT/NEXT')
+const BTC = require('./BTC')
+const GHOST = require('./GHOST')
+const NEXT = require('./NEXT')
 
 const coins = {
   'BTC': BTC,
