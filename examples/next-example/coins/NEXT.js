@@ -1,3 +1,5 @@
+const fetch = require('node-fetch');
+
 const { networkType } = require('./../domain/network')
 
 const NEXT = {
@@ -16,6 +18,7 @@ const NEXT = {
         wif: 0xef, // todo: set right value
       },
       bip44coinIndex: 707,
+      getBalance: async (addr) => await fetchBalance(networkType.mainnet, addr)
     },
     /*
     'testnet': { //testnet is down???
@@ -32,6 +35,7 @@ const NEXT = {
         wif: ,
       },
       bip44coinIndex: 1,
+      getBalance: async (addr) => await fetchBalance(networkType.testnet, addr)
     }
     */
   }
@@ -39,7 +43,7 @@ const NEXT = {
 
 const getApiUrl = (netwType) => {
   if (netwType === networkType.mainnet) {
-    return 'https://explore.next.exchange/#/api'
+    return 'https://explore.next.exchange/api'
   }
   /*if (netwType === networkType.testnet) {
     return ''
@@ -50,10 +54,13 @@ const getApiUrl = (netwType) => {
 const fetchBalance = async (networkType, address) => {
   const apiUrl = getApiUrl(networkType);
   const response = await fetch(`${apiUrl}/address/${address}`);
-  const json = await response.json();
-  const balanceSat = json.balance;
-  const balanceBTC = (new BigNumber(balanceSat)).dividedBy(10 ** BTC.precision)
-  return balanceBTC.toNumber();
+  try { // todo: improve
+    const json = await response.json();
+    return json.balance;
+  } catch (e) {
+    return 0
+  }
+  
 }
 
 module.exports = NEXT

@@ -43,7 +43,7 @@ const coins = require('./coins');
   console.log('<<<', balance)
 
 
-/*  // NEXT
+  // NEXT
 
   console.log('getBalance: NEXT mainnet, zero-balance')
   addr = 'XZUsFMpkgPjjfT1c9CwKKyY4TzdQhiKNju'
@@ -54,6 +54,8 @@ const coins = require('./coins');
   addr = 'XMkvVVvuQJp4mp5hoVHUPumbnvh63xJsN4'
   balance = await coins.NEXT.networks.mainnet.getBalance(addr)
   console.log('<<<', balance)
-*/
+
+
+
 })()
 
