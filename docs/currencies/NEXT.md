@@ -5,6 +5,7 @@
 - github: https://github.com/NextExchange
 - JS lib: https://github.com/NextExchange/nextcoin-js
 - explorer: https://explore.next.exchange/
+- explorer API: https://explore.next.exchange/#/api
 - rank: https://www.coingecko.com/en/coins/next-coin
 - buy: https://next.exchange/
 
@@ -16,12 +17,21 @@ btc-like
 
 ## Address example
 
-XCekEafQLQnvKTXcAfW5uQnnUu9MJkCfqB
-XZajSCKFVgXohRsFE9qDUpqzaGqh29mPVF
-XWL71yBXn9VtqnzBNFDHxoXzL8RfSdXwcy
+### Zero-balance
+
+XZUsFMpkgPjjfT1c9CwKKyY4TzdQhiKNju
+XVt8u3g9XSMjJ4xH3PiQgMf8EGPeKtDihH
+XXVaCs1kMB4LWLgAzCm812fRxud7UkAWoK
+
+### Non-zero balance
+
 XMkvVVvuQJp4mp5hoVHUPumbnvh63xJsN4
 XNnXeCcxvPTVFo3DvWERBd6pWZvCfMn9AV
 XEQ79EVHWKk9RkhKEnsMQijHiCGmiW42hc
+XYxgHbApp338Bi4RQiNJrj4hA7zZ61NU1U
+XDbs2n272UcHbaYw5SJjGwCQRxTkcPE2JK
+XKN37tQogGcy8EXnGcmPSe19ySdy2Bezxn
+XHDXx6GiEL7CT8WHU2kFDBLLPygn8DBdRD
 
 
 ### Address posfixes (???)
@@ -49,38 +59,6 @@ yes
 ## Chain params
 
 see node src: `src/chainparams.cpp`
-
-
-### Example (ghost chain params)
-
-```
-networks.mainnet = {
-  messagePrefix: '\x18Bitcoin Signed Message:\n',
-  bech32: 'gp',
-  bip32: {
-    public:  0x68DF7CBD,
-    private: 0x8E8EA8EA,
-  },
-  pubKeyHash: 0x26,
-  scriptHash: 0x61,
-  wif: 0xA6,
-}
-
-networks.testnet = {
-  messagePrefix: '\x18Bitcoin Signed Message:\n',
-  bech32: 'tghost',
-  bip32: {
-    public: 0xe1427800,
-    private: 0x04889478,
-  },
-  pubKeyHash: 0x4B,
-  scriptHash: 0x89,
-  wif: 0x2e,
-}
-
-```
-
-(Specify NEXT constants)
 
 
 ## Node binaries dist
@@ -111,3 +89,12 @@ bitcore.Networks.testnet
 bitcore.Transaction.Sighash.sign()
 bitcore.Transaction()...
 
+## Explorer Usage
+
+https://explore.next.exchange/api/sendrawtransaction
+body: rawtx = ...
+
+https://explore.next.exchange/api/address/XMkvVVvuQJp4mp5hoVHUPumbnvh63xJsN4
+https://explore.next.exchange/api/tx/f8ec81f26c89cc63c072e47a94c2a1dd8ee97a01d5d909707868d3dbb4221bda
+
+tx link: https://explore.next.exchange/#/tx/f8ec81f26c89cc63c072e47a94c2a1dd8ee97a01d5d909707868d3dbb4221bda

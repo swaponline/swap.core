@@ -16,15 +16,15 @@ or build it from sources (by request)
 
 ## Usage
 
-`sh next-start.sh` - start node
+`sh start-node.sh` - start node
 
 `node nextd-proxy` - start node proxy
 
 
 ## Develop & debug
 
-`sh next-request.sh` - request example
+`sh request-example.sh` - request example
 
-See available request methods in `nextd-rpc-methods.txt`
+See available request methods in `node-rpc-methods.txt`
 
-See also `nextd-options.txt`
+See also `node-options.txt`

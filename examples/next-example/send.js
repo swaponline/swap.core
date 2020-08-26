@@ -92,11 +92,33 @@ const coins = {
     networks: {
       'mainnet': {
         type: networkType.mainnet,
+        bip32settings: {
+          messagePrefix: '\x18Bitcoin Signed Message:\n',
+          bech32: ,
+          bip32: {
+            public: 0x0488B21E,
+            private: 0x0488ADE4,
+          },
+          pubKeyHash: ,
+          scriptHash: ,
+          wif: ,
+        },
         bip44coinIndex: 707,
       },
       'testnet': {
         type: networkType.testnet,
-        bip44coinIndex: 707,
+        bip32settings: {
+          messagePrefix: '\x18Bitcoin Signed Message:\n',
+          bech32: ,
+          bip32: {
+            public: 0x043587CF,
+            private: 0x04358394,
+          },
+          pubKeyHash: ,
+          scriptHash: ,
+          wif: ,
+        },
+        bip44coinIndex: 1,
       }
     }
   }
