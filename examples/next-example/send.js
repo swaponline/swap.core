@@ -5,14 +5,16 @@ const bitcore = require('ghost-bitcore-lib')
 const Networks = bitcore.Networks
 const PrivateKey = bitcore.PrivateKey
 const PublicKey = bitcore.PublicKey
-const Transaction = bitcore.Transaction
 const Address = bitcore.Address
+const Transaction = bitcore.Transaction
 
-const api = require('./api')
+
 const coins = require('./coins')
 
 
-const createDerivePath = (network) => { // see bip-44
+const createDerivePath = (network) => {
+  // see bip-44
+
   //const testnetCoinIndex = 1 // (all coins)
   //const coinIndex = (network.type === networkType.testnet) ? testnetCoinIndex : network.bip44coinIndex
   const coinIndex = network.bip44coinIndex
@@ -30,11 +32,11 @@ const createTx = async ({ mnemonic, network, amount, to }) => {
   const publicKey = PublicKey(privateKey, Networks.testnet) // ???
   const address = new Address(publicKey, Networks.testnet)
 
-  const unspent = await api.fetchUnspents(address.toString())
+  const unspent = await coins.GHOST.networks.testnet.fetchUnspents(address.toString())
 
   const tx = new bitcore.Transaction()
     .from(unspent)  // Feed information about what unspent outputs one can use
-    .to(to, amount)   // Add an output with the given amount of satoshis
+    .to(to, amount)  // Add an output with the given amount of satoshis
     .change(address)  // Sets up a change address where the rest of the funds will go
     .sign(privateKey) // Signs all the inputs it can
 
@@ -53,7 +55,7 @@ const to = 'XPtT4tJWyepGAGRF9DR4AhRkJWB3DEBXT2';
 (async () => {
   const rawTx = await createTx({ mnemonic, network, amount, to })
   console.log('tx created:', rawTx)
-  const answer = await api.publishRawTx(rawTx)
+  const answer = await coins.GHOST.networks.testnet.publishRawTx(rawTx)
   console.log('tx sended:', answer)
 })()
 

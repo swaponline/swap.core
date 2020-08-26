@@ -41,6 +41,10 @@ const NEXT = {
   }
 }
 
+
+// next.exhnage API documentation:
+// https://explore.next.exchange/#/api
+
 const getApiUrl = (netwType) => {
   if (netwType === networkType.mainnet) {
     return 'https://explore.next.exchange/api'
@@ -54,13 +58,12 @@ const getApiUrl = (netwType) => {
 const fetchBalance = async (networkType, address) => {
   const apiUrl = getApiUrl(networkType);
   const response = await fetch(`${apiUrl}/address/${address}`);
-  try { // todo: improve
+  try {
     const json = await response.json();
     return json.balance;
-  } catch (e) {
+  } catch (e) { // todo: improve
     return 0
   }
-  
 }
 
 module.exports = NEXT

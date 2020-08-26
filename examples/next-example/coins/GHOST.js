@@ -3,6 +3,9 @@ const fetch = require('node-fetch');
 const { networkType } = require('./../domain/network')
 
 const GHOST = {
+  ticker: 'GHOST',
+  name: 'Ghost',
+  precision: 8,
   networks: {
     // bip32settings from https://github.com/JoaoCampos89/ghost-samples/blob/master/examples/transaction/index.js
     // bip32settings from https://github.com/ghost-coin/ghost-bitcore-lib/blob/master/lib/networks.js (wrong?)
@@ -20,7 +23,9 @@ const GHOST = {
         wif: 0xa6,
       },
       bip44coinIndex: 531,
-      getBalance: async (addr) => await fetchBalance(networkType.mainnet, addr)
+      getBalance: async (addr) => await fetchBalance(networkType.mainnet, addr),
+      publishRawTx: (rawTx) => publishRawTx(networkType.mainnet, rawTx),
+      getTxUrl: (getTxUrl) => getTxUrl(networkType.mainnet, txId),
     },
     'testnet': {
       type: networkType.testnet,
@@ -36,24 +41,30 @@ const GHOST = {
         wif: 0x2e,
       },
       bip44coinIndex: 531,
-      getBalance: async (addr) => await fetchBalance(networkType.testnet, addr)
+      getBalance: async (addr) => await fetchBalance(networkType.testnet, addr),
+
+      // todo: add to mainnet
+      fetchUnspents: (addr) => fetchUnspents(addr),
+
+      publishRawTx: (rawTx) => publishRawTx(networkType.testnet, rawTx),
+      getTxUrl: (getTxUrl) => getTxUrl(networkType.testnet, txId),
     }
   }
 }
 
 
-const getApiUrl = (netwType) => {
-  if (netwType === networkType.mainnet) {
+const getApiUrl = (netType) => {
+  if (netType === networkType.mainnet) {
     return 'https://ghostscan.io/ghost-insight-api'
   }
-  if (netwType === networkType.testnet) {
+  if (netType === networkType.testnet) {
     return 'https://testnet.ghostscan.io/ghost-insight-api'
   }
   throw new Error('Unknown networkType')
 }
 
-const fetchBalance = async (networkType, address) => {
-  const apiUrl = getApiUrl(networkType);
+const fetchBalance = async (netType, address) => {
+  const apiUrl = getApiUrl(netType);
   const response = await fetch(`${apiUrl}/addr/${address}`);
   const json = await response.json();
   /*
@@ -86,27 +97,30 @@ const fetchBalance = async (networkType, address) => {
 }
 
 const fetchUnspents = async (address) => {
-  const apiUrl = getApiUrl(network);
+  //const apiUrl = getApiUrl(netType);
+  // todo: mainnet support
+  const apiUrl = getApiUrl(networkType.testnet);
   const response = await fetch(`${apiUrl}/addr/${address}/utxo`);
   const json = await response.json();
   return json;
 }
 
-const fetchTx = async (txid) => {
+/*const fetchTx = async (txid) => {
   const apiUrl = getApiUrl(network);
   const response = await fetch(`${apiUrl}/tx/${txid}`);
   const json = await response.json();
   return json;
-}
+}*/
 
-const fetchRawTx = async (txid) => {
+/*const fetchRawTx = async (txid) => {
   const apiUrl = getApiUrl(network);
   const response = await fetch(`${apiUrl}/rawtx/${txid}`);
   const json = await response.json();
   return json;
-}
+}*/
 
-const publishRawTx = async (rawTx) => {
+const publishRawTx = async (netType, rawTx) => {
+  const apiUrl = getApiUrl(netType);
   const response = await fetch(`${apiUrl}/tx/send`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -116,5 +130,13 @@ const publishRawTx = async (rawTx) => {
   return json;
 }
 
+const getTxUrl = (netType, txId) => {
+  if (netType == networkType.mainnet) {
+    return `https://ghostscan.io/tx/${txId}`
+  }
+  if (netType == networkType.testnet) {
+    return `https://testnet.ghostscan.io/${txId}`
+  }
+}
 
 module.exports = GHOST

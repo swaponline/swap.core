@@ -23,7 +23,9 @@ const BTC = {
         wif: 0x80,
       },
       bip44coinIndex: 0,
-      getBalance: async (addr) => await fetchBalance(networkType.mainnet, addr)
+      getBalance: async (addr) => await fetchBalance(networkType.mainnet, addr),
+      //publishTx: async (rawTx) => await publishTx(networkType.testnet, rawTx)
+      getTxUrl: (getTxUrl) => getTxUrl(networkType.mainnet, txId),
     },
     'testnet': {
       type: networkType.testnet,
@@ -39,11 +41,16 @@ const BTC = {
         wif: 0xef,
       },
       bip44coinIndex: 1,
-      getBalance: async (addr) => await fetchBalance(networkType.testnet, addr)
+      getBalance: async (addr) => await fetchBalance(networkType.testnet, addr),
+      publishTx: async (rawTx) => await publishTx(networkType.testnet, rawTx),
+      getTxUrl: (getTxUrl) => getTxUrl(networkType.testnet, txId),
     }
   }
 }
 
+
+// bitcore API documentation:
+// https://github.com/bitpay/bitcore/blob/master/packages/bitcore-node/docs/api-documentation.md
 
 const getApiUrl = (netwType) => {
   if (netwType === networkType.mainnet) {
@@ -62,6 +69,27 @@ const fetchBalance = async (networkType, address) => {
   const balanceSat = json.balance;
   const balanceBTC = (new BigNumber(balanceSat)).dividedBy(10 ** BTC.precision)
   return balanceBTC.toNumber();
+}
+
+const publishTx = async (networkType, rawTx) => {
+  const apiUrl = getApiUrl(networkType);
+  const response = await fetch(`${apiUrl}/tx/send`, {
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({'rawTx': rawTx}),
+  })
+  const json = await response.json()
+  return json
+}
+
+
+const getTxUrl = (netType, txId) => {
+  if (netType == networkType.mainnet) {
+    return `https://www.blockchain.com/btc/tx/${txId}`
+  }
+  if (netType == networkType.testnet) {
+    return `https://www.blockchain.com/btc-testnet/tx/${txId}`
+  }
 }
 
 module.exports = BTC
