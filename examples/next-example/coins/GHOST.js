@@ -1,9 +1,13 @@
+const bip32 = require('bip32')
+const bip39 = require('bip39')
+const ghost_bitcore = require('ghost-bitcore-lib')
+
 const fetch = require('node-fetch');
 
 const { networkType } = require('./../domain/network')
 
 
-const networks = {
+const netNames = {
   'mainnet': 'mainnet',
   'testnet': 'testnet',
 }
@@ -12,8 +16,9 @@ const GHOST = {
   ticker: 'GHOST',
   name: 'Ghost',
   precision: 8,
-  networks,
-  [networks.mainnet]: {
+  networks: netNames,
+
+  [netNames.mainnet]: {
     type: networkType.mainnet,
     bip32settings: {
       // bip32settings from https://github.com/JoaoCampos89/ghost-samples/blob/master/examples/transaction/index.js
@@ -32,17 +37,14 @@ const GHOST = {
     getBalance: async (addr) =>
       await connector.fetchBalance(networkType.mainnet, addr),
 
-    // not public?
-    /*fetchUnspents: async (addr) =>
-      await connector.fetchUnspents(networkType.testnet, addr),*/
-
     publishRawTx: async (rawTx) =>
       await connector.publishRawTx(networkType.mainnet, rawTx),
 
     getTxUrl: (txId) =>
       connector.getTxUrl(networkType.mainnet, txId),
   },
-  [networks.testnet]: {
+
+  [netNames.testnet]: {
     type: networkType.testnet,
     bip32settings: {
       messagePrefix: '\x18Bitcoin Signed Message:\n',
@@ -56,12 +58,19 @@ const GHOST = {
       wif: 0x2e,
     },
     bip44coinIndex: 531,
+    accountFromMnemonic: (mnemonic) =>
+      libAdapter.accountFromMnemonic(mnemonic, netNames.testnet),
+
     getBalance: async (addr) =>
       await connector.fetchBalance(networkType.testnet, addr),
 
-    // not public?
-    /*fetchUnspents: async (addr) =>
-      await connector.fetchUnspents(networkType.testnet, addr),*/
+    createTx: async ({ account, amount, to }) =>
+      await libAdapter.createTx({
+        netName: netNames.testnet,
+        account,
+        amount,
+        to
+      }),
 
     publishRawTx: async (rawTx) =>
       await connector.publishRawTx(networkType.testnet, rawTx),
@@ -89,7 +98,7 @@ const connector = {
       return `https://ghostscan.io/tx/${txId}`
     }
     if (netType == networkType.testnet) {
-      return `https://testnet.ghostscan.io/${txId}`
+      return `https://testnet.ghostscan.io/tx/${txId}`
     }
   },
 
@@ -118,11 +127,11 @@ const connector = {
     return json.balance;
   },
 
-  async fetchUnspents(address) {
+  async fetchUnspents(addr) {
     //const apiUrl = getApiUrl(netType);
     // todo: mainnet support
     const apiUrl = connector.getApiUrl(networkType.testnet);
-    const response = await fetch(`${apiUrl}/addr/${address}/utxo`);
+    const response = await fetch(`${apiUrl}/addr/${addr}/utxo`);
     const json = await response.json();
     return json;
   },
@@ -160,3 +169,69 @@ const connector = {
 
 
 module.exports = GHOST
+
+
+
+
+const createDerivePath = (network) => {
+  // see bip-44
+
+  //const testnetCoinIndex = 1 // (all coins)
+  //const coinIndex = (network.type === networkType.testnet) ? testnetCoinIndex : network.bip44coinIndex
+  const coinIndex = network.bip44coinIndex
+  const addressIndex = 0
+  const path = `m/44'/${coinIndex}'/0'/0/${addressIndex}`
+  return path;
+}
+
+
+const libAdapter = {
+
+  accountFromMnemonic(mnemonic, netName) {
+    const network = GHOST[netName]
+
+    const seed = bip39.mnemonicToSeedSync(mnemonic)
+    const root = bip32.fromSeed(seed, network.bip32settings)
+    const derivePath = createDerivePath(network)
+    const child = root.derivePath(derivePath)
+
+    const Networks = ghost_bitcore.Networks
+    const PrivateKey = ghost_bitcore.PrivateKey
+    const PublicKey = ghost_bitcore.PublicKey
+    const Address = ghost_bitcore.Address
+
+    const privateKey = new PrivateKey.fromWIF(child.toWIF(), 'testnet')
+    const publicKey = PublicKey(privateKey, Networks.testnet) // ???
+    const address = new Address(publicKey, Networks.testnet)
+
+    const account = {
+      privateKey,
+      publicKey,
+      address
+    }
+
+    return account
+  },
+
+  async createTx({ netName, account, amount, to }) {
+    const { privateKey, publicKey, address } = account
+
+    const network = GHOST[netName]
+    const addressStr = address.toString()
+    const unspent = await connector.fetchUnspents(addressStr)
+
+    const tx = new ghost_bitcore.Transaction()
+      .from(unspent)
+      .to(to, amount)  // [sat]
+      .change(address)  // Where the rest of the funds will go
+      .sign(privateKey) // Signs all the inputs it can
+
+    const rawTx = tx.serialize() // raw tx to broadcast
+    return rawTx
+  }
+
+}
+
+
+
+
