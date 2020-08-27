@@ -18,10 +18,12 @@ const NEXT = {
         wif: 0xef, // todo: set right value
       },
       bip44coinIndex: 707,
-      getBalance: async (addr) => await fetchBalance(networkType.mainnet, addr)
+      getBalance: async (addr) =>
+        await connector.fetchBalance(networkType.mainnet, addr)
     },
     /*
-    'testnet': { //testnet is down???
+    //testnet is down???
+    'testnet': { 
       type: networkType.testnet,
       bip32settings: {
         messagePrefix: '\x18Bitcoin Signed Message:\n',
@@ -42,29 +44,34 @@ const NEXT = {
 }
 
 
-// next.exhnage API documentation:
-// https://explore.next.exchange/#/api
+const connector = {
 
-const getApiUrl = (netwType) => {
-  if (netwType === networkType.mainnet) {
-    return 'https://explore.next.exchange/api'
+  // next.exhnage API documentation:
+  // https://explore.next.exchange/#/api
+
+  getApiUrl(netwType) {
+    if (netwType === networkType.mainnet) {
+      return 'https://explore.next.exchange/api'
+    }
+    /*if (netwType === networkType.testnet) {
+      return ''
+    }*/
+    throw new Error('Unknown networkType')
+  },
+
+  async fetchBalance(networkType, address) {
+    const apiUrl = connector.getApiUrl(networkType);
+    const response = await fetch(`${apiUrl}/address/${address}`);
+    try {
+      const json = await response.json();
+      return json.balance;
+    } catch (e) { // todo: improve
+      return 0
+    }
   }
-  /*if (netwType === networkType.testnet) {
-    return ''
-  }*/
-  throw new Error('Unknown networkType')
+
 }
 
-const fetchBalance = async (networkType, address) => {
-  const apiUrl = getApiUrl(networkType);
-  const response = await fetch(`${apiUrl}/address/${address}`);
-  try {
-    const json = await response.json();
-    return json.balance;
-  } catch (e) { // todo: improve
-    return 0
-  }
-}
 
 module.exports = NEXT
 
