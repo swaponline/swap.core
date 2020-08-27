@@ -2,45 +2,53 @@ const fetch = require('node-fetch');
 
 const { networkType } = require('./../domain/network')
 
+
+const networks = {
+  'mainnet': 'mainnet',
+  //'testnet': 'testnet',
+}
+
 const NEXT = {
-  networks: {
-    'mainnet': {
-      type: networkType.mainnet,
-      bip32settings: {
-        messagePrefix: '\x18Bitcoin Signed Message:\n',
-        bech32: 'bc', // todo: set right value
-        bip32: {
-          public: 0x0488B21E,
-          private: 0x0488ADE4,
-        },
-        pubKeyHash: 0x6f, // todo: set right value
-        scriptHash: 0xc4, // todo: set right value
-        wif: 0xef, // todo: set right value
+  ticker: 'NEXT',
+  name: 'NEXT.coin',
+  precision: 8,
+  networks,
+  [networks.mainnet]: {
+    type: networkType.mainnet,
+    bip32settings: {
+      messagePrefix: '\x18Bitcoin Signed Message:\n',
+      bech32: 'bc', // todo: set right value
+      bip32: {
+        public: 0x0488B21E,
+        private: 0x0488ADE4,
       },
-      bip44coinIndex: 707,
-      getBalance: async (addr) =>
-        await connector.fetchBalance(networkType.mainnet, addr)
+      pubKeyHash: 0x6f, // todo: set right value
+      scriptHash: 0xc4, // todo: set right value
+      wif: 0xef, // todo: set right value
     },
-    /*
-    //testnet is down???
-    'testnet': { 
-      type: networkType.testnet,
-      bip32settings: {
-        messagePrefix: '\x18Bitcoin Signed Message:\n',
-        bech32: ,
-        bip32: {
-          public: 0x043587CF,
-          private: 0x04358394,
-        },
-        pubKeyHash: ,
-        scriptHash: ,
-        wif: ,
+    bip44coinIndex: 707,
+    getBalance: async (addr) =>
+      await connector.fetchBalance(networkType.mainnet, addr)
+  },
+  /*
+  //testnet is down???
+  [networks.testnet]: { 
+    type: networkType.testnet,
+    bip32settings: {
+      messagePrefix: '\x18Bitcoin Signed Message:\n',
+      bech32: ,
+      bip32: {
+        public: 0x043587CF,
+        private: 0x04358394,
       },
-      bip44coinIndex: 1,
-      getBalance: async (addr) => await fetchBalance(networkType.testnet, addr)
-    }
-    */
+      pubKeyHash: ,
+      scriptHash: ,
+      wif: ,
+    },
+    bip44coinIndex: 1,
+    getBalance: async (addr) => await fetchBalance(networkType.testnet, addr)
   }
+  */
 }
 
 
