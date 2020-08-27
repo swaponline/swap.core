@@ -146,9 +146,25 @@ const libAdapter = {
     const PublicKey = bitcore.PublicKey
     const Address = bitcore.Address
 
-    const privateKey = new PrivateKey.fromWIF(child.toWIF(), 'testnet')
-    const publicKey = PublicKey(privateKey, Networks.testnet) // ???
-    const address = new Address(publicKey, Networks.testnet)
+    let bitcoreNetwork, bitcoreNetName
+
+    if (netName == netNames.mainnet) {
+      bitcoreNetwork = Networks.mainnet
+      bitcoreNetName = 'mainnet'
+    }
+
+    if (netName == netNames.testnet) {
+      bitcoreNetwork = Networks.testnet
+      bitcoreNetName = 'testnet'
+    }
+
+    if (!bitcoreNetwork && !bitcoreNetName) {
+      throw new Error(`Unknown network: ${netName}`)
+    }
+
+    const privateKey = new PrivateKey.fromWIF(child.toWIF(), bitcoreNetName)
+    const publicKey = PublicKey(privateKey, bitcoreNetwork)
+    const address = new Address(publicKey, bitcoreNetwork)
 
     const account = {
       privateKey,
