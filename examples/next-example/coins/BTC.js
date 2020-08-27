@@ -1,10 +1,14 @@
+const bip32 = require('bip32')
+const bip39 = require('bip39')
+const bitcore = require('bitcore-lib')
+
 const fetch = require('node-fetch');
 const BigNumber = require('bignumber.js')
 
 const { networkType } = require('./../domain/network')
 
 
-const networks = {
+const netNames = {
   'mainnet': 'mainnet',
   'testnet': 'testnet',
 }
@@ -13,8 +17,9 @@ const BTC = {
   ticker: 'BTC',
   name: 'Bitcoin',
   precision: 8,
-  networks,
-  [networks.mainnet]: {
+  networks: netNames,
+
+  [netNames.mainnet]: {
     type: networkType.mainnet,
     bip32settings: {
       // bip32settings from https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/src/networks.js
@@ -29,13 +34,16 @@ const BTC = {
       wif: 0x80,
     },
     bip44coinIndex: 0,
+    accountFromMnemonic: (mnemonic) =>
+      libAdapter.accountFromMnemonic(mnemonic, netNames.mainnet),
     getBalance: async (addr) =>
       await connector.fetchBalance(networkType.mainnet, addr),
     //publishTx: async (rawTx) => await publishTx(networkType.testnet, rawTx)
     getTxUrl: (txId) =>
       connector.getTxUrl(networkType.mainnet, txId),
   },
-  [networks.testnet]: {
+
+  [netNames.testnet]: {
     type: networkType.testnet,
     bip32settings: {
       messagePrefix: '\x18Bitcoin Signed Message:\n',
@@ -49,6 +57,8 @@ const BTC = {
       wif: 0xef,
     },
     bip44coinIndex: 1,
+    accountFromMnemonic: (mnemonic) =>
+      libAdapter.accountFromMnemonic(mnemonic, netNames.testnet),
     getBalance: async (addr) =>
       await connector.fetchBalance(networkType.testnet, addr),
     publishTx: async (rawTx) =>
@@ -57,6 +67,9 @@ const BTC = {
       connector.getTxUrl(networkType.testnet, txId),
   }
 }
+
+module.exports = BTC
+
 
 
 const connector = {
@@ -105,4 +118,44 @@ const connector = {
 
 }
 
-module.exports = BTC
+
+// todo: move/remove
+const createDerivePath = (network) => {
+  // see bip-44
+
+  //const testnetCoinIndex = 1 // (all coins)
+  //const coinIndex = (network.type === networkType.testnet) ? testnetCoinIndex : network.bip44coinIndex
+  const coinIndex = network.bip44coinIndex
+  const addressIndex = 0
+  const path = `m/44'/${coinIndex}'/0'/0/${addressIndex}`
+  return path;
+}
+
+const libAdapter = {
+
+  accountFromMnemonic(mnemonic, netName) {
+    const network = BTC[netName]
+
+    const seed = bip39.mnemonicToSeedSync(mnemonic)
+    const root = bip32.fromSeed(seed, network.bip32settings)
+    const derivePath = createDerivePath(network)
+    const child = root.derivePath(derivePath)
+
+    const Networks = bitcore.Networks
+    const PrivateKey = bitcore.PrivateKey
+    const PublicKey = bitcore.PublicKey
+    const Address = bitcore.Address
+
+    const privateKey = new PrivateKey.fromWIF(child.toWIF(), 'testnet')
+    const publicKey = PublicKey(privateKey, Networks.testnet) // ???
+    const address = new Address(publicKey, Networks.testnet)
+
+    const account = {
+      privateKey,
+      publicKey,
+      address
+    }
+
+    return account
+  },
+}

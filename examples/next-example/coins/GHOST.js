@@ -36,10 +36,8 @@ const GHOST = {
     bip44coinIndex: 531,
     getBalance: async (addr) =>
       await connector.fetchBalance(networkType.mainnet, addr),
-
     publishRawTx: async (rawTx) =>
       await connector.publishRawTx(networkType.mainnet, rawTx),
-
     getTxUrl: (txId) =>
       connector.getTxUrl(networkType.mainnet, txId),
   },
@@ -60,10 +58,8 @@ const GHOST = {
     bip44coinIndex: 531,
     accountFromMnemonic: (mnemonic) =>
       libAdapter.accountFromMnemonic(mnemonic, netNames.testnet),
-
     getBalance: async (addr) =>
       await connector.fetchBalance(networkType.testnet, addr),
-
     createTx: async ({ account, amount, to }) =>
       await libAdapter.createTx({
         netName: netNames.testnet,
@@ -71,14 +67,15 @@ const GHOST = {
         amount,
         to
       }),
-
     publishRawTx: async (rawTx) =>
       await connector.publishRawTx(networkType.testnet, rawTx),
-
     getTxUrl: (txId) =>
       connector.getTxUrl(networkType.testnet, txId),
   }
 }
+
+module.exports = GHOST
+
 
 
 const connector = {
@@ -168,11 +165,8 @@ const connector = {
 }
 
 
-module.exports = GHOST
 
-
-
-
+// todo: move/remove
 const createDerivePath = (network) => {
   // see bip-44
 
@@ -231,7 +225,3 @@ const libAdapter = {
   }
 
 }
-
-
-
-

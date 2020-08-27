@@ -1,19 +1,24 @@
+const bip32 = require('bip32')
+const bip39 = require('bip39')
+const bitcore = require('bitcore-lib')
+
 const fetch = require('node-fetch');
 
 const { networkType } = require('./../domain/network')
 
 
-const networks = {
+const netNames = {
   'mainnet': 'mainnet',
-  //'testnet': 'testnet',
+  //'testnet': 'testnet', //testnet is down???
 }
 
 const NEXT = {
   ticker: 'NEXT',
   name: 'NEXT.coin',
   precision: 8,
-  networks,
-  [networks.mainnet]: {
+  networks: netNames,
+
+  [netNames.mainnet]: {
     type: networkType.mainnet,
     bip32settings: {
       messagePrefix: '\x18Bitcoin Signed Message:\n',
@@ -27,12 +32,14 @@ const NEXT = {
       wif: 0xef, // todo: set right value
     },
     bip44coinIndex: 707,
+    accountFromMnemonic: (mnemonic) =>
+      libAdapter.accountFromMnemonic(mnemonic, netNames.mainnet),
     getBalance: async (addr) =>
       await connector.fetchBalance(networkType.mainnet, addr)
   },
+
   /*
-  //testnet is down???
-  [networks.testnet]: { 
+  [networks.testnet]: {  //testnet is down???
     type: networkType.testnet,
     bip32settings: {
       messagePrefix: '\x18Bitcoin Signed Message:\n',
@@ -50,6 +57,9 @@ const NEXT = {
   }
   */
 }
+
+module.exports = NEXT
+
 
 
 const connector = {
@@ -81,5 +91,44 @@ const connector = {
 }
 
 
-module.exports = NEXT
+// todo: move/remove
+const createDerivePath = (network) => {
+  // see bip-44
 
+  //const testnetCoinIndex = 1 // (all coins)
+  //const coinIndex = (network.type === networkType.testnet) ? testnetCoinIndex : network.bip44coinIndex
+  const coinIndex = network.bip44coinIndex
+  const addressIndex = 0
+  const path = `m/44'/${coinIndex}'/0'/0/${addressIndex}`
+  return path;
+}
+
+
+const libAdapter = {
+
+  accountFromMnemonic(mnemonic, netName) {
+    const network = NEXT[netName]
+
+    const seed = bip39.mnemonicToSeedSync(mnemonic)
+    const root = bip32.fromSeed(seed, network.bip32settings)
+    const derivePath = createDerivePath(network)
+    const child = root.derivePath(derivePath)
+
+    const Networks = bitcore.Networks
+    const PrivateKey = bitcore.PrivateKey
+    const PublicKey = bitcore.PublicKey
+    const Address = bitcore.Address
+
+    const privateKey = new PrivateKey.fromWIF(child.toWIF(), 'testnet')
+    const publicKey = PublicKey(privateKey, Networks.testnet) // ???
+    const address = new Address(publicKey, Networks.testnet)
+
+    const account = {
+      privateKey,
+      publicKey,
+      address
+    }
+
+    return account
+  },
+}
