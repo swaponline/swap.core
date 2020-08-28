@@ -28,6 +28,26 @@ const tests = [
   },
   {
     check: true,
+    coin: 'LTC',
+    network: 'mainnet',
+    mnemonic: 'sudden expire elegant spend they peanut search giggle battle gas sister atom',
+    privateKey: 'T8LYWa1wvC317PSytdpHBbzviijKuuqyLywT7FCEXupEuAuUwPPo',
+    publicKey: '026e9e26d004b5fb1da69e7349c32642005cc800002121ef48dad30a212b1dd47b',
+    address: 'LggM6A4J2NzpZYPzMEGLCBSpRJZrcMML8n', // index 0
+    // address: 'LfaPnMj5jYcGMMD6fiXbCq9y1aR6oa5qt1', // index 1
+  },
+  {
+    check: true,
+    coin: 'LTC',
+    network: 'testnet',
+    mnemonic: 'sudden expire elegant spend they peanut search giggle battle gas sister atom',
+    privateKey: 'cUA5k263Wd8cA6M4StxyJNdrXs4rKk2h88rxATcHunrxaxtpMMXw',
+    publicKey: '02baacab92e5563ca1cb785f412ccf69ef6979d5b6e8b01c01a7e5cc7612051eab',
+    address: 'mnkxYF6DZVSeQrQjusHq7xgECTVPp4w24H', // index 0
+    // address: 'n1diZdNDBJPhd22vuXQvsqAdsfqhaWcy7R', // index 1
+  },
+  {
+    check: true,
     coin: 'GHOST',
     network: 'testnet',
     mnemonic: 'praise you muffin lion enable neck grocery crumble super myself license ghost',
@@ -49,26 +69,6 @@ const tests = [
     //publicKey: '', // ?
     address: 'XJYfa9XF9zYkLkHmQfjvpAEsV2rBiPUB5P', // index 0
     //address 'XX6QMNnYRpks9YzmkFbmpMyHDXzowEJDjc', // index 1
-  },
-  {
-    check: true,
-    coin: 'LTC',
-    network: 'mainnet',
-    mnemonic: 'sudden expire elegant spend they peanut search giggle battle gas sister atom',
-    privateKey: 'T8LYWa1wvC317PSytdpHBbzviijKuuqyLywT7FCEXupEuAuUwPPo',
-    publicKey: '026e9e26d004b5fb1da69e7349c32642005cc800002121ef48dad30a212b1dd47b',
-    address: 'LggM6A4J2NzpZYPzMEGLCBSpRJZrcMML8n', // index 0
-    // address: 'LfaPnMj5jYcGMMD6fiXbCq9y1aR6oa5qt1', // index 1
-  },
-  {
-    check: true,
-    coin: 'LTC',
-    network: 'testnet',
-    mnemonic: 'sudden expire elegant spend they peanut search giggle battle gas sister atom',
-    privateKey: 'cUA5k263Wd8cA6M4StxyJNdrXs4rKk2h88rxATcHunrxaxtpMMXw',
-    publicKey: '02baacab92e5563ca1cb785f412ccf69ef6979d5b6e8b01c01a7e5cc7612051eab',
-    address: 'mnkxYF6DZVSeQrQjusHq7xgECTVPp4w24H', // index 0
-    // address: 'n1diZdNDBJPhd22vuXQvsqAdsfqhaWcy7R', // index 1
   },
 ]
 
