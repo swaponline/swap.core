@@ -136,35 +136,38 @@ const libAdapter = {
   accountFromMnemonic(mnemonic, netName) {
     const network = BTC[netName]
 
+    // todo: move?
+
     const seed = bip39.mnemonicToSeedSync(mnemonic)
     const root = bip32.fromSeed(seed, network.bip32settings)
     const derivePath = createDerivePath(network)
     const child = root.derivePath(derivePath)
+
 
     const Networks = bitcore.Networks
     const PrivateKey = bitcore.PrivateKey
     const PublicKey = bitcore.PublicKey
     const Address = bitcore.Address
 
-    let bitcoreNetwork, bitcoreNetName
+    let libNetwork, libNetworkName
 
     if (netName == netNames.mainnet) {
-      bitcoreNetwork = Networks.mainnet
-      bitcoreNetName = 'mainnet'
+      libNetwork = Networks.mainnet
+      libNetworkName = 'mainnet'
     }
 
     if (netName == netNames.testnet) {
-      bitcoreNetwork = Networks.testnet
-      bitcoreNetName = 'testnet'
+      libNetwork = Networks.testnet
+      libNetworkName = 'testnet'
     }
 
-    if (!bitcoreNetwork && !bitcoreNetName) {
+    if (!libNetwork && !libNetworkName) {
       throw new Error(`Unknown network: ${netName}`)
     }
 
-    const privateKey = new PrivateKey.fromWIF(child.toWIF(), bitcoreNetName)
-    const publicKey = PublicKey(privateKey, bitcoreNetwork)
-    const address = new Address(publicKey, bitcoreNetwork)
+    const privateKey = new PrivateKey.fromWIF(child.toWIF(), libNetworkName)
+    const publicKey = PublicKey(privateKey, libNetwork)
+    const address = new Address(publicKey, libNetwork)
 
     const account = {
       privateKey,

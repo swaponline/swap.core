@@ -21,7 +21,7 @@ const NEXT = {
   [netNames.mainnet]: {
     type: networkType.mainnet,
     bip32settings: {
-      messagePrefix: '\x18Bitcoin Signed Message:\n',
+      messagePrefix: 'Nextcoin Signed Message:\n',
       bech32: 'bc', // todo: set right value
       bip32: {
         public: 0x0488B21E,
@@ -114,14 +114,29 @@ const libAdapter = {
     const derivePath = createDerivePath(network)
     const child = root.derivePath(derivePath)
 
+    // todo (compare BTC/bitcoinjs-lib => NEXT/it)
+
     const Networks = bitcore.Networks
     const PrivateKey = bitcore.PrivateKey
     const PublicKey = bitcore.PublicKey
     const Address = bitcore.Address
 
-    const privateKey = new PrivateKey.fromWIF(child.toWIF(), 'testnet')
-    const publicKey = PublicKey(privateKey, Networks.testnet) // ???
-    const address = new Address(publicKey, Networks.testnet)
+    var custom = {
+      name: 'litecoin',
+      pubkeyhash: 0x1c,
+      privatekey: 0x1e,
+      scripthash: 0x28,
+      xpubkey: 0x02e8de8f,
+      xprivkey: 0x02e8da54,
+      networkMagic: 0x0c110907,
+      port: 7333
+    };
+    Networks.add(custom);
+    const libNetwork = Networks.get('litecoin')
+
+    const privateKey = new PrivateKey.fromWIF(child.toWIF(), 'litecoin')
+    const publicKey = PublicKey(privateKey, libNetwork)
+    const address = new Address(publicKey, libNetwork)
 
     const account = {
       privateKey,

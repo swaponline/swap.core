@@ -34,7 +34,7 @@
     "app-module-path": "^2.2.0",
     "babel-runtime": "^6.26.0",
     "bignumber.js": "^7.2.1",
-    "bitcoinjs-lib": "^5.1.6",
+    "bitcoinjs-lib": "^5.1.10",
     "bitcore-lib": "^8.22.0",
     "command-line-args": "^5.0.2",
     "command-line-usage": "^5.0.5",
