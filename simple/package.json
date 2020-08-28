@@ -32,7 +32,7 @@
     "node-localstorage": "^1.3.1",
     "node-sessionstorage": "^1.0.0",
     "request-promise-native": "^1.0.5",
-    "swap.core": "^0.3.13",
+    "swap.core": "latest",
     "web3": "^1.2.4"
   },
   "devDependencies": {
