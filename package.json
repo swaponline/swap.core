@@ -20,7 +20,7 @@
     "build:umd:win": "webpack --config webpack.config.babel.js",
     "preversion": "npm run build",
     "postversion": "npm publish",
-    "release": "npm version patch"
+    "release": "npm version patch && git push"
   },
   "peerDependencies": {
     "bitcoinjs-lib": "~3.3.2"
