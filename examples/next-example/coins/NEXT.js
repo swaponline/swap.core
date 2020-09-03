@@ -134,6 +134,16 @@ const connector = {
     } catch (e) { // todo: improve
       return 0
     }
-  }
+  },
+
+  async fetchUnspents(addr) {
+    //const apiUrl = getApiUrl(netType);
+    // todo: mainnet support
+    const apiUrl = connector.getApiUrl(networkType.testnet);
+    const response = await fetch(`${apiUrl}/addr/${addr}/utxo`);
+    const json = await response.json();
+    return json;
+    //
+  },
 
 }

@@ -76,6 +76,9 @@ const GHOST = {
       await connector.publishRawTx(networkType.testnet, rawTx),
     getTxUrl: (txId) =>
       connector.getTxUrl(networkType.testnet, txId),
+    get _connector() {
+      return connector
+    },
   }
 }
 
@@ -113,7 +116,7 @@ const libAdapter = {
 
     const network = GHOST[netName]
     const addressStr = address.toString()
-    const unspent = await connector.fetchUnspents(addressStr)
+    const unspent = await connector.fetchUnspents(network.type, addressStr)
 
     const tx = new ghost_bitcore.Transaction()
       .from(unspent)
@@ -138,7 +141,7 @@ const connector = {
     if (netType === networkType.testnet) {
       return 'https://testnet.ghostscan.io/ghost-insight-api'
     }
-    throw new Error('Unknown networkType')
+    throw new Error(`Unknown networkType: ${netType}`)
   },
 
   getTxUrl(netType, txId) {
@@ -175,12 +178,32 @@ const connector = {
     return json.balance;
   },
 
-  async fetchUnspents(addr) {
-    //const apiUrl = getApiUrl(netType);
-    // todo: mainnet support
-    const apiUrl = connector.getApiUrl(networkType.testnet);
+  async fetchUnspents(netType, addr) {
+    const apiUrl = connector.getApiUrl(netType);
     const response = await fetch(`${apiUrl}/addr/${addr}/utxo`);
-    const json = await response.json();
+
+    if (response.status !== 200) {
+      throw new Error(`Can't fetch unspents - ${response.status}, ${response.statusText}`)
+    }
+
+    /*
+    [
+      {
+        address: 'XPtT4tJWyepGAGRF9DR4AhRkJWB3DEBXT2',
+        txid:
+     'd919f24224c32288c101bfdc0c787e28bd11c9f6d350be0ce4dc2b242a005dac',
+        vout: 0,
+        scriptPubKey: '76a91489889acc6e649c88f34cd7e682601d395e0ecef388ac',
+        amount: 1,
+        satoshis: 100000000,
+        confirmations: 0,
+        ts: 1598447591
+      },
+      { .. }
+    ]
+    */
+
+    json = await response.json();
     return json;
   },
 
