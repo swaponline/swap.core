@@ -28,6 +28,12 @@ class SwapApp {
 
     this._addSwaps(options.swaps || [])
     this._addFlows(options.flows || [])
+
+    if (!this.env.getWeb3) {
+      this.env.getWeb3 = () => {
+        return this.env.web3
+      }
+    }
   }
 
   static init(options) {

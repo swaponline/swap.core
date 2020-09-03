@@ -204,7 +204,9 @@ class ETH2BTC extends Flow {
         }
 
         const swapData = {
-          participantAddress: participant.eth.address,
+          participantAddress: (flow.swap.metamaskAddress)
+            ? flow.swap.metamaskAddress
+            : participant.eth.address,
           secretHash: secretHash,
           amount: sellAmount,
           targetWallet: flow.swap.destinationSellAddress
@@ -317,7 +319,9 @@ class ETH2BTC extends Flow {
         const checkSecretExist = async () => {
           try {
             let secretFromContract = await flow.ethSwap.getSecret({
-              participantAddress: participant.eth.address,
+              participantAddress: (flow.swap.metamaskAddress)
+                ? flow.swap.metamaskAddress
+                : participant.eth.address,
             })
 
             if (secretFromContract) {
@@ -433,7 +437,9 @@ class ETH2BTC extends Flow {
     this.swap.room.once('do withdraw', async ({secret}) => {
       try {
         const data = {
-          participantAddress: flow.swap.participant.eth.address,
+          participantAddress: (flow.swap.metamaskAddress)
+            ? flow.swap.metamaskAddress
+            : flow.swap.participant.eth.address,
           secret,
         }
 
@@ -459,8 +465,12 @@ class ETH2BTC extends Flow {
     const { participant } = this.swap
 
     const swapData = {
-      ownerAddress: this.app.services.auth.accounts.eth.address,
-      participantAddress: participant.eth.address
+      ownerAddress: (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+        ? this.app.env.metamask.getAddress()
+        : this.app.services.auth.accounts.eth.address,
+      participantAddress: (flow.swap.metamaskAddress)
+        ? flow.swap.metamaskAddress
+        : participant.eth.address
     }
 
     return this.ethSwap.checkSwapExists(swapData)
@@ -539,7 +549,11 @@ class ETH2BTC extends Flow {
       isBalanceFetching: true,
     })
 
-    const balance = await this.ethSwap.fetchBalance(this.app.services.auth.accounts.eth.address)
+    const balance = await this.ethSwap.fetchBalance(
+      (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+        ? this.app.env.metamask.getAddress()
+        : this.app.services.auth.accounts.eth.address
+    )
     const isEnoughMoney = sellAmount.isLessThanOrEqualTo(balance)
 
     const stateData = {
@@ -589,7 +603,9 @@ class ETH2BTC extends Flow {
     }
 
     return this.ethSwap.refund({
-      participantAddress: participant.eth.address,
+      participantAddress: (flow.swap.metamaskAddress)
+        ? flow.swap.metamaskAddress
+        : participant.eth.address,
     })
       .then((hash) => {
         if (!hash) {

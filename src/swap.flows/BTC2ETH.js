@@ -297,7 +297,9 @@ class BTC2ETH extends Flow {
           ownerAddress: (flow.swap.metamaskAddress)
             ? flow.swap.metamaskAddress
             : participant.eth.address,
-          participantAddress: this.app.services.auth.accounts.eth.address,
+          participantAddress: (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+            ? this.app.env.metamask.getAddress()
+            : this.app.services.auth.accounts.eth.address,
           expectedValue: buyAmount,
           expectedHash: secretHash,
         })
@@ -313,7 +315,9 @@ class BTC2ETH extends Flow {
           const targetWallet = await flow.ethSwap.getTargetWallet( participant.eth.address )
           const needTargetWallet = (flow.swap.destinationBuyAddress)
             ? flow.swap.destinationBuyAddress
-            : this.app.services.auth.accounts.eth.address
+            : (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+              ? this.app.env.metamask.getAddress()
+              : this.app.services.auth.accounts.eth.address
 
           if (targetWallet.toLowerCase() !== needTargetWallet.toLowerCase()) {
             console.error(
