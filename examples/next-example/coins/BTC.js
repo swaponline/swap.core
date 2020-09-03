@@ -6,6 +6,7 @@ const fetch = require('node-fetch');
 const BigNumber = require('bignumber.js')
 
 const { networkType } = require('./../domain/network')
+const bip44 = require('./../helpers/bip44')
 
 
 const netNames = {
@@ -33,7 +34,9 @@ const BTC = {
       scriptHash: 0x05,
       wif: 0x80,
     },
-    bip44coinIndex: 0,
+    bip44settings: {
+      coinIndex: 0,
+    },
     accountFromMnemonic: (mnemonic) =>
       libAdapter.accountFromMnemonic(mnemonic, netNames.mainnet),
     getBalance: async (addr) =>
@@ -56,7 +59,9 @@ const BTC = {
       scriptHash: 0xc4,
       wif: 0xef,
     },
-    bip44coinIndex: 1,
+    bip44settings: {
+      coinIndex: 1,
+    },
     accountFromMnemonic: (mnemonic) =>
       libAdapter.accountFromMnemonic(mnemonic, netNames.testnet),
     getBalance: async (addr) =>
@@ -69,6 +74,49 @@ const BTC = {
 }
 
 module.exports = BTC
+
+
+
+const libAdapter = {
+
+  accountFromMnemonic(mnemonic, netName) {
+    const network = BTC[netName]
+
+    // todo: move?
+
+    const seed = bip39.mnemonicToSeedSync(mnemonic)
+    const root = bip32.fromSeed(seed, network.bip32settings)
+    const derivePath = bip44.createDerivePath(network)
+    const child = root.derivePath(derivePath)
+
+
+    let libNetwork, libNetworkName
+
+    if (netName == netNames.mainnet) {
+      libNetwork = bitcore.Networks.mainnet
+    }
+
+    if (netName == netNames.testnet) {
+      libNetwork = bitcore.Networks.testnet
+    }
+
+    if (!libNetwork) {
+      throw new Error(`Unknown network: ${netName}`)
+    }
+
+    const privateKey = new bitcore.PrivateKey.fromWIF(child.toWIF())
+    const publicKey = bitcore.PublicKey(privateKey, libNetwork)
+    const address = new bitcore.Address(publicKey, libNetwork)
+
+    const account = {
+      privateKey,
+      publicKey,
+      address
+    }
+
+    return account
+  },
+}
 
 
 
@@ -118,63 +166,3 @@ const connector = {
 
 }
 
-
-// todo: move/remove
-const createDerivePath = (network) => {
-  // see bip-44
-
-  //const testnetCoinIndex = 1 // (all coins)
-  //const coinIndex = (network.type === networkType.testnet) ? testnetCoinIndex : network.bip44coinIndex
-  const coinIndex = network.bip44coinIndex
-  const addressIndex = 0
-  const path = `m/44'/${coinIndex}'/0'/0/${addressIndex}`
-  return path;
-}
-
-const libAdapter = {
-
-  accountFromMnemonic(mnemonic, netName) {
-    const network = BTC[netName]
-
-    // todo: move?
-
-    const seed = bip39.mnemonicToSeedSync(mnemonic)
-    const root = bip32.fromSeed(seed, network.bip32settings)
-    const derivePath = createDerivePath(network)
-    const child = root.derivePath(derivePath)
-
-
-    const Networks = bitcore.Networks
-    const PrivateKey = bitcore.PrivateKey
-    const PublicKey = bitcore.PublicKey
-    const Address = bitcore.Address
-
-    let libNetwork, libNetworkName
-
-    if (netName == netNames.mainnet) {
-      libNetwork = Networks.mainnet
-      libNetworkName = 'mainnet'
-    }
-
-    if (netName == netNames.testnet) {
-      libNetwork = Networks.testnet
-      libNetworkName = 'testnet'
-    }
-
-    if (!libNetwork && !libNetworkName) {
-      throw new Error(`Unknown network: ${netName}`)
-    }
-
-    const privateKey = new PrivateKey.fromWIF(child.toWIF(), libNetworkName)
-    const publicKey = PublicKey(privateKey, libNetwork)
-    const address = new Address(publicKey, libNetwork)
-
-    const account = {
-      privateKey,
-      publicKey,
-      address
-    }
-
-    return account
-  },
-}

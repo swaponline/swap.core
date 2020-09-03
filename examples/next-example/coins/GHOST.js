@@ -5,6 +5,7 @@ const ghost_bitcore = require('ghost-bitcore-lib')
 const fetch = require('node-fetch');
 
 const { networkType } = require('./../domain/network')
+const bip44 = require('./../helpers/bip44')
 
 
 const netNames = {
@@ -33,7 +34,9 @@ const GHOST = {
       scriptHash: 0x61,
       wif: 0xa6,
     },
-    bip44coinIndex: 531,
+    bip44settings: {
+      coinIndex: 531,
+    },
     getBalance: async (addr) =>
       await connector.fetchBalance(networkType.mainnet, addr),
     publishRawTx: async (rawTx) =>
@@ -55,7 +58,9 @@ const GHOST = {
       scriptHash: 0xc4,
       wif: 0x2e,
     },
-    bip44coinIndex: 531,
+    bip44settings: {
+      coinIndex: 531,
+    },
     accountFromMnemonic: (mnemonic) =>
       libAdapter.accountFromMnemonic(mnemonic, netNames.testnet),
     getBalance: async (addr) =>
@@ -75,6 +80,52 @@ const GHOST = {
 }
 
 module.exports = GHOST
+
+
+
+const libAdapter = {
+
+  accountFromMnemonic(mnemonic, netName) {
+    const network = GHOST[netName]
+
+    const seed = bip39.mnemonicToSeedSync(mnemonic)
+    const root = bip32.fromSeed(seed, network.bip32settings)
+    const derivePath = bip44.createDerivePath(network)
+    const child = root.derivePath(derivePath)
+
+    const libNetwork = ghost_bitcore.Networks.testnet // todo: add mainnet
+
+    const privateKey = new ghost_bitcore.PrivateKey.fromWIF(child.toWIF())
+    const publicKey = ghost_bitcore.PublicKey(privateKey, libNetwork)
+    const address = new ghost_bitcore.Address(publicKey, libNetwork)
+
+    const account = {
+      privateKey,
+      publicKey,
+      address
+    }
+
+    return account
+  },
+
+  async createTx({ netName, account, amount, to }) {
+    const { privateKey, publicKey, address } = account
+
+    const network = GHOST[netName]
+    const addressStr = address.toString()
+    const unspent = await connector.fetchUnspents(addressStr)
+
+    const tx = new ghost_bitcore.Transaction()
+      .from(unspent)
+      .to(to, amount)  // [sat]
+      .change(address)  // Where the rest of the funds will go
+      .sign(privateKey) // Signs all the inputs it can
+
+    const rawTx = tx.serialize() // raw tx to broadcast
+    return rawTx
+  }
+
+}
 
 
 
@@ -161,67 +212,5 @@ const connector = {
     const json = await response.json();
     return json;
   },
-
-}
-
-
-
-// todo: move/remove
-const createDerivePath = (network) => {
-  // see bip-44
-
-  //const testnetCoinIndex = 1 // (all coins)
-  //const coinIndex = (network.type === networkType.testnet) ? testnetCoinIndex : network.bip44coinIndex
-  const coinIndex = network.bip44coinIndex
-  const addressIndex = 0
-  const path = `m/44'/${coinIndex}'/0'/0/${addressIndex}`
-  return path;
-}
-
-
-const libAdapter = {
-
-  accountFromMnemonic(mnemonic, netName) {
-    const network = GHOST[netName]
-
-    const seed = bip39.mnemonicToSeedSync(mnemonic)
-    const root = bip32.fromSeed(seed, network.bip32settings)
-    const derivePath = createDerivePath(network)
-    const child = root.derivePath(derivePath)
-
-    const Networks = ghost_bitcore.Networks
-    const PrivateKey = ghost_bitcore.PrivateKey
-    const PublicKey = ghost_bitcore.PublicKey
-    const Address = ghost_bitcore.Address
-
-    const privateKey = new PrivateKey.fromWIF(child.toWIF(), 'testnet')
-    const publicKey = PublicKey(privateKey, Networks.testnet) // ???
-    const address = new Address(publicKey, Networks.testnet)
-
-    const account = {
-      privateKey,
-      publicKey,
-      address
-    }
-
-    return account
-  },
-
-  async createTx({ netName, account, amount, to }) {
-    const { privateKey, publicKey, address } = account
-
-    const network = GHOST[netName]
-    const addressStr = address.toString()
-    const unspent = await connector.fetchUnspents(addressStr)
-
-    const tx = new ghost_bitcore.Transaction()
-      .from(unspent)
-      .to(to, amount)  // [sat]
-      .change(address)  // Where the rest of the funds will go
-      .sign(privateKey) // Signs all the inputs it can
-
-    const rawTx = tx.serialize() // raw tx to broadcast
-    return rawTx
-  }
 
 }

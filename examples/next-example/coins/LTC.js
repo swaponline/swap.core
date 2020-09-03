@@ -5,6 +5,7 @@ const bitcore = require('bitcore-lib')
 const fetch = require('node-fetch');
 
 const { networkType } = require('./../domain/network')
+const bip44 = require('./../helpers/bip44')
 
 
 const netNames = {
@@ -32,7 +33,9 @@ const LTC = {
       scriptHash: 0x32,
       wif: 0xb0,
     },
-    bip44coinIndex: 2,
+    bip44settings: {
+      coinIndex: 2,
+    },
     accountFromMnemonic: (mnemonic) =>
       libAdapter.accountFromMnemonic(mnemonic, netNames.mainnet),
   },
@@ -51,7 +54,9 @@ const LTC = {
       scriptHash: 0xc4,
       wif: 0xef,
     },
-    bip44coinIndex: 1,
+    bip44settings: {
+      coinIndex: 1,
+    },
     accountFromMnemonic: (mnemonic) =>
       libAdapter.accountFromMnemonic(mnemonic, netNames.testnet),
   }
@@ -60,23 +65,6 @@ const LTC = {
 module.exports = LTC
 
 
-
-const connector = {
-  // "https://testnet.litecore.io"
-}
-
-
-// todo: move/remove
-const createDerivePath = (network) => {
-  // see bip-44
-
-  //const testnetCoinIndex = 1 // (all coins)
-  //const coinIndex = (network.type === networkType.testnet) ? testnetCoinIndex : network.bip44coinIndex
-  const coinIndex = network.bip44coinIndex
-  const addressIndex = 0
-  const path = `m/44'/${coinIndex}'/0'/0/${addressIndex}`
-  return path;
-}
 
 const libAdapter = {
 
@@ -87,21 +75,15 @@ const libAdapter = {
 
     const seed = bip39.mnemonicToSeedSync(mnemonic)
     const root = bip32.fromSeed(seed, network.bip32settings)
-    const derivePath = createDerivePath(network)
+    const derivePath = bip44.createDerivePath(network)
     const child = root.derivePath(derivePath)
-
-
-    const Networks = bitcore.Networks
-    const PrivateKey = bitcore.PrivateKey
-    const PublicKey = bitcore.PublicKey
-    const Address = bitcore.Address
 
 
     let libNetworkName
 
     if (netName == netNames.mainnet) {
       libNetworkName = 'litecoin-mainnet'
-      Networks.add({
+      bitcore.Networks.add({
         // from https://github.com/litecoin-project/litecore-lib/blob/segwit/lib/networks.js
         name: libNetworkName,
         pubkeyhash: 0x30,
@@ -115,7 +97,7 @@ const libAdapter = {
     }
     if (netName == netNames.testnet) {
       libNetworkName = 'litecoin-testnet'
-      Networks.add({
+      bitcore.Networks.add({
         // from https://github.com/litecoin-project/litecore-lib/blob/segwit/lib/networks.js
         // from https://github.com/litecoin-project/litecoin/blob/master/src/chainparams.cpp
         name: libNetworkName,
@@ -126,18 +108,18 @@ const libAdapter = {
         xprivkey: 0x04358394,
         networkMagic: 0xfdd2c8f1,
         port: 19335
-      });
+      })
     }
 
     if (!libNetworkName) {
       throw new Error(`Unknown network: ${netName}`)
     }
 
-    const libNetwork = Networks.get(libNetworkName)
+    const libNetwork = bitcore.Networks.get(libNetworkName)
 
-    const privateKey = new PrivateKey.fromWIF(child.toWIF(), libNetworkName)
-    const publicKey = PublicKey(privateKey, libNetwork)
-    const address = new Address(publicKey, libNetwork)
+    const privateKey = new bitcore.PrivateKey.fromWIF(child.toWIF())
+    const publicKey = bitcore.PublicKey(privateKey, libNetwork)
+    const address = new bitcore.Address(publicKey, libNetwork)
 
     const account = {
       privateKey,
@@ -147,4 +129,10 @@ const libAdapter = {
 
     return account
   },
+}
+
+
+
+const connector = {
+  // "https://testnet.litecore.io"
 }
