@@ -47,7 +47,10 @@ class EthSwap extends SwapInterface {
     this.app = app
 
     this.decoder  = new InputDataDecoder(this.abi)
-    this.contract = new this.app.env.web3.eth.Contract(this.abi, this.address)
+
+    const web3 = this.app.env.getWeb3()
+    console.log('init swaps contract')
+    this.contract = new web3.eth.Contract(this.abi, this.address)
   }
 
   /**
@@ -97,7 +100,9 @@ class EthSwap extends SwapInterface {
 
     return new Promise(async (resolve, reject) => {
       const params = {
-        from: this.app.services.auth.accounts.eth.address,
+        from: (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+          ? this.app.env.metamask.getAddress()
+          : this.app.services.auth.accounts.eth.address,
         gas: this.gasLimit,
         gasPrice: this.gasPrice,
         ..._params,
@@ -137,8 +142,9 @@ class EthSwap extends SwapInterface {
    */
   async createSwap(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount } = data
+    const web3 = this.app.env.getWeb3()
 
-    const amountWei = this.app.env.web3.utils.toWei(amount.toString())
+    const amountWei = web3.utils.toWei(amount.toString())
 
     const hash = `0x${secretHash.replace(/^0x/, '')}`
     const args = [ hash, participantAddress ]
@@ -159,9 +165,11 @@ class EthSwap extends SwapInterface {
   async createSwapTarget(data, handleTransactionHash) {
     const { secretHash, participantAddress, amount, targetWallet } = data
 
+    const web3 = this.app.env.getWeb3()
+
     await this.updateGasPrice()
 
-    const amountWei = this.app.env.web3.utils.toWei(amount.toString())
+    const amountWei = web3.utils.toWei(amount.toString())
 
     const hash = `0x${secretHash.replace(/^0x/, '')}`
 
@@ -180,7 +188,9 @@ class EthSwap extends SwapInterface {
     const { ownerAddress } = data
 
     return this.contract.methods.getBalance(ownerAddress).call({
-      from: this.app.services.auth.accounts.eth.address,
+      from: (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+        ? this.app.env.metamask.getAddress()
+        : this.app.services.auth.accounts.eth.address,
     })
   }
 
@@ -388,7 +398,9 @@ class EthSwap extends SwapInterface {
     return new Promise(async (resolve, reject) => {
       try {
         const targetWallet = await this.contract.methods.getTargetWallet(ownerAddress).call({
-          from: this.app.services.auth.accounts.eth.address,
+          from: (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+            ? this.app.env.metamask.getAddress()
+            : this.app.services.auth.accounts.eth.address,
         })
 
         resolve(targetWallet)
@@ -410,7 +422,9 @@ class EthSwap extends SwapInterface {
   async calcWithdrawGas(data) {
     return this.calcWithdrawOtherGas({
       ownerAddress: data.ownerAddress,
-      participantAddress: this.app.services.auth.accounts.eth.address,
+      participantAddress: (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+        ? this.app.env.metamask.getAddress()
+        : this.app.services.auth.accounts.eth.address,
       secret: data.secret,
     })
   }
@@ -426,7 +440,9 @@ class EthSwap extends SwapInterface {
   async withdraw(data, handleTransactionHash) {
     return this.withdrawOther({
       ownerAddress: data.ownerAddress,
-      participantAddress: this.app.services.auth.accounts.eth.address,
+      participantAddress: (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+        ? this.app.env.metamask.getAddress()
+        : this.app.services.auth.accounts.eth.address,
       secret: data.secret,
     }, handleTransactionHash)
   }
@@ -440,7 +456,9 @@ class EthSwap extends SwapInterface {
    */
   async calcWithdrawNoMoneyGas(data) {
     return this.calcWithdrawOtherGas({
-      ownerAddress: this.app.services.auth.accounts.eth.address,
+      ownerAddress: (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+        ? this.app.env.metamask.getAddress()
+        : this.app.services.auth.accounts.eth.address,
       participantAddress: data.participantAddress,
       secret: data.secret,
     })
@@ -456,7 +474,9 @@ class EthSwap extends SwapInterface {
    */
   async withdrawNoMoney(data, handleTransactionHash) {
     return this.withdrawOther({
-      ownerAddress: this.app.services.auth.accounts.eth.address,
+      ownerAddress: (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+        ? this.app.env.metamask.getAddress()
+        : this.app.services.auth.accounts.eth.address,
       participantAddress: data.participantAddress,
       secret: data.secret,
     }, handleTransactionHash)
@@ -471,7 +491,9 @@ class EthSwap extends SwapInterface {
       const _secret = `0x${secret.replace(/^0x/, '')}`
 
       const params = {
-        from: this.app.services.auth.accounts.eth.address,
+        from: (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+          ? this.app.env.metamask.getAddress()
+          : this.app.services.auth.accounts.eth.address,
         gas: this.gasLimit,
         gasPrice: this.gasPrice,
       }
@@ -529,7 +551,9 @@ class EthSwap extends SwapInterface {
     const { participantAddress } = data
 
     return this.contract.methods.getSecret(participantAddress).call({
-      from: this.app.services.auth.accounts.eth.address,
+      from: (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
+        ? this.app.env.metamask.getAddress()
+        : this.app.services.auth.accounts.eth.address,
     })
       .then((secret) => {
         debug('secret ethswap.js', secret)
@@ -556,11 +580,11 @@ class EthSwap extends SwapInterface {
    * @returns {Promise<any>}
    */
   getSecretFromTxhash = (transactionHash) =>
-    this.app.env.web3.eth.getTransaction(transactionHash)
+    this.app.env.getWeb3().eth.getTransaction(transactionHash)
       .then(txResult => {
         try {
           const bytes32 = this.decoder.decodeData(txResult.input)
-          return this.app.env.web3.utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
+          return this.app.env.getWeb3().utils.bytesToHex(bytes32.inputs[0]).split('0x')[1]
         } catch (err) {
           debug('Trying to fetch secret from tx: ' + err.message)
           return

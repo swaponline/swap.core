@@ -255,7 +255,9 @@ class BTC2ETH extends Flow {
 
         const isContractBalanceOk = await util.helpers.repeatAsyncUntilResult(async () => {
           const balance = await flow.ethSwap.getBalance({
-            ownerAddress: participant.eth.address,
+            ownerAddress: (flow.swap.metamaskAddress)
+              ? flow.swap.metamaskAddress
+              : participant.eth.address,
           })
 
           debug('swap.core:flow')('Checking contract balance:', balance)
@@ -285,12 +287,16 @@ class BTC2ETH extends Flow {
         const { secretHash, secret } = flow.state
 
         const data = {
-          ownerAddress:   participant.eth.address,
+          ownerAddress: (flow.swap.metamaskAddress)
+            ? flow.swap.metamaskAddress
+            : participant.eth.address,
           secret,
         }
 
         const balanceCheckError = await flow.ethSwap.checkBalance({
-          ownerAddress: participant.eth.address,
+          ownerAddress: (flow.swap.metamaskAddress)
+            ? flow.swap.metamaskAddress
+            : participant.eth.address,
           participantAddress: this.app.services.auth.accounts.eth.address,
           expectedValue: buyAmount,
           expectedHash: secretHash,
