@@ -39,7 +39,13 @@ const NEXT = {
       libAdapter.accountFromMnemonic(mnemonic, netNames.mainnet),
     getBalance: async (addr) =>
       await connector.fetchBalance(networkType.mainnet, addr),
-
+    createTx: async ({ account, amount, to }) =>
+      await libAdapter.createTx({
+        netName: netNames.mainnet,
+        account,
+        amount,
+        to
+      }),
     get _connector() { // todo: remove
       return connector
     },
@@ -108,6 +114,24 @@ const libAdapter = {
 
     return account
   },
+
+  async createTx({ netName, account, amount, to }) {
+    const { privateKey, publicKey, address } = account
+
+    const network = NEXT[netName]
+    const addressStr = address.toString()
+    const unspent = await connector.fetchUnspents(network.type, addressStr)
+
+    const tx = new bitcore.Transaction()
+      .from(unspent)
+      .to(to, amount)  // [sat]
+      .change(address)  // Where the rest of the funds will go
+      .sign(privateKey) // Signs all the inputs it can
+
+    const rawTx = tx.serialize() // raw tx to broadcast
+    return rawTx
+  }
+
 }
 
 
@@ -141,8 +165,13 @@ const connector = {
   },
 
   async fetchUnspents(netType, addr) {
-    const apiUrl = connector.getApiUrl(netType);
-    const response = await fetch(`${apiUrl}/addr/${addr}/utxo`);
+    // todo: localhost -> server
+    const apiUrl = 'http://localhost:32251'
+
+    //const apiUrl = connector.getApiUrl(netType);
+
+    const response = await fetch(`${apiUrl}/${netType}/addr/${addr}/utxo`);
+    console.log(response)
 
     if (response.status !== 200) {
       throw new Error(`Can't fetch unspents - ${response.status}, ${response.statusText}`)

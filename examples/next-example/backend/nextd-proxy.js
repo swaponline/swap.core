@@ -86,15 +86,15 @@ const sendRequest = ({ network, rpcMethod, rpcMethodParams = [], onSuccess, onEr
 /*
 Planning proxy interface:
 
-/next/:network
-/next/:network/addr/:address'
-/next/:network/tx/send
-/next/:network/tx/:txId
-/next/:network/rawtx/:txId
-/next/:network/txs/:address
+/:network
+/:network/addr/:address'
+/:network/tx/send
+/:network/tx/:txId
+/:network/rawtx/:txId
+/:network/txs/:address
 */
 
-app.get('/next/:network', async (req, res) => {
+app.get('/:network', async (req, res) => {
   const { network } = req.params
 
   sendRequest({
@@ -115,7 +115,7 @@ app.get('/next/:network', async (req, res) => {
 })
 
 
-app.get('/next/:network/addr/:address', async (req, res) => {
+app.get('/:network/addr/:address', async (req, res) => {
   const { network, address } = req.params
 
   sendRequest({
@@ -136,7 +136,7 @@ app.get('/next/:network/addr/:address', async (req, res) => {
 
 // todo: unexisting address case
 
-app.get('/next/:network/addr/:address/utxos', async (req, res) => {
+app.get('/:network/addr/:address/utxo', async (req, res) => {
   const { network, address } = req.params
 
   sendRequest({
