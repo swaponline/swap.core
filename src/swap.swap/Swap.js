@@ -22,7 +22,7 @@ class Swap {
     this.app                    = null
     this.createUnixTimeStamp    = Math.floor(new Date().getTime() / 1000)
 
-    this.metamaskAddress        = null
+    this.participantMetamaskAddress = null
 
     this._attachSwapApp(app)
 
@@ -71,12 +71,8 @@ class Swap {
     this.room.on('set metamask address', (data) => {
       debug('swap.core:swap')('Participant use metamask')
       this.update({
-        metamaskAddress: data.address,
+        participantMetamaskAddress: data.address,
       })
-    })
-
-    this.room.on('user online', () => {
-      this.processMetamask()
     })
   }
 
@@ -179,12 +175,10 @@ class Swap {
   }
 
   processMetamask() {
-    console.log('process metamask address')
     if (this.app.env.metamask
       && this.app.env.metamask.isEnabled()
       && this.app.env.metamask.isConnected()
     ) {
-      console.log('send message')
       this.room.sendMessage({
         event: 'set metamask address',
         data: {

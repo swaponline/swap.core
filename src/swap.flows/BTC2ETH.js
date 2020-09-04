@@ -98,6 +98,7 @@ class BTC2ETH extends Flow {
       // 1. Signs
 
       async () => {
+        flow.swap.processMetamask()
         flow.swap.room.once('swap sign', () => {
           const { step } = flow.state
 
@@ -255,9 +256,7 @@ class BTC2ETH extends Flow {
 
         const isContractBalanceOk = await util.helpers.repeatAsyncUntilResult(async () => {
           const balance = await flow.ethSwap.getBalance({
-            ownerAddress: (flow.swap.metamaskAddress)
-              ? flow.swap.metamaskAddress
-              : participant.eth.address,
+            ownerAddress: this.app.getParticipantEthAddress(flow.swap),
           })
 
           debug('swap.core:flow')('Checking contract balance:', balance)
@@ -283,27 +282,24 @@ class BTC2ETH extends Flow {
       // 6. Withdraw
 
       async () => {
+        console.log('withdraw')
         const { buyAmount, participant } = flow.swap
         const { secretHash, secret } = flow.state
 
         const data = {
-          ownerAddress: (flow.swap.metamaskAddress)
-            ? flow.swap.metamaskAddress
-            : participant.eth.address,
+          ownerAddress: this.app.getParticipantEthAddress(flow.swap),
           secret,
         }
 
+        console.log(data)
         const balanceCheckError = await flow.ethSwap.checkBalance({
-          ownerAddress: (flow.swap.metamaskAddress)
-            ? flow.swap.metamaskAddress
-            : participant.eth.address,
-          participantAddress: (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
-            ? this.app.env.metamask.getAddress()
-            : this.app.services.auth.accounts.eth.address,
+          ownerAddress: this.app.getParticipantEthAddress(flow.swap),
+          participantAddress: this.app.getMyEthAddress(),
           expectedValue: buyAmount,
           expectedHash: secretHash,
         })
 
+        console.log('balanceCheckError', balanceCheckError)
         if (balanceCheckError) {
           console.error('Waiting until deposit: ETH balance check error:', balanceCheckError)
           flow.swap.events.dispatch('eth balance check error', balanceCheckError)
@@ -312,12 +308,12 @@ class BTC2ETH extends Flow {
         }
 
         if (flow.ethSwap.hasTargetWallet()) {
-          const targetWallet = await flow.ethSwap.getTargetWallet( participant.eth.address )
+          const targetWallet = await flow.ethSwap.getTargetWallet(
+            this.app.getParticipantEthAddress(flow.swap)
+          )
           const needTargetWallet = (flow.swap.destinationBuyAddress)
             ? flow.swap.destinationBuyAddress
-            : (this.app.env.metamask && this.app.env.metamask.isEnabled() && this.app.env.metamask.isConnected())
-              ? this.app.env.metamask.getAddress()
-              : this.app.services.auth.accounts.eth.address
+            : this.app.getMyEthAddress()
 
           if (targetWallet.toLowerCase() !== needTargetWallet.toLowerCase()) {
             console.error(
@@ -694,7 +690,7 @@ class BTC2ETH extends Flow {
     const { participant } = this.swap
 
     const data = {
-      ownerAddress: participant.eth.address,
+      ownerAddress: this.app.getParticipantEthAddress(this.swap),
       secret: _secret,
     }
 

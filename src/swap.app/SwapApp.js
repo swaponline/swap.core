@@ -29,11 +29,8 @@ class SwapApp {
     this._addSwaps(options.swaps || [])
     this._addFlows(options.flows || [])
 
-    if (!this.env.getWeb3) {
-      this.env.getWeb3 = () => {
-        return this.env.web3
-      }
-    }
+    console.log('getWeb3', this.env.getWeb3)
+
   }
 
   static init(options) {
@@ -64,8 +61,14 @@ class SwapApp {
 
     env.storage = new StorageFactory(env.storage)
 
+    console.log('Swap.core - addenv', env)
     // SwapApp.env = env
-
+    if (!env.getWeb3) {
+      console.log('set default getWeb3')
+      env.getWeb3 = () => {
+        return this.env.web3
+      }
+    }
     this.env = env
   }
 
@@ -147,6 +150,25 @@ class SwapApp {
 
   isSwapApp() {
     return true
+  }
+
+  getMyEthAddress() {
+    return (
+      this.env.metamask 
+      && this.env.metamask.isEnabled()
+      && this.env.metamask.isConnected()
+    ) ? this.env.metamask.getAddress()
+      : this.services.auth.accounts.eth.address
+  }
+
+  getParticipantEthAddress(swap) {
+    const {
+      participant,
+      participantMetamaskAddress,
+    } = swap
+    return (participantMetamaskAddress)
+      ? participantMetamaskAddress
+      : participant.eth.address
   }
 
   static is(app) {
