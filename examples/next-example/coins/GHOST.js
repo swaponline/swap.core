@@ -76,7 +76,7 @@ const GHOST = {
       await connector.publishRawTx(networkType.testnet, rawTx),
     getTxUrl: (txId) =>
       connector.getTxUrl(networkType.testnet, txId),
-    get _connector() {
+    get _connector() { // todo: remove
       return connector
     },
   }

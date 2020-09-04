@@ -23,23 +23,29 @@ const nextCoinNode = {
 
 const networks = Object.keys(nextCoinNode)
 
-const allowedRpcMethods = [
+/*const allowedRpcMethods = [
   'getblockchaininfo',
-  'getreceivedbyaddress'
-]
+  'getaddressbalance'
+]*/
 
 
 const sendRequest = ({ network, rpcMethod, rpcMethodParams = [], onSuccess, onError, appRes }) => {
   
   if (!networks.includes(network)) {
-    appRes.status(400).json({ error: `bad request: wrong network ${network}, expected ${networks}` })
+    const error = `bad request: unknown network "${network}", expected ${networks}`
+    throw new Error(error)
+    //appRes.status(400).json({ error })
     return
   }
 
+  /*
   if (!allowedRpcMethods.includes(rpcMethod)) {
-    appRes.status(400).json({ error: `bad request: wrong rpcMethod ${rpcMethod}, expected ${allowedRpcMethods}` })
+    const error = `bad request: unknown rpcMethod "${rpcMethod}", expected ${allowedRpcMethods}`
+    //appRes.status(400).json({ error })
+    throw new Error(error)
     return
   }
+  */
 
   const user = { name: 'test', password: 'test' }
   const nodePort = nextCoinNode[network].port
@@ -89,7 +95,6 @@ Planning proxy interface:
 */
 
 app.get('/next/:network', async (req, res) => {
-
   const { network } = req.params
 
   sendRequest({
@@ -111,14 +116,33 @@ app.get('/next/:network', async (req, res) => {
 
 
 app.get('/next/:network/addr/:address', async (req, res) => {
-
   const { network, address } = req.params
 
   sendRequest({
     network,
-    rpcMethod: 'getreceivedbyaddress',
-    //rpcMethodParams: [address],
-    rpcMethodParams: [{"addresses": ["XwnLY9Tf7Zsef8gMGL2fhWA9ZmMjt4KPwg"]}],
+    rpcMethod: 'getaddressbalance',
+    rpcMethodParams: [{'addresses': [address]}],
+    onSuccess: (data) => {
+      /*res.status(200).json({
+        rawtx: answer.hex,
+      })*/
+      res.status(200).json(data)
+    },
+    onError: (e) => {
+      res.status(503).json({ error: e.message })
+    },
+  })
+})
+
+// todo: unexisting address case
+
+app.get('/next/:network/addr/:address/utxos', async (req, res) => {
+  const { network, address } = req.params
+
+  sendRequest({
+    network,
+    rpcMethod: 'getaddressutxos',
+    rpcMethodParams: [{'addresses': [address]}],
     onSuccess: (data) => {
       /*res.status(200).json({
         rawtx: answer.hex,

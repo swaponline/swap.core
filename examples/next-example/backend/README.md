@@ -28,3 +28,10 @@ or build it from sources (by request)
 See available request methods in `node-rpc-methods.txt`
 
 See also `node-options.txt`
+
+
+## (Prod) NEXT.coin node daemon start/stop
+
+`nextd -daemon -rpcuser=test -rpcpassword=test`
+
+`start-stop-daemon --name nextd --stop`

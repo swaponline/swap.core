@@ -38,7 +38,11 @@ const NEXT = {
     accountFromMnemonic: (mnemonic) =>
       libAdapter.accountFromMnemonic(mnemonic, netNames.mainnet),
     getBalance: async (addr) =>
-      await connector.fetchBalance(networkType.mainnet, addr)
+      await connector.fetchBalance(networkType.mainnet, addr),
+
+    get _connector() { // todo: remove
+      return connector
+    },
   },
 
   // testnet is down
@@ -113,8 +117,8 @@ const connector = {
   // next.exhnage API documentation:
   // https://explore.next.exchange/#/api
 
-  getApiUrl(netwType) {
-    if (netwType === networkType.mainnet) {
+  getApiUrl(netType) {
+    if (netType === networkType.mainnet) {
       return 'https://explore.next.exchange/api'
     }
 
@@ -136,11 +140,14 @@ const connector = {
     }
   },
 
-  async fetchUnspents(addr) {
-    //const apiUrl = getApiUrl(netType);
-    // todo: mainnet support
-    const apiUrl = connector.getApiUrl(networkType.testnet);
+  async fetchUnspents(netType, addr) {
+    const apiUrl = connector.getApiUrl(netType);
     const response = await fetch(`${apiUrl}/addr/${addr}/utxo`);
+
+    if (response.status !== 200) {
+      throw new Error(`Can't fetch unspents - ${response.status}, ${response.statusText}`)
+    }
+
     const json = await response.json();
     return json;
     //
