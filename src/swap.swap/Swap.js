@@ -159,7 +159,7 @@ class Swap {
       'destinationBuyAddress',
       'destinationSellAddress',
       'createUnixTimeStamp',
-      'metamaskAddress',
+      'participantMetamaskAddress',
     )
   }
 

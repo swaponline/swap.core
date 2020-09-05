@@ -257,7 +257,6 @@ export default (tokenName) => {
           })
 
           const isContractBalanceOk = await util.helpers.repeatAsyncUntilResult(async () => {
-            console.log('check isContractBalanceOk')
             const balance = await flow.ethTokenSwap.getBalance({
               ownerAddress: this.app.getParticipantEthAddress(flow.swap),
             })
