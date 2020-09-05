@@ -231,7 +231,6 @@ export default (tokenName) => {
         // 5. Wait participant creates ETH Contract
 
         async () => {
-          console.log('In step 5')
           flow.swap.room.sendMessage({
             event: 'request eth contract',
           })

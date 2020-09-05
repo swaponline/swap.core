@@ -28,9 +28,6 @@ class SwapApp {
 
     this._addSwaps(options.swaps || [])
     this._addFlows(options.flows || [])
-
-    console.log('getWeb3', this.env.getWeb3)
-
   }
 
   static init(options) {
@@ -61,10 +58,7 @@ class SwapApp {
 
     env.storage = new StorageFactory(env.storage)
 
-    console.log('Swap.core - addenv', env)
-    // SwapApp.env = env
     if (!env.getWeb3) {
-      console.log('set default getWeb3')
       env.getWeb3 = () => {
         return this.env.web3
       }
