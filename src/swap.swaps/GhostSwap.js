@@ -162,7 +162,6 @@ class GhostSwap extends SwapInterface {
     })
     
     tx.inputs[inputIndex].setWitnesses(payment.witness);
-    console.log(tx.inputs[inputIndex]);
   }
 
   /**
