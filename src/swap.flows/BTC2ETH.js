@@ -98,6 +98,7 @@ class BTC2ETH extends Flow {
       // 1. Signs
 
       async () => {
+        flow.swap.processMetamask()
         flow.swap.room.once('swap sign', () => {
           const { step } = flow.state
 
@@ -255,7 +256,7 @@ class BTC2ETH extends Flow {
 
         const isContractBalanceOk = await util.helpers.repeatAsyncUntilResult(async () => {
           const balance = await flow.ethSwap.getBalance({
-            ownerAddress: participant.eth.address,
+            ownerAddress: this.app.getParticipantEthAddress(flow.swap),
           })
 
           debug('swap.core:flow')('Checking contract balance:', balance)
@@ -285,13 +286,13 @@ class BTC2ETH extends Flow {
         const { secretHash, secret } = flow.state
 
         const data = {
-          ownerAddress:   participant.eth.address,
+          ownerAddress: this.app.getParticipantEthAddress(flow.swap),
           secret,
         }
 
         const balanceCheckError = await flow.ethSwap.checkBalance({
-          ownerAddress: participant.eth.address,
-          participantAddress: this.app.services.auth.accounts.eth.address,
+          ownerAddress: this.app.getParticipantEthAddress(flow.swap),
+          participantAddress: this.app.getMyEthAddress(),
           expectedValue: buyAmount,
           expectedHash: secretHash,
         })
@@ -304,10 +305,12 @@ class BTC2ETH extends Flow {
         }
 
         if (flow.ethSwap.hasTargetWallet()) {
-          const targetWallet = await flow.ethSwap.getTargetWallet( participant.eth.address )
+          const targetWallet = await flow.ethSwap.getTargetWallet(
+            this.app.getParticipantEthAddress(flow.swap)
+          )
           const needTargetWallet = (flow.swap.destinationBuyAddress)
             ? flow.swap.destinationBuyAddress
-            : this.app.services.auth.accounts.eth.address
+            : this.app.getMyEthAddress()
 
           if (targetWallet.toLowerCase() !== needTargetWallet.toLowerCase()) {
             console.error(
@@ -684,7 +687,7 @@ class BTC2ETH extends Flow {
     const { participant } = this.swap
 
     const data = {
-      ownerAddress: participant.eth.address,
+      ownerAddress: this.app.getParticipantEthAddress(this.swap),
       secret: _secret,
     }
 

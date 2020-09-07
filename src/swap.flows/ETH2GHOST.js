@@ -126,6 +126,7 @@ class ETH2GHOST extends Flow {
       // 1. Sign swap to start
 
       () => {
+        flow.swap.processMetamask()
         // this.sign()
       },
 
@@ -204,7 +205,7 @@ class ETH2GHOST extends Flow {
         }
 
         const swapData = {
-          participantAddress: participant.eth.address,
+          participantAddress: this.app.getParticipantEthAddress(flow.swap),
           secretHash: secretHash,
           amount: sellAmount,
           targetWallet: flow.swap.destinationSellAddress
@@ -317,7 +318,7 @@ class ETH2GHOST extends Flow {
         const checkSecretExist = async () => {
           try {
             let secretFromContract = await flow.ethSwap.getSecret({
-              participantAddress: participant.eth.address,
+              participantAddress: this.app.getParticipantEthAddress(flow.swap),
             })
 
             if (secretFromContract) {
@@ -433,7 +434,7 @@ class ETH2GHOST extends Flow {
     this.swap.room.once('do withdraw', async ({secret}) => {
       try {
         const data = {
-          participantAddress: flow.swap.participant.eth.address,
+          participantAddress: this.app.getParticipantEthAddress(flow.swap),
           secret,
         }
 
@@ -459,8 +460,8 @@ class ETH2GHOST extends Flow {
     const { participant } = this.swap
 
     const swapData = {
-      ownerAddress: this.app.services.auth.accounts.eth.address,
-      participantAddress: participant.eth.address
+      ownerAddress: this.app.getMyEthAddress(),
+      participantAddress: this.app.getParticipantEthAddress(this.swap)
     }
 
     return this.ethSwap.checkSwapExists(swapData)
@@ -589,7 +590,7 @@ class ETH2GHOST extends Flow {
     }
 
     return this.ethSwap.refund({
-      participantAddress: participant.eth.address,
+      participantAddress: this.app.getParticipantEthAddress(this.swap),
     })
       .then((hash) => {
         if (!hash) {
@@ -674,7 +675,7 @@ class ETH2GHOST extends Flow {
         const { scriptAddress } = this.ghostSwap.createScript(btcScriptValues)
 
         const destinationAddress = this.swap.destinationBuyAddress
-        const destAddress = (destinationAddress) ? destinationAddress : this.app.services.auth.accounts.btc.getAddress()
+        const destAddress = (destinationAddress) ? destinationAddress : this.app.getMyEthAddress()
 
         const hasWithdraw = await this.ghostSwap.checkWithdraw(scriptAddress)
         if (hasWithdraw

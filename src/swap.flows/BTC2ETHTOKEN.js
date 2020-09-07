@@ -99,6 +99,7 @@ export default (tokenName) => {
         // 1. Signs
 
         async () => {
+          flow.swap.processMetamask()
           flow.swap.room.once('swap sign', () => {
             const { step } = flow.state
 
@@ -256,7 +257,7 @@ export default (tokenName) => {
 
           const isContractBalanceOk = await util.helpers.repeatAsyncUntilResult(async () => {
             const balance = await flow.ethTokenSwap.getBalance({
-              ownerAddress: participant.eth.address,
+              ownerAddress: this.app.getParticipantEthAddress(flow.swap),
             })
 
             debug('swap.core:flow')('Checking contract balance:', balance)
@@ -286,13 +287,13 @@ export default (tokenName) => {
           const { secretHash, secret } = flow.state
 
           const data = {
-            ownerAddress: participant.eth.address,
+            ownerAddress: this.app.getParticipantEthAddress(flow.swap),
             secret,
           }
 
           const balanceCheckError = await flow.ethTokenSwap.checkBalance({
-            ownerAddress: participant.eth.address,
-            participantAddress: this.app.services.auth.accounts.eth.address,
+            ownerAddress: this.app.getParticipantEthAddress(flow.swap),
+            participantAddress: this.app.getMyEthAddress(),
             expectedValue: buyAmount,
             expectedHash: secretHash,
           })
@@ -305,10 +306,12 @@ export default (tokenName) => {
           }
 
           if (flow.ethTokenSwap.hasTargetWallet()) {
-            const targetWallet = await flow.ethTokenSwap.getTargetWallet( participant.eth.address )
+            const targetWallet = await flow.ethTokenSwap.getTargetWallet(
+              this.app.getParticipantEthAddress(flow.swap)
+            )
             const needTargetWallet = (flow.swap.destinationBuyAddress)
               ? flow.swap.destinationBuyAddress
-              : this.app.services.auth.accounts.eth.address
+              : this.app.getMyEthAddress()
 
             if (targetWallet.toLowerCase() != needTargetWallet.toLowerCase()) {
               console.error(
@@ -327,8 +330,8 @@ export default (tokenName) => {
           }
 
           const tokenAddressIsValid = await flow.ethTokenSwap.checkTokenIsValid({
-            ownerAddress: participant.eth.address,
-            participantAddress: this.app.services.auth.accounts.eth.address,
+            ownerAddress: this.app.getParticipantEthAddress(flow.swap),
+            participantAddress: this.app.getMyEthAddress(),
           })
 
           if (!tokenAddressIsValid) {
@@ -693,7 +696,7 @@ export default (tokenName) => {
       const { participant } = this.swap
 
       const data = {
-        ownerAddress: participant.eth.address,
+        ownerAddress: this.app.getParticipantEthAddress(this.swap),
         secret: _secret,
       }
 

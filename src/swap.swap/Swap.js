@@ -22,6 +22,8 @@ class Swap {
     this.app                    = null
     this.createUnixTimeStamp    = Math.floor(new Date().getTime() / 1000)
 
+    this.participantMetamaskAddress = null
+
     this._attachSwapApp(app)
 
     let data = this.app.env.storage.getItem(`swap.${id}`)
@@ -65,6 +67,13 @@ class Swap {
         destinationBuyAddress: data.address
       })
     });
+
+    this.room.on('set metamask address', (data) => {
+      debug('swap.core:swap')('Participant use metamask')
+      this.update({
+        participantMetamaskAddress: data.address,
+      })
+    })
   }
 
   static read(app, { id } = {}) {
@@ -150,6 +159,7 @@ class Swap {
       'destinationBuyAddress',
       'destinationSellAddress',
       'createUnixTimeStamp',
+      'participantMetamaskAddress',
     )
   }
 
@@ -162,6 +172,20 @@ class Swap {
   checkTimeout(timeoutUTS) {
     // return true if timeout passed
     return !((this.createUnixTimeStamp + timeoutUTS) > Math.floor(new Date().getTime() / 1000))
+  }
+
+  processMetamask() {
+    if (this.app.env.metamask
+      && this.app.env.metamask.isEnabled()
+      && this.app.env.metamask.isConnected()
+    ) {
+      this.room.sendMessage({
+        event: 'set metamask address',
+        data: {
+          address: this.app.env.metamask.getAddress(),
+        },
+      })
+    }
   }
 
   setDestinationBuyAddress(address) {
