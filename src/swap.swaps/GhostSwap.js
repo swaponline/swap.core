@@ -140,6 +140,8 @@ class GhostSwap extends SwapInterface {
     // At the moment we are using Bitcore lib from Ghost to handle signing logic. TODO: port Bitcoinjs-lib to be compatible with Ghost and
     // to avoid lib's duplicate
     const network = this.app.isMainNet() ? bitcore.Networks.mainnet : bitcore.Networks.testnet; 
+    // For refund we need to change the sequence number
+    tx.inputs[inputIndex].sequenceNumber = 4294967294;
     const privateKey = new PrivateKey(this.app.services.auth.accounts.ghost.getPrivateKey(), network);
     const signature = bitcore.Transaction.Sighash.sign(tx, privateKey, hashType, inputIndex, script);
     const sigBuffer = BufferUtil.concat([
@@ -158,8 +160,9 @@ class GhostSwap extends SwapInterface {
         }
       })
     })
-
+    
     tx.inputs[inputIndex].setWitnesses(payment.witness);
+    console.log(tx.inputs[inputIndex]);
   }
 
   /**
@@ -369,7 +372,7 @@ class GhostSwap extends SwapInterface {
     if (isRefund) {
       tx.lockUntilDate(scriptValues.lockTime);
     }
-  
+ 
     tx.from(unspents);
     tx.to(destAddress, totalUnspent - feeValue);
     // Sign input witness's
