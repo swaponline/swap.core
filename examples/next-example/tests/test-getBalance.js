@@ -7,20 +7,6 @@ const tests = [
   {
     check: true,
     coin: 'BTC',
-    network: 'testnet',
-    address: '2N3pDTovNkg5QqgkMttjwekPNBZo3m7XfGZ',
-    isCoins: false,
-  },
-  {
-    check: true,
-    coin: 'BTC',
-    network: 'testnet',
-    address: 'mkHS9ne12qx9pS9VojpwU5xtRd4T7X7ZUt',
-    isCoins: true,
-  },
-  {
-    check: true,
-    coin: 'BTC',
     network: 'mainnet',
     address: '1EPTHasxZ1Hx6tBb8qfLZ3hAEr45y9viU9',
     isCoins: false,
@@ -32,17 +18,31 @@ const tests = [
     address: '3JurbUwpsAPqvUkwLM5CtwnEWrNnUKJNoD',
     isCoins: true,
   },
+  {
+    check: true,
+    coin: 'BTC',
+    network: 'testnet',
+    address: '2N3pDTovNkg5QqgkMttjwekPNBZo3m7XfGZ',
+    isCoins: false,
+  },
+  {
+    check: true,
+    coin: 'BTC',
+    network: 'testnet',
+    address: 'mkHS9ne12qx9pS9VojpwU5xtRd4T7X7ZUt',
+    isCoins: true,
+  },
 
   // ghost
   {
-    check: true,
+    check: false,
     coin: 'GHOST',
     network: 'testnet',
     address: 'XPtT4tJWyepGAGRF9DR4AhRkJWB3DEBXT2',
     isCoins: false,
   },
   {
-    check: true,
+    check: false,
     coin: 'GHOST',
     network: 'testnet',
     address: 'Xa6SpohTZZAKrbqoZjSFkPY34hbCZJy9RG',
@@ -83,6 +83,9 @@ const tests = [
 (async () => {
   for (let i = 0; i < tests.length; i++) {
     const test = tests[i];
+    if (!test.check) {
+      continue
+    }
     const { coin, network, address, isCoins } = test;
     console.log(`Test: getBalance, ${coin} ${network}, balance ${isCoins ? '> 0' : '= 0'}`)
     balance = await coins[coin][network].getBalance(address)

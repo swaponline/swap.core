@@ -21,19 +21,20 @@ const NEXT = {
 
   [netNames.mainnet]: {
     type: networkType.mainnet,
-    bip32settings: {
+    settings: {
+      port: 7077,
+      magic: 0xcbe4d0a1,
       messagePrefix: 'Nextcoin Signed Message:\n',
-      bech32: 'bc', // not needed?
-      bip32: {
-        public: 0x0488B21E,
-        private: 0x0488ADE4,
+      base58prefix: {
+        pubKeyHash: 75,
+        scriptHash: 5,
+        privateKeyWIF: 128,
+        publicKeyBIP32: 0x0488B21E,
+        privateKeyBIP32: 0x0488ADE4,
       },
-      pubKeyHash: 75,
-      scriptHash: 5,
-      wif: 128,
-    },
-    bip44settings: {
-      coinIndex: 707,
+      bip44: {
+        coinIndex: 707,
+      },
     },
     accountFromMnemonic: (mnemonic) =>
       libAdapter.accountFromMnemonic(mnemonic, netNames.mainnet),
@@ -52,26 +53,7 @@ const NEXT = {
   },
 
   // testnet is down
-  /* 
-  [networks.testnet]: {  
-    type: networkType.testnet,
-    bip32settings: {
-      messagePrefix: '\x18Bitcoin Signed Message:\n',
-      bech32: ,
-      bip32: {
-        public: 0x043587CF,
-        private: 0x04358394,
-      },
-      pubKeyHash: ,
-      scriptHash: ,
-      wif: ,
-    },
-    bip44settings: {
-      coinIndex: 1,
-    },
-    getBalance: async (addr) => await fetchBalance(networkType.testnet, addr)
-  }
-  */
+
 }
 
 module.exports = NEXT
@@ -82,9 +64,19 @@ const libAdapter = {
 
   accountFromMnemonic(mnemonic, netName) {
     const network = NEXT[netName]
+    const settings = network.settings
 
     const seed = bip39.mnemonicToSeedSync(mnemonic)
-    const root = bip32.fromSeed(seed, network.bip32settings)
+    const root = bip32.fromSeed(seed, {
+      wif: settings.base58prefix.privateKeyWIF,
+      bip32: {
+        public: settings.base58prefix.publicKeyBIP32,
+        private: settings.base58prefix.privateKeyBIP32,
+      },
+      messagePrefix: settings.messagePrefix,
+      pubKeyHash: settings.pubKeyHash,
+      scriptHash: settings.scriptHash,
+    })
     const derivePath = bip44.createDerivePath(network)
     const child = root.derivePath(derivePath)
 
@@ -92,13 +84,13 @@ const libAdapter = {
     const libNetworkName = 'next-mainnet'
     bitcore.Networks.add({
       name: libNetworkName,
-      pubkeyhash: 75,
-      privatekey: 128,
-      scripthash: 5,
-      xpubkey: 0x0488B21E,
-      xprivkey: 0x0488ADE4,
-      networkMagic: 0xcbe4d0a1,
-      port: 7077
+      pubkeyhash: settings.base58prefix.pubKeyHash,
+      privatekey: settings.base58prefix.privateKeyWIF,
+      scripthash: settings.base58prefix.scriptHash,
+      xpubkey: settings.base58prefix.publicKeyBIP32,
+      xprivkey: settings.base58prefix.privateKeyBIP32,
+      networkMagic: settings.magic,
+      port: settings.port
     })
     const libNetwork = bitcore.Networks.get(libNetworkName)
 
@@ -145,10 +137,20 @@ const connector = {
     if (netType === networkType.mainnet) {
       return 'https://explore.next.exchange/api'
     }
-
     // testnet is down
     /*if (netwType === networkType.testnet) {
-      return ''
+      return '' // ?
+    }*/
+    throw new Error('Unknown networkType')
+  },
+
+  getTxUrl(netType, txId) {
+    if (netType == networkType.mainnet) {
+      return `https://explore.next.exchange/#/tx/${txId}`
+    }
+    // testnet is down
+    /*if (netType == networkType.testnet) {
+      return '' // ?
     }*/
     throw new Error('Unknown networkType')
   },

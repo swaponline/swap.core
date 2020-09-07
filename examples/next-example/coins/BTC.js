@@ -22,20 +22,21 @@ const BTC = {
 
   [netNames.mainnet]: {
     type: networkType.mainnet,
-    bip32settings: {
-      // bip32settings from https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/src/networks.js
+    settings: {
+      // from https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/src/networks.js
+      port: 0, // ?
+      magic: 0, // ? (aka pchMessageStart)
       messagePrefix: '\x18Bitcoin Signed Message:\n',
-      bech32: 'bc',
-      bip32: {
-        public: 0x0488b21e,
-        private: 0x0488ade4,
+      base58prefix: {
+        pubKeyHash: 0x00,
+        scriptHash: 0x05,
+        privateKeyWIF: 0x80,
+        publicKeyBIP32: 0x0488b21e,
+        privateKeyBIP32: 0x0488ade4,
       },
-      pubKeyHash: 0x00,
-      scriptHash: 0x05,
-      wif: 0x80,
-    },
-    bip44settings: {
-      coinIndex: 0,
+      bip44: {
+        coinIndex: 0,
+      },
     },
     accountFromMnemonic: (mnemonic) =>
       libAdapter.accountFromMnemonic(mnemonic, netNames.mainnet),
@@ -48,19 +49,21 @@ const BTC = {
 
   [netNames.testnet]: {
     type: networkType.testnet,
-    bip32settings: {
+    settings: {
+      // from https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/src/networks.js
+      port: 0, //?
+      magic: 0, //?
       messagePrefix: '\x18Bitcoin Signed Message:\n',
-      bech32: 'tb',
-      bip32: {
-        public: 0x043587cf,
-        private: 0x04358394,
+      base58prefix: {
+        pubKeyHash: 0x6f,
+        scriptHash: 0xc4,
+        privateKeyWIF: 0xef,
+        publicKeyBIP32: 0x043587cf,
+        privateKeyBIP32: 0x04358394,
       },
-      pubKeyHash: 0x6f,
-      scriptHash: 0xc4,
-      wif: 0xef,
-    },
-    bip44settings: {
-      coinIndex: 1,
+      bip44: {
+        coinIndex: 1,
+      },
     },
     accountFromMnemonic: (mnemonic) =>
       libAdapter.accountFromMnemonic(mnemonic, netNames.testnet),
@@ -81,11 +84,21 @@ const libAdapter = {
 
   accountFromMnemonic(mnemonic, netName) {
     const network = BTC[netName]
+    const settings = network.settings
 
     // todo: move?
 
     const seed = bip39.mnemonicToSeedSync(mnemonic)
-    const root = bip32.fromSeed(seed, network.bip32settings)
+    const root = bip32.fromSeed(seed, {
+      wif: settings.base58prefix.privateKeyWIF,
+      bip32: {
+        public: settings.base58prefix.publicKeyBIP32,
+        private: settings.base58prefix.privateKeyBIP32,
+      },
+      messagePrefix: settings.messagePrefix,
+      pubKeyHash: settings.pubKeyHash,
+      scriptHash: settings.scriptHash,
+    })
     const derivePath = bip44.createDerivePath(network)
     const child = root.derivePath(derivePath)
 

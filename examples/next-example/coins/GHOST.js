@@ -21,21 +21,22 @@ const GHOST = {
 
   [netNames.mainnet]: {
     type: networkType.mainnet,
-    bip32settings: {
-      // bip32settings from https://github.com/JoaoCampos89/ghost-samples/blob/master/examples/transaction/index.js
-      // bip32settings from https://github.com/ghost-coin/ghost-bitcore-lib/blob/master/lib/networks.js (wrong?)
+    settings: {
+      // from https://github.com/JoaoCampos89/ghost-samples/blob/master/examples/transaction/index.js
+      // from https://github.com/ghost-coin/ghost-bitcore-lib/blob/master/lib/networks.js (wrong?)
+      port: 0, // ?
+      magic: 0, // ?
       messagePrefix: '\x18Bitcoin Signed Message:\n',
-      bech32: 'gp',
-      bip32: {
-        public:  0x68df7cbd,
-        private: 0x8e8ea8ea,
+      base58prefix: {
+        pubKeyHash: 0x26,
+        scriptHash: 0x61,
+        privateKeyWIF: 0xa6,
+        publicKeyBIP32: 0x68df7cbd,
+        privateKeyBIP32: 0x8e8ea8ea,
       },
-      pubKeyHash: 0x26,
-      scriptHash: 0x61,
-      wif: 0xa6,
-    },
-    bip44settings: {
-      coinIndex: 531,
+      bip44: {
+        coinIndex: 531,
+      },
     },
     getBalance: async (addr) =>
       await connector.fetchBalance(networkType.mainnet, addr),
@@ -47,19 +48,20 @@ const GHOST = {
 
   [netNames.testnet]: {
     type: networkType.testnet,
-    bip32settings: {
+    settings: {
+      port: 0, // ?
+      magic: 0, // ?
       messagePrefix: '\x18Bitcoin Signed Message:\n',
-      bech32: 'tb',
-      bip32: {
-        public: 0x043587cf,
-        private: 0x04358394,
+      base58prefix: {
+        pubKeyHash: 0x6f,
+        scriptHash: 0xc4,
+        privateKeyWIF: 0x2e,
+        publicKeyBIP32: 0x043587cf,
+        privateKeyBIP32: 0x04358394,
       },
-      pubKeyHash: 0x6f,
-      scriptHash: 0xc4,
-      wif: 0x2e,
-    },
-    bip44settings: {
-      coinIndex: 531,
+      bip44: {
+        coinIndex: 531,
+      },
     },
     accountFromMnemonic: (mnemonic) =>
       libAdapter.accountFromMnemonic(mnemonic, netNames.testnet),
@@ -76,9 +78,6 @@ const GHOST = {
       await connector.publishRawTx(networkType.testnet, rawTx),
     getTxUrl: (txId) =>
       connector.getTxUrl(networkType.testnet, txId),
-    get _connector() { // todo: remove
-      return connector
-    },
   }
 }
 
@@ -90,9 +89,19 @@ const libAdapter = {
 
   accountFromMnemonic(mnemonic, netName) {
     const network = GHOST[netName]
+    const settings = network.settings
 
     const seed = bip39.mnemonicToSeedSync(mnemonic)
-    const root = bip32.fromSeed(seed, network.bip32settings)
+    const root = bip32.fromSeed(seed, {
+      wif: settings.base58prefix.privateKeyWIF,
+      bip32: {
+        public: settings.base58prefix.publicKeyBIP32,
+        private: settings.base58prefix.privateKeyBIP32,
+      },
+      messagePrefix: settings.messagePrefix,
+      pubKeyHash: settings.pubKeyHash,
+      scriptHash: settings.scriptHash,
+    })
     const derivePath = bip44.createDerivePath(network)
     const child = root.derivePath(derivePath)
 

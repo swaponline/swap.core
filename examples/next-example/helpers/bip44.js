@@ -6,7 +6,7 @@ const bip44 = {
     Therefore, specify the testnet coin index in the settings
     */
 
-    const coinIndex = network.bip44settings.coinIndex
+    const coinIndex = network.settings.bip44.coinIndex
     const addressIndex = 0
 
     const path = `m/44'/${coinIndex}'/0'/0/${addressIndex}`
