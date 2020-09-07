@@ -47,6 +47,10 @@ const NEXT = {
         amount,
         to
       }),
+    publishTx: async (rawTx) =>
+      await connector.publishTx(networkType.mainnet, rawTx),
+    getTxUrl: (txId) =>
+      connector.getTxUrl(networkType.mainnet, txId),
     get _connector() { // todo: remove
       return connector
     },
@@ -182,6 +186,20 @@ const connector = {
     const json = await response.json();
     return json;
     //
+  },
+
+  async publishTx(networkType, rawTx) {
+    const apiUrl = connector.getApiUrl(networkType);
+    const response = await fetch(`${apiUrl}/sendrawtransaction`, {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({'rawtx': rawTx}),
+    })
+    const json = await response.json()
+    if (!json.raw) {
+      throw new Error(`Can't publish tx, answer = ${JSON.stringify(json)}`)
+    }
+    return json.raw
   },
 
 }

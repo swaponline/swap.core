@@ -17,12 +17,12 @@ const coins = require('./coins');
   console.log('GHOST tx created:', rawTx)
 
   // publish TX
-  // const txid = await coins.GHOST.testnet.publishRawTx(rawTx)
+  // const txid = await coins.GHOST.testnet.publishTx(rawTx)
   // console.log('tx sended, txid =', txid)
 
   // show TX URL
   // const txUrl = coins.GHOST.testnet.getTxUrl(txid)
-  // console.log('txUrl =:', txUrl)
+  // console.log('txUrl =', txUrl)
 */
 
 
@@ -37,5 +37,15 @@ const coins = require('./coins');
   const to = '...';
   const rawTx = await coins.NEXT.mainnet.createTx({ account, amount, to })
   console.log('NEXT tx created:', rawTx)
+
+  // publish TX
+  const txid = await coins.NEXT.mainnet.publishTx(rawTx)
+  console.log('tx sended, txid =', txid)
+
+  if (txid) { // show TX URL
+    const txUrl = coins.NEXT.mainnet.getTxUrl(txid)
+    console.log('txUrl =', txUrl)
+  }
+
 
 })()
