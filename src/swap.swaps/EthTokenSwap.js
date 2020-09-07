@@ -68,9 +68,10 @@ class EthTokenSwap extends SwapInterface {
 
     this.app = app
 
+    const web3 = this.app.env.getWeb3()
     this.decoder        = new InputDataDecoder(this.abi)
-    this.contract       = new this.app.env.web3.eth.Contract(this.abi, this.address)
-    this.ERC20          = new this.app.env.web3.eth.Contract(this.tokenAbi, this.tokenAddress)
+    this.contract       = new web3.eth.Contract(this.abi, this.address)
+    this.ERC20          = new web3.eth.Contract(this.tokenAbi, this.tokenAddress)
   }
 
   /**
@@ -102,7 +103,7 @@ class EthTokenSwap extends SwapInterface {
 
     return new Promise(async (resolve, reject) => {
       const params = {
-        from: this.app.services.auth.accounts.eth.address,
+        from: this.app.getMyEthAddress(),
         gas: this.gasLimit,
         gasPrice: this.gasPrice,
         ..._params,
@@ -148,7 +149,7 @@ class EthTokenSwap extends SwapInterface {
     return new Promise(async (resolve, reject) => {
       try {
         const params = {
-          from: this.app.services.auth.accounts.eth.address,
+          from: this.app.getMyEthAddress(),
           gas: this.gasLimit,
           gasPrice: this.gasPrice,
         }
@@ -191,7 +192,7 @@ class EthTokenSwap extends SwapInterface {
     return new Promise(async (resolve, reject) => {
       try {
         const result = await this.ERC20.methods.allowance(spender, this.address).call({
-          from: this.app.services.auth.accounts.eth.address,
+          from: this.app.getMyEthAddress(),
         })
 
         resolve(result)
@@ -301,7 +302,7 @@ class EthTokenSwap extends SwapInterface {
     const { ownerAddress } = data
 
     return this.contract.methods.getBalance(ownerAddress).call({
-      from: this.app.services.auth.accounts.eth.address,
+      from: this.app.getMyEthAddress(),
     })
   }
 
@@ -500,7 +501,7 @@ class EthTokenSwap extends SwapInterface {
     return new Promise(async (resolve, reject) => {
       try {
         const targetWallet = await this.contract.methods.getTargetWallet(ownerAddress).call({
-          from: this.app.services.auth.accounts.eth.address,
+          from: this.app.getMyEthAddress(),
         })
         debug('swap.core:swaps')('EthTokenSwap->getTargetWallet',targetWallet);
 
@@ -523,7 +524,7 @@ class EthTokenSwap extends SwapInterface {
   async calcWithdrawGas(data) {
     return this.calcWithdrawOtherGas({
       ownerAddress: data.ownerAddress,
-      participantAddress: this.app.services.auth.accounts.eth.address,
+      participantAddress: this.app.getMyEthAddress(),
       secret: data.secret,
     })
   }
@@ -539,7 +540,7 @@ class EthTokenSwap extends SwapInterface {
   async withdraw(data, handleTransactionHash) {
     return this.withdrawOther({
       ownerAddress: data.ownerAddress,
-      participantAddress: this.app.services.auth.accounts.eth.address,
+      participantAddress: this.app.getMyEthAddress(),
       secret: data.secret,
     } , handleTransactionHash)
   }
@@ -553,7 +554,7 @@ class EthTokenSwap extends SwapInterface {
    */
   async calcWithdrawNoMoneyGas(data) {
     return this.calcWithdrawOtherGas({
-      ownerAddress: this.app.services.auth.accounts.eth.address,
+      ownerAddress: this.app.getMyEthAddress(),
       participantAddress: data.participantAddress,
       secret: data.secret,
     })
@@ -569,7 +570,7 @@ class EthTokenSwap extends SwapInterface {
    */
   async withdrawNoMoney(data, handleTransactionHash) {
     return this.withdrawOther({
-      ownerAddress: this.app.services.auth.accounts.eth.address,
+      ownerAddress: this.app.getMyEthAddress(),
       participantAddress: data.participantAddress,
       secret: data.secret,
     }, handleTransactionHash)
@@ -584,7 +585,7 @@ class EthTokenSwap extends SwapInterface {
       const _secret = `0x${secret.replace(/^0x/, '')}`
 
       const params = {
-        from: this.app.services.auth.accounts.eth.address,
+        from: this.app.getMyEthAddress(),
         gas: this.gasLimit,
         gasPrice: this.gasPrice,
       }
@@ -644,7 +645,7 @@ class EthTokenSwap extends SwapInterface {
     return new Promise(async (resolve, reject) => {
       try {
         const secret = await this.contract.methods.getSecret(participantAddress).call({
-          from: this.app.services.auth.accounts.eth.address,
+          from: this.app.getMyEthAddress(),
         })
 
         const secretValue = secret && !/^0x0+$/.test(secret) ? secret : null
