@@ -1,0 +1,1 @@
+start-stop-daemon --name nextd --stop
