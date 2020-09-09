@@ -3,9 +3,12 @@
 
 ## Install
 
-### Install NEXT.coin node
+### Install `nextd` (NEXT.coin node daemon)
 
-Download `nextd` (NEXT.coin node) https://chain.next.exchange/#downloads
+```sh
+sudo sh install-nextd.sh
+```
+or install it manually (download `nextd` from https://chain.next.exchange/#downloads)
 
 or build it from sources (by request)
 
@@ -16,9 +19,12 @@ or build it from sources (by request)
 
 ## Usage
 
-`sh start-node.sh` - start node
+`sh start-nextd.sh` - start nextd
 
-`node nextd-proxy` - start node proxy
+`node nextd-proxy` - start nextd proxy
+
+
+`sh start-nextd.sh` - stop nextd
 
 
 ## Develop & debug
@@ -28,10 +34,3 @@ or build it from sources (by request)
 See available request methods in `node-rpc-methods.txt`
 
 See also `node-options.txt`
-
-
-## (Prod) NEXT.coin node daemon start/stop
-
-`nextd -daemon -rpcuser=test -rpcpassword=test`
-
-`start-stop-daemon --name nextd --stop`

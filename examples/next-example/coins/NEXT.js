@@ -172,7 +172,7 @@ const connector = {
 
   async fetchUnspents(netType, addr) {
     // todo: localhost -> server
-    const apiUrl = 'http://localhost:32251'
+    const apiUrl = 'http://localhost:7079'
 
     //const apiUrl = connector.getApiUrl(netType);
 

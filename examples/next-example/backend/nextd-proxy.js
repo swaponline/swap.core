@@ -1,21 +1,24 @@
-const express = require("express")
+const express = require('express')
 const bodyParser = require('body-parser')
 
 const request = require('superagent')
 const app = express()
+const helmet = require('helmet')
 
+app.use(helmet())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({
   extended: true
 }))
 
 
-const portDefault = 32251
+const portDefault = 7079
 
 const nextCoinNode = {
-  testnet: {
+  // testnet is down
+  /*testnet: {
     port: 17078
-  },
+  },*/
   mainnet: {
     port: 7078
   }
@@ -65,7 +68,7 @@ const sendRequest = ({ network, rpcMethod, rpcMethodParams = [], onSuccess, onEr
     .send(body)
     .then((req) => {
       const data = JSON.parse(req.text)
-      console.log('data=', data)
+      //console.log('data =', data)
       if (data.error === null) {
         onSuccess(data.result)
       } else {
