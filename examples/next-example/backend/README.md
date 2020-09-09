@@ -3,8 +3,14 @@
 
 ## Terms
 
-nextd - NEXT.coin node daemon
-nextp - http RPC proxy
+- `nextd` - NEXT.coin node daemon (3rd side)
+- `nextp` - http RPC proxy
+
+
+## Dependencies
+
+- `pm2`
+
 
 ## Install
 
@@ -17,32 +23,27 @@ or install it manually (download `nextd` from https://chain.next.exchange/#downl
 
 or build it from sources (by request)
 
-### Install dependencies
+### Install `nextp` dependencies
 
 `npm i`
 
 
 ## Start
 
-`sh start-nextd.sh` - start nextd
-
-`node nextd-proxy` - start nextd proxy
-
-`pm2 start nextd-proxy.js` - start nextd proxy (prod)
+- `sh nextd-start.sh` - start nextd
+- `sh nextp-start.sh` - start nextp
 
 
 ## Logs
 
-`sh log-nextd` - nextd logs
-
-`pm2 log nextd-proxy` - nextd-proxy logs
+- `sh nextd-logs.sh` - nextd logs
+- `sh nextp-logs.sh` - nextp logs
 
 
 ## Stop
 
-`sh start-nextd.sh` - stop nextd
-
-`pm2 stop nextd-proxy` - stop nextd proxy (prod)
+- `sh nextd-stop.sh` - stop nextd
+- `sh nextp-stop.sh` - stop nextp
 
 
 ## Develop & debug

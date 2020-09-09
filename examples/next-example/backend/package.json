@@ -1,8 +1,8 @@
 {
-  "name": "nextd-proxy",
+  "name": "nextp",
   "version": "1.0.0",
   "description": "",
-  "main": "nextd-proxy.js",
+  "main": "nextp.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

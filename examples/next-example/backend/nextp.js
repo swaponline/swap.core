@@ -160,4 +160,4 @@ app.get('/:network/addr/:address/utxo', async (req, res) => {
 
 
 app.listen(process.env.PORT ? process.env.PORT : portDefault)
-console.log(`NEXT proxy listening: localhost:${portDefault} ⇄ NEXT.coin node`)
+console.log(`nextp (NEXT.coin proxy) listening: localhost:${portDefault} ⇄ NEXT.coin node`)
