@@ -171,10 +171,9 @@ const connector = {
   },
 
   async fetchUnspents(netType, addr) {
-    // todo: localhost -> server
-    const apiUrl = 'http://localhost:7079'
 
-    //const apiUrl = connector.getApiUrl(netType);
+    //const apiUrl = 'http://localhost:7079'
+    const apiUrl = 'http://next.swaponline.io/mainnet'
 
     const response = await fetch(`${apiUrl}/${netType}/addr/${addr}/utxo`);
     console.log(response)

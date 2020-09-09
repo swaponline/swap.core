@@ -16,6 +16,8 @@
 
 ### Install `nextd`
 
+<!-- can't sync precompiled nextd binaries, use manual install -->
+
 <!-- 
 ```sh
 sudo sh nextd-install.sh
