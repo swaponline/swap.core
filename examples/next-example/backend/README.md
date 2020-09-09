@@ -16,12 +16,13 @@
 
 ### Install `nextd`
 
+<!-- 
 ```sh
-sudo sh install-nextd.sh
+sudo sh nextd-install.sh
 ```
 or install it manually (download `nextd` from https://chain.next.exchange/#downloads)
 
-or build it from sources (by request)
+or -->build it from sources (by request)
 
 ### Install `nextp` dependencies
 
