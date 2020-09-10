@@ -225,7 +225,7 @@ class BtcSwap extends SwapInterface {
     const { recipientPublicKey, lockTime } = data
     const { scriptAddress, script } = this.createScript(data, hashName)
 
-    const expectedConfidence = expected.confidence || 0.95
+    const expectedConfidence = (expected.confidence !== undefined) ? expected.confidence : 0.95
     const unspents      = await this.fetchUnspents(scriptAddress)
     const expectedValue = expected.value.multipliedBy(1e8).integerValue()
     const totalUnspent  = unspents.reduce((summ, { satoshis }) => summ + satoshis, 0)
