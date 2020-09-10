@@ -180,7 +180,7 @@ class ETH2BTC extends Flow {
             value: buyAmount,
             recipientPublicKey: this.app.services.auth.accounts.btc.getPublicKey(),
             lockTime: utcNow(),
-            confidence: 0.8,
+            confidence: (this.app.isWhitelistBtc(participant.btc.address)) ? 0 : 0.8,
           })
 
           if (scriptCheckError) {

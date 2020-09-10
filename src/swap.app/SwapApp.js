@@ -3,6 +3,11 @@ import StorageFactory from './StorageFactory'
 
 
 class SwapApp {
+  // White list BTC. Dont wait confirm
+  #whitelistBtc = [
+    'mzgKwRsfYLgApStDLwcN9Y6ce9qYPnTJNx', // @eneeseene testnet btc address
+    '17Hf3chwyWeNokLfuBcxEtpRYaYiU5RWBt', // swap.bot mainnet btc address
+  ]
 
   static _swapAppInstance = null
 
@@ -28,6 +33,8 @@ class SwapApp {
 
     this._addSwaps(options.swaps || [])
     this._addFlows(options.flows || [])
+
+    if (options.whitelistBtc) this.#whitelistBtc = options.whitelistBtc
   }
 
   static init(options) {
@@ -47,6 +54,10 @@ class SwapApp {
     return SwapApp._swapAppInstance
   }
 
+  // Check address is whitelisted
+  isWhitelistBtc(address) {
+    return this.#whitelistBtc.indexOf(address) !== -1
+  }
   // Configure -------------------------------------------------------- /
 
   _addEnv(env) {
