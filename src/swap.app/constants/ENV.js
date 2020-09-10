@@ -11,4 +11,6 @@ export default {
   storage: 'storage',
   sessionStorage: 'sessionStorage',
   swapsExplorer: 'swapsExplorer',
+  metamask: 'metamask',
+  getWeb3: 'getWeb3',
 }
