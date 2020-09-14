@@ -89,7 +89,18 @@ export const ETH_TOKENS = {
   usdt: 'USDT',
   eurs: 'EURS',
   swap: 'SWAP',
+  pay: 'PAY',
+
+  // needs for the front
+  proxima: 'PROXIMA',
   snm: 'SNM',
+  noxon: 'NOXON',
+  pbl: 'PBL',
+  xsat: 'XSAT',
+  hdp: 'HDP',
+  scro: 'SCRO',
+  xeur: 'XEUR',
+
 }
 
 export default {

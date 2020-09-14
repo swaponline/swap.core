@@ -10,5 +10,5 @@ const register = (code, precision) => {
 }
 
 export default {
-  register
+  register,
 }
