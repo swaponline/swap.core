@@ -95,4 +95,5 @@ export const ETH_TOKENS = {
 export default {
   ...NATIVE,
   ...ETH_TOKENS,
+  ...COIN_DATA,
 }

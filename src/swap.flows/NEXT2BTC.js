@@ -1,12 +1,11 @@
 import debug from 'debug'
 import crypto from 'bitcoinjs-lib/src/crypto' // move to BtcSwap
 import SwapApp, { constants } from 'swap.app'
-import { Flow } from 'swap.swap'
 import { COIN_DATA } from 'swap.app/constants'
-import stepsForCoins from 'swap.swap'
+import stepsForCoins, { Flow } from 'swap.swap'
 
-const fromCoin = COIN_DATA['NEXT']
-const toCoin = COIN_DATA['BTC']
+const fromCoin = constants.COIN_DATA.NEXT
+const toCoin = constants.COIN_DATA.BTC
 
 class NEXT2BTC extends Flow {
 
