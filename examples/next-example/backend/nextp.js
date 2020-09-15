@@ -3,14 +3,20 @@ const bodyParser = require('body-parser')
 
 const request = require('superagent')
 const app = express()
+const cors = require('cors')
 const helmet = require('helmet')
+
 
 app.use(helmet())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({
-  extended: true
+  extended: true,
 }))
 
+app.options('*', cors({
+  origin: '*',
+  optionsSuccessStatus: 200, // some legacy browsers
+}))
 
 const portDefault = 7079
 
@@ -20,8 +26,8 @@ const nextCoinNode = {
     port: 17078
   },*/
   mainnet: {
-    port: 7078
-  }
+    port: 7078,
+  },
 }
 
 const networks = Object.keys(nextCoinNode)
@@ -33,11 +39,10 @@ const networks = Object.keys(nextCoinNode)
 
 
 const sendRequest = ({ network, rpcMethod, rpcMethodParams = [], onSuccess, onError, appRes }) => {
-  
   if (!networks.includes(network)) {
     const error = `bad request: unknown network "${network}", expected ${networks}`
     throw new Error(error)
-    //appRes.status(400).json({ error })
+    // appRes.status(400).json({ error })
     return
   }
 
@@ -58,7 +63,7 @@ const sendRequest = ({ network, rpcMethod, rpcMethodParams = [], onSuccess, onEr
     'jsonrpc': '1.0',
     'id': 'curltext',
     'method': rpcMethod,
-    'params': rpcMethodParams
+    'params': rpcMethodParams,
   }
   const body = JSON.stringify(bodyJson)
 
@@ -68,7 +73,7 @@ const sendRequest = ({ network, rpcMethod, rpcMethodParams = [], onSuccess, onEr
     .send(body)
     .then((req) => {
       const data = JSON.parse(req.text)
-      //console.log('data =', data)
+      // console.log('data =', data)
       if (data.error === null) {
         onSuccess(data.result)
       } else {
@@ -78,7 +83,7 @@ const sendRequest = ({ network, rpcMethod, rpcMethodParams = [], onSuccess, onEr
     .catch((e) => {
       console.log('Error', e)
       let resultError = e
-      if (e.code == 'ECONNREFUSED') {
+      if (e.code === 'ECONNREFUSED') {
         resultError = new Error('Node is offline')
       }
       onError(resultError)
@@ -124,7 +129,7 @@ app.get('/:network/addr/:address', async (req, res) => {
   sendRequest({
     network,
     rpcMethod: 'getaddressbalance',
-    rpcMethodParams: [{'addresses': [address]}],
+    rpcMethodParams: [{ 'addresses': [address] }],
     onSuccess: (data) => {
       /*res.status(200).json({
         rawtx: answer.hex,
@@ -145,7 +150,7 @@ app.get('/:network/addr/:address/utxo', async (req, res) => {
   sendRequest({
     network,
     rpcMethod: 'getaddressutxos',
-    rpcMethodParams: [{'addresses': [address]}],
+    rpcMethodParams: [{ 'addresses': [address] }],
     onSuccess: (data) => {
       /*res.status(200).json({
         rawtx: answer.hex,
