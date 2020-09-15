@@ -8,15 +8,12 @@ const helmet = require('helmet')
 
 
 app.use(helmet())
+app.use(cors())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({
   extended: true,
 }))
 
-app.options('*', cors({
-  origin: '*',
-  optionsSuccessStatus: 200, // some legacy browsers
-}))
 
 const portDefault = 7079
 
