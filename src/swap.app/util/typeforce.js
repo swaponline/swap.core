@@ -14,7 +14,13 @@ const check = (...args) => {
 
 const isNumeric = (value) => !isNaN(parseFloat(value)) && isFinite(value)
 
-const isCoinName = (value) => Object.values(constants.COINS).map((v) => v.toLowerCase()).includes(value.toLowerCase())
+const isCoinName = (value) => {
+  return Object.values(constants.COINS).filter(
+    (v) => (v.ticker)
+      ? v.ticker.toLowerCase() === value.toLowerCase()
+      : v.toLowerCase() === value.toLowerCase()
+  ).length > 0
+}
 
 const isCoinAddress = {
   [constants.COINS.eth]: (value) => typeof value === 'string' && /^0x[A-Fa-f0-9]{40}$/.test(value),
