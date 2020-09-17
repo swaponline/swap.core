@@ -22,6 +22,11 @@
     "postversion": "npm publish",
     "release": "npm version patch && git push"
   },
+  "husky": {
+    "hooks": {
+      "post-commit": "npm test"
+    }
+  },
   "peerDependencies": {
     "bitcoinjs-lib": "~3.3.2"
   },
@@ -29,13 +34,14 @@
     "ajv": "^6.5.2",
     "app-module-path": "^2.2.0",
     "babel-runtime": "^6.26.0",
-    "ghost-bitcore-lib": "https://github.com/ghost-coin/ghost-bitcore-lib.git",
     "bignumber.js": "^7.2.1",
-    "bitcoinjs-lib": "^5.1.6",
+    "bitcoinjs-lib": "^5.1.10",
+    "bitcore-lib": "^8.22.0",
     "command-line-args": "^5.0.2",
     "command-line-usage": "^5.0.5",
     "debug": "^4.1.0",
     "ethereum-input-data-decoder": "0.0.12",
+    "ghost-bitcore-lib": "https://github.com/ghost-coin/ghost-bitcore-lib.git",
     "node-gyp": "^3.8.0",
     "rebuild": "^0.1.2",
     "typeforce": "^1.12.0"
@@ -56,6 +62,7 @@
     "colors": "^1.2.1",
     "copy-and-watch": "^0.1.2",
     "cpx": "^1.5.0",
+    "husky": "^4.2.5",
     "ipfs": "^0.34.4",
     "ipfs-pubsub-room": "^1.4.1",
     "jest": "^23.4.2",

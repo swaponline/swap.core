@@ -68,8 +68,15 @@ class BtcSwap extends SwapInterface {
    * @public
    */
   async getTxFee({ inSatoshis, size, speed = 'fast', address } = {}) {
-    let estimatedFee = BigNumber(await this.estimateFeeValue({ inSatoshis, address, speed, method: 'swap' /*, txSize: size */}))
+    const estimatedFeeRaw = await this.estimateFeeValue({
+      inSatoshis: true,
+      address,
+      speed,
+      method: 'swap'
+      /*, txSize: size */
+    })
 
+    const estimatedFee = BigNumber(estimatedFeeRaw)
     this.feeValue = estimatedFee
 
     return inSatoshis

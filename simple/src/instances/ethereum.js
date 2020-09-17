@@ -14,7 +14,6 @@ const LOCAL_PROVIDER = process.env.WEB3_LOCAL_PROVIDER || `http://localhost:7545
 const WEB3_PROVIDERS = {
   mainnet: new Web3.providers.HttpProvider(MAINNET_PROVIDER),
   testnet: new Web3.providers.HttpProvider(TESTNET_PROVIDER),
-  localnet: new Web3.providers.HttpProvider(LOCAL_PROVIDER),
 }
 
 const ETHERCHAIN_API = `https://www.etherchain.org/api/gasPriceOracle`
@@ -185,4 +184,3 @@ class Ethereum {
 module.exports = new Ethereum()
 module.exports.mainnet = () => new Ethereum('mainnet')
 module.exports.testnet = () => new Ethereum('testnet')
-module.exports.localnet = () => new Ethereum('localnet')

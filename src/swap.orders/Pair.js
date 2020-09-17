@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js'
 
-import COINS_PRECISION from 'swap.app/constants/COINS_PRECISION'
+import { COIN_DATA } from 'swap.app/constants'
 import TRADE_TICKERS from 'swap.app/constants/TRADE_TICKERS'
 import PAIR_TYPES from 'swap.app/constants/PAIR_TYPES'
 
@@ -11,8 +11,10 @@ const PAIR_ASK = PAIR_TYPES.ASK
 const isAsk = (type) => (type === PAIR_TYPES.ASK)
 const isBid = (type) => (type === PAIR_TYPES.BID)
 
-const filteredDecimals = ({ amount, currency }) =>
-  BigNumber(amount).decimalPlaces((COINS_PRECISION[currency] !== undefined) ? COINS_PRECISION[currency] : 18).toString()
+const filteredDecimals = ({ amount, currency }) => {
+  const precision = COIN_DATA[currency] && typeof COIN_DATA[currency].precision == "number" ? COIN_DATA[currency].precision : 18
+  return BigNumber(amount).decimalPlaces(precision).toString()
+}
 
 export const parseTicker = (order) => {
   const { buyCurrency: buy, sellCurrency: sell } = order
