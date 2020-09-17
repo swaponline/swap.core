@@ -8,7 +8,7 @@ import Order from './Order'
 
 
 const checkIncomeOrderFormat = (order) => {
-  // Skip unkronw sell-buy currency
+  // Skip unknown currencies
   if (order && order.buyCurrency && !util.typeforce.isCoinName(order.buyCurrency)) return false
   if (order && order.sellCurrency && !util.typeforce.isCoinName(order.sellCurrency)) return false
 
@@ -28,10 +28,10 @@ const checkIncomeOrderFormat = (order) => {
         return result
       })(),
     },
-    buyCurrency: util.typeforce.isCoinName,
     sellCurrency: util.typeforce.isCoinName,
-    buyAmount: util.typeforce.isNumeric,
     sellAmount: util.typeforce.isNumeric,
+    buyCurrency: util.typeforce.isCoinName,
+    buyAmount: util.typeforce.isNumeric,
     exchangeRate: util.typeforce.t.maybe(util.typeforce.isNumeric),
     isProcessing: '?Boolean',
     isRequested: '?Boolean',
@@ -209,8 +209,8 @@ class SwapOrders extends aggregation(ServiceInterface, Collection) {
 
     const buy = buyCurrency.toUpperCase()
     const sell = sellCurrency.toUpperCase()
-    const roundedBuyAmount = BigNumber(buyAmount).dp(constants.COINS_PRECISION[buy])
-    const roundedSellAmount = BigNumber(sellAmount).dp(constants.COINS_PRECISION[sell])
+    const roundedBuyAmount = BigNumber(buyAmount).dp(constants.COIN_DATA[buy].precision)
+    const roundedSellAmount = BigNumber(sellAmount).dp(constants.COIN_DATA[sell].precision)
 
     const order = new Order(this.app, this, {
       id:           id || this.getUniqueId(),

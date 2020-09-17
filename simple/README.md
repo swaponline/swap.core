@@ -69,7 +69,7 @@ In the `.env`:
 
   Will be generated if not given.
 
-- `NETWORK` is one of the `mainnet`, `testnet`, `localnet`. Default = `testnet`
+- `NETWORK` is one of the `mainnet`, `testnet`. Default = `testnet`
 - `OFFSET` is better to be omitted!
 
  _this variable should be consistent between different scripts if you wish to access the same IPFS peer id. By default `OFFSET` is a `process.argv[1]`, which is usually the name of the script you run: `node bot.js` => `bot.js`, so if you launching the same file, it will match._

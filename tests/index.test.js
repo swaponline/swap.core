@@ -1,9 +1,8 @@
-import SwapApp, { SwapInterface } from 'swap.app'
+import SwapApp from './setupSwapApp'
 import { Bitcoin } from 'examples/react/src/instances/bitcoin'
 import bitcoinjs from 'bitcoinjs-lib'
 import { BtcSwap } from 'swap.swaps'
 
-jest.mock('swap.app')
 
 const log = console.log
 const crypto = {
@@ -32,7 +31,9 @@ const btcSwap = new BtcSwap({
   broadcastTx: (tx) => btcOwnerBitcoin.broadcastTx(tx),
 })
 
-btcSwap._initSwap(SwapApp.shared())
+const swapAppInstance = SwapApp.shared()
+console.log('swapAppInstance =', swapAppInstance)
+btcSwap._initSwap(swapAppInstance)
 
 const btcOwnerData = btcOwnerBitcoin.login(btcOwner.privateKey)
 const ethOwnerData = ethOwnerBitcoin.login(ethOwner.privateKey)

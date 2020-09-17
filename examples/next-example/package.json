@@ -1,0 +1,19 @@
+{
+  "name": "sample-bitcore-lib",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "bignumber.js": "^7.2.1",
+    "bip32": "^2.0.5",
+    "bip39": "^3.0.2",
+    "bitcoinjs-lib": "^5.1.10",
+    "bitcore-mnemonic": "https://github.com/ghost-coin/bitcore-mnemonic",
+    "ghost-bitcore-lib": "https://github.com/ghost-coin/ghost-bitcore-lib.git",
+    "node-fetch": "^2.6.0"
+  },
+  "scripts": {
+    "send": "node send.js",
+    "balance": "node balance.js"
+  }
+}
