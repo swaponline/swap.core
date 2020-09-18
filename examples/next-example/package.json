@@ -10,7 +10,7 @@
     "bitcoinjs-lib": "^5.1.10",
     "bitcore-mnemonic": "https://github.com/ghost-coin/bitcore-mnemonic",
     "ghost-bitcore-lib": "https://github.com/ghost-coin/ghost-bitcore-lib.git",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.1"
   },
   "scripts": {
     "send": "node send.js",
