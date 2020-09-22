@@ -1,6 +1,6 @@
 {
   "name": "simple.swap.core",
-  "version": "0.3.145",
+  "version": "0.3.150",
   "description": "A wrapper around swap.core library",
   "main": "lib/index.js",
   "scripts": {
