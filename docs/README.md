@@ -1,3 +1,7 @@
+
+# Moved to https://github.com/swaponline/MultiCurrencyWallet/blob/master/docs/CORE.md
+---
+
 <img src="https://api.travis-ci.org/caffeinum/swap.core.svg?branch=master" />
 
 # Swap Core
